@@ -1,11 +1,20 @@
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import {
+  LogOut,
+  Moon,
+  Sun,
+  TrendingDown,
+  TrendingUp,
+  Wallet,
+} from "lucide-react";
 import { motion } from "motion/react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Expense } from "../backend.d";
+import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import {
   useAppSettings,
   useCategories,
@@ -33,6 +42,20 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
   const { data: categories = [] } = useCategories();
   const { data: settings } = useAppSettings();
   const currency = settings?.currency ?? "USD";
+  const { clear } = useInternetIdentity();
+
+  // Dark/light mode toggle — reads Tailwind "dark" class on <html>
+  const [isDark, setIsDark] = useState(() =>
+    document.documentElement.classList.contains("dark"),
+  );
+
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [isDark]);
 
   const recentExpenses = useMemo(
     () =>
@@ -67,14 +90,53 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
 
   return (
     <div className="px-4 py-5 space-y-5 pb-24">
-      {/* Header */}
+      {/* Top header row */}
+      <div className="flex items-center justify-between">
+        {/* Left: App title + subtitle */}
+        <div>
+          <h1 className="font-display text-2xl font-bold tracking-tight leading-tight">
+            PE Tracker
+          </h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Personal Expense Tracker
+          </p>
+        </div>
+
+        {/* Right: Theme toggle + Logout */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            data-ocid="dashboard.theme.toggle"
+            onClick={() => setIsDark((prev) => !prev)}
+          >
+            {isDark ? (
+              <Sun className="h-5 w-5" />
+            ) : (
+              <Moon className="h-5 w-5" />
+            )}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Logout"
+            data-ocid="dashboard.logout.button"
+            onClick={() => clear()}
+          >
+            <LogOut className="h-5 w-5" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Sub-header: Monthly Overview */}
       <div>
         <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
           Monthly Overview
         </p>
-        <h1 className="font-display text-2xl font-bold tracking-tight mt-0.5">
+        <h2 className="font-display text-xl font-bold tracking-tight mt-0.5">
           {formatMonthYear(month)}
-        </h1>
+        </h2>
       </div>
 
       {isLoading ? (

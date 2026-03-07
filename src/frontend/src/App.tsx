@@ -224,22 +224,20 @@ export default function App() {
           </div>
         </nav>
 
-        {/* FAB */}
-        <motion.button
-          type="button"
-          data-ocid="fab.button"
-          onClick={openAddExpense}
-          className="fixed bottom-20 right-4 z-50 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:shadow-xl active:scale-95 transition-shadow"
-          whileHover={{ scale: 1.08 }}
-          whileTap={{ scale: 0.92 }}
-          aria-label="Add expense"
-          style={{
-            // Center within max-width container on desktop
-            right: "max(1rem, calc(50vw - 240px + 1rem))",
-          }}
-        >
-          <Plus className="h-6 w-6" strokeWidth={2.5} />
-        </motion.button>
+        {/* FAB — centered above bottom nav */}
+        <div className="fixed bottom-[4.5rem] left-1/2 -translate-x-1/2 z-50">
+          <motion.button
+            type="button"
+            data-ocid="fab.button"
+            onClick={openAddExpense}
+            className="w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:shadow-xl active:scale-95 transition-shadow"
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.92 }}
+            aria-label="Add expense"
+          >
+            <Plus className="h-6 w-6" strokeWidth={2.5} />
+          </motion.button>
+        </div>
       </div>
 
       {/* Expense Dialog */}

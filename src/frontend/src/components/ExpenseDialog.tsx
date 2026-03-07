@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
+import { Calendar, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { Category, Expense } from "../backend.d";
 import { todayISO } from "../utils/format";
@@ -187,14 +187,17 @@ export default function ExpenseDialog({
             <Label htmlFor="date" className="text-sm font-medium">
               Date
             </Label>
-            <Input
-              id="date"
-              data-ocid="expense.date.input"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="h-11"
-            />
+            <div className="relative">
+              <Input
+                id="date"
+                data-ocid="expense.date.input"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="h-11 pr-10"
+              />
+              <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            </div>
           </div>
 
           {/* Note */}

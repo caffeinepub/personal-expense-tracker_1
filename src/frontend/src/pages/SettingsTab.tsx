@@ -226,19 +226,21 @@ export default function SettingsTab() {
         </div>
 
         <Card className="border-0 shadow-sm">
-          <CardContent className="px-4 py-6 flex flex-col items-center text-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-              <Lock className="h-5 w-5 text-muted-foreground" />
+          <CardContent className="px-4 py-8 flex flex-col items-center text-center gap-5">
+            <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
+              <Lock className="h-6 w-6 text-muted-foreground" />
             </div>
-            <div className="space-y-1">
-              <h2 className="font-display font-semibold text-base">
-                Sign in required
+            <div className="space-y-1.5">
+              <h2 className="font-display font-semibold text-lg">
+                Sign in to continue
               </h2>
               <p className="text-sm text-muted-foreground max-w-xs">
-                Sign in with Internet Identity to manage your settings,
-                categories, currency, and data.
+                Choose a login method to manage your settings, categories,
+                currency, and data.
               </p>
             </div>
+
+            {/* Primary: Internet Identity */}
             <Button
               onClick={login}
               disabled={isLoggingIn}
@@ -251,9 +253,118 @@ export default function SettingsTab() {
                   Signing in…
                 </>
               ) : (
-                "Sign In"
+                <>
+                  {/* Internet Identity logo */}
+                  <svg
+                    className="h-4 w-4"
+                    viewBox="0 0 32 32"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <circle
+                      cx="16"
+                      cy="16"
+                      r="16"
+                      fill="white"
+                      fillOpacity="0.2"
+                    />
+                    <path
+                      d="M16 6C10.477 6 6 10.477 6 16s4.477 10 10 10 10-4.477 10-10S21.523 6 16 6zm0 2a8 8 0 110 16A8 8 0 0116 8zm0 3a5 5 0 100 10A5 5 0 0016 11z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                  Sign In with Internet Identity
+                </>
               )}
             </Button>
+
+            {/* Divider */}
+            <div className="flex items-center gap-3 w-full">
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-xs text-muted-foreground">
+                or continue with
+              </span>
+              <div className="flex-1 h-px bg-border" />
+            </div>
+
+            {/* Social login buttons */}
+            <div className="flex gap-3 w-full">
+              {/* Google */}
+              <button
+                type="button"
+                onClick={login}
+                disabled={isLoggingIn}
+                data-ocid="settings.google.button"
+                aria-label="Sign in with Google"
+                className="flex-1 flex items-center justify-center gap-2 h-11 rounded-lg border border-border bg-background hover:bg-muted transition-colors text-sm font-medium disabled:opacity-50"
+              >
+                <svg
+                  className="h-4 w-4 flex-shrink-0"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    fill="#4285F4"
+                  />
+                  <path
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    fill="#34A853"
+                  />
+                  <path
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"
+                    fill="#FBBC05"
+                  />
+                  <path
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                    fill="#EA4335"
+                  />
+                </svg>
+                Google
+              </button>
+
+              {/* Apple */}
+              <button
+                type="button"
+                onClick={login}
+                disabled={isLoggingIn}
+                data-ocid="settings.apple.button"
+                aria-label="Sign in with Apple"
+                className="flex-1 flex items-center justify-center gap-2 h-11 rounded-lg border border-border bg-background hover:bg-muted transition-colors text-sm font-medium disabled:opacity-50"
+              >
+                <svg
+                  className="h-4 w-4 flex-shrink-0"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
+                </svg>
+                Apple
+              </button>
+
+              {/* Microsoft */}
+              <button
+                type="button"
+                onClick={login}
+                disabled={isLoggingIn}
+                data-ocid="settings.microsoft.button"
+                aria-label="Sign in with Microsoft"
+                className="flex-1 flex items-center justify-center gap-2 h-11 rounded-lg border border-border bg-background hover:bg-muted transition-colors text-sm font-medium disabled:opacity-50"
+              >
+                <svg
+                  className="h-4 w-4 flex-shrink-0"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <rect x="1" y="1" width="10" height="10" fill="#F25022" />
+                  <rect x="13" y="1" width="10" height="10" fill="#7FBA00" />
+                  <rect x="1" y="13" width="10" height="10" fill="#00A4EF" />
+                  <rect x="13" y="13" width="10" height="10" fill="#FFB900" />
+                </svg>
+                Microsoft
+              </button>
+            </div>
           </CardContent>
         </Card>
       </div>
