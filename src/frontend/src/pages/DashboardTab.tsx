@@ -1,13 +1,14 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { MoreVertical, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import { motion } from "motion/react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { Expense } from "../backend.d";
 import AppHeader from "../components/AppHeader";
+import ThemePickerDialog from "../components/ThemePickerDialog";
+import { useCardTheme } from "../hooks/useCardTheme";
 import {
   useAppSettings,
   useCategories,
@@ -35,6 +36,9 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
   const { data: categories = [] } = useCategories();
   const { data: settings } = useAppSettings();
   const currency = settings?.currency ?? "USD";
+
+  const { theme, themeId, setThemeId } = useCardTheme();
+  const [themeDialogOpen, setThemeDialogOpen] = useState(false);
 
   const recentExpenses = useMemo(
     () =>
@@ -101,18 +105,14 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
             <motion.div variants={itemVariants}>
               <Card
                 className="relative overflow-hidden border-0 shadow-xl bg-primary text-primary-foreground rounded-2xl"
-                style={{
-                  background:
-                    "linear-gradient(145deg, oklch(0.52 0.15 160) 0%, oklch(0.38 0.14 162) 55%, oklch(0.30 0.12 165) 100%)",
-                }}
+                style={{ background: theme.gradient }}
               >
-                {/* Decorative glowing orb — top-right depth layer */}
+                {/* Decorative glowing orb */}
                 <div
                   aria-hidden="true"
                   className="pointer-events-none absolute -top-8 -right-8 w-48 h-48 rounded-full opacity-25"
                   style={{
-                    background:
-                      "radial-gradient(circle, oklch(0.80 0.10 150) 0%, transparent 70%)",
+                    background: `radial-gradient(circle, ${theme.orb} 0%, transparent 70%)`,
                     filter: "blur(18px)",
                   }}
                 />
@@ -121,12 +121,22 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
                   aria-hidden="true"
                   className="pointer-events-none absolute inset-x-0 top-0 h-px opacity-40"
                   style={{
-                    background:
-                      "linear-gradient(90deg, transparent, oklch(0.92 0.05 145), transparent)",
+                    background: `linear-gradient(90deg, transparent, ${theme.highlight}, transparent)`,
                   }}
                 />
 
                 <CardContent className="relative pt-6 pb-6 px-5">
+                  {/* Three-dots theme picker button */}
+                  <button
+                    type="button"
+                    data-ocid="total_spent.open_modal_button"
+                    onClick={() => setThemeDialogOpen(true)}
+                    className="absolute top-3 right-3 p-1.5 rounded-full bg-primary-foreground/15 border border-primary-foreground/20 text-primary-foreground/80 hover:bg-primary-foreground/25 transition-colors z-10"
+                    aria-label="Change card theme"
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </button>
+
                   <div className="flex items-start justify-between">
                     {/* Left: label + amount + income line */}
                     <div className="flex-1 min-w-0">
@@ -155,7 +165,7 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
                         className="absolute inset-0 rounded-2xl opacity-40"
                         style={{
                           filter: "blur(8px)",
-                          background: "oklch(0.75 0.10 150)",
+                          background: theme.orb,
                         }}
                       />
                       <div className="relative p-3.5 rounded-2xl bg-primary-foreground/15 border border-primary-foreground/20 backdrop-blur-sm">
@@ -173,8 +183,7 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
                           className="absolute left-0 top-0 h-full rounded-full transition-all duration-700 ease-out"
                           style={{
                             width: `${Math.min(pct(totalSpent, totalIncome), 100)}%`,
-                            background:
-                              "linear-gradient(90deg, oklch(0.85 0.08 145), oklch(0.95 0.04 140))",
+                            background: `linear-gradient(90deg, ${theme.highlight}cc, ${theme.highlight})`,
                           }}
                         />
                         {/* Shimmer overlay */}
@@ -368,6 +377,13 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
           </motion.div>
         )}
       </div>
+
+      <ThemePickerDialog
+        open={themeDialogOpen}
+        onOpenChange={setThemeDialogOpen}
+        selectedThemeId={themeId}
+        onSelect={setThemeId}
+      />
     </div>
   );
 }
