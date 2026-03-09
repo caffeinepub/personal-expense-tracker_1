@@ -55,6 +55,8 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
   const totalSpent = summary?.totalExpenses ?? 0;
   const totalIncome = summary?.totalIncome ?? 0;
   const balance = totalIncome - totalSpent;
+  const spentPct =
+    totalIncome > 0 ? Math.min(pct(totalSpent, totalIncome), 100) : 0;
 
   const isLoading = loadingExpenses || loadingSummary;
 
@@ -101,10 +103,10 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
             initial="hidden"
             animate="show"
           >
-            {/* Main spending card */}
+            {/* ── Total Spent card ─────────────────────────────── */}
             <motion.div variants={itemVariants}>
               <Card
-                className="relative overflow-hidden border-0 shadow-xl bg-primary text-primary-foreground rounded-2xl"
+                className="relative overflow-hidden border-0 shadow-xl rounded-2xl"
                 style={{ background: theme.gradient }}
               >
                 {/* Decorative glowing orb */}
@@ -125,97 +127,100 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
                   }}
                 />
 
-                <CardContent className="relative pt-6 pb-6 px-5">
-                  {/* Three-dots theme picker button */}
-                  <button
-                    type="button"
-                    data-ocid="total_spent.open_modal_button"
-                    onClick={() => setThemeDialogOpen(true)}
-                    className="absolute top-3 right-3 p-1.5 rounded-full bg-primary-foreground/15 border border-primary-foreground/20 text-primary-foreground/80 hover:bg-primary-foreground/25 transition-colors z-10"
-                    aria-label="Change card theme"
-                  >
-                    <MoreVertical className="h-4 w-4" />
-                  </button>
+                <CardContent className="relative pt-4 pb-5 px-5">
+                  {/* ── Row 1: pill label  +  three-dots ── */}
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-widest bg-white/15 text-white/90 border border-white/20 backdrop-blur-sm">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white/70 inline-block" />
+                      Total Spent
+                    </span>
 
-                  <div className="flex items-start justify-between">
-                    {/* Left: label + amount + income line */}
+                    <button
+                      type="button"
+                      data-ocid="total_spent.open_modal_button"
+                      onClick={() => setThemeDialogOpen(true)}
+                      className="p-1.5 rounded-full bg-white/15 border border-white/20 text-white/80 hover:bg-white/25 transition-colors"
+                      aria-label="Change card theme"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {/* ── Row 2: hero amount  +  wallet icon ── */}
+                  <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0">
-                      {/* Pill label */}
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-widest bg-primary-foreground/15 text-primary-foreground/90 border border-primary-foreground/20 backdrop-blur-sm mb-3">
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary-foreground/70 inline-block" />
-                        Total Spent
-                      </span>
-
-                      {/* Hero amount */}
-                      <p className="font-display text-5xl font-bold tracking-tight leading-none">
+                      <p className="font-display text-5xl font-bold tracking-tight leading-none text-white">
                         {formatCurrency(totalSpent, currency)}
                       </p>
-
-                      {/* Income reference line */}
                       {totalIncome > 0 && (
-                        <p className="text-primary-foreground/60 text-xs mt-2.5 font-medium">
+                        <p className="text-white/60 text-xs mt-2 font-medium">
                           of {formatCurrency(totalIncome, currency)} income
                         </p>
                       )}
                     </div>
 
-                    {/* Right: Wallet icon with frosted glow circle */}
+                    {/* Wallet icon – frosted glow circle */}
                     <div className="relative ml-4 flex-shrink-0">
                       <div
                         className="absolute inset-0 rounded-2xl opacity-40"
-                        style={{
-                          filter: "blur(8px)",
-                          background: theme.orb,
-                        }}
+                        style={{ filter: "blur(8px)", background: theme.orb }}
                       />
-                      <div className="relative p-3.5 rounded-2xl bg-primary-foreground/15 border border-primary-foreground/20 backdrop-blur-sm">
-                        <Wallet className="h-7 w-7 text-primary-foreground" />
+                      <div className="relative p-3.5 rounded-2xl bg-white/15 border border-white/20 backdrop-blur-sm">
+                        <Wallet className="h-7 w-7 text-white" />
                       </div>
                     </div>
                   </div>
 
-                  {/* Progress + balance row */}
-                  {totalIncome > 0 && (
-                    <div className="mt-5">
-                      {/* Animated progress bar */}
-                      <div className="relative h-2 bg-primary-foreground/15 rounded-full overflow-hidden">
+                  {/* ── Row 3: shimmer bar (always visible) ── */}
+                  <div className="mt-5">
+                    <div className="relative h-2 bg-white/15 rounded-full overflow-hidden">
+                      {/* Filled portion */}
+                      {spentPct > 0 && (
                         <div
                           className="absolute left-0 top-0 h-full rounded-full transition-all duration-700 ease-out"
                           style={{
-                            width: `${Math.min(pct(totalSpent, totalIncome), 100)}%`,
+                            width: `${spentPct}%`,
                             background: `linear-gradient(90deg, ${theme.highlight}cc, ${theme.highlight})`,
                           }}
                         />
-                        {/* Shimmer overlay */}
-                        <div
-                          aria-hidden="true"
-                          className="absolute top-0 left-0 h-full w-1/4 animate-shimmer"
-                          style={{
-                            background:
-                              "linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent)",
-                          }}
-                        />
-                      </div>
-
-                      {/* Balance chips row */}
-                      <div className="flex items-center justify-between mt-3 gap-2">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-foreground/12 border border-primary-foreground/15 text-primary-foreground/90">
-                          {balance >= 0 ? (
-                            <TrendingUp className="h-3 w-3 text-primary-foreground/80" />
-                          ) : (
-                            <TrendingDown className="h-3 w-3 text-primary-foreground/80" />
-                          )}
-                          {formatCurrency(Math.abs(balance), currency)}
-                          <span className="text-primary-foreground/60 font-normal">
-                            {balance < 0 ? "over" : "left"}
-                          </span>
-                        </span>
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-primary-foreground/12 border border-primary-foreground/15 text-primary-foreground/90">
-                          {pct(totalSpent, totalIncome)}%
-                        </span>
-                      </div>
+                      )}
+                      {/* Shimmer overlay – always running */}
+                      <div
+                        aria-hidden="true"
+                        className="absolute top-0 left-0 h-full w-1/4 animate-shimmer"
+                        style={{
+                          background:
+                            "linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent)",
+                        }}
+                      />
                     </div>
-                  )}
+
+                    {/* ── Row 4: bottom chips (always visible) ── */}
+                    <div className="flex items-center justify-between mt-3 gap-2">
+                      {totalIncome > 0 ? (
+                        <>
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/12 border border-white/15 text-white/90">
+                            {balance >= 0 ? (
+                              <TrendingUp className="h-3 w-3 text-white/80" />
+                            ) : (
+                              <TrendingDown className="h-3 w-3 text-white/80" />
+                            )}
+                            {formatCurrency(Math.abs(balance), currency)}
+                            <span className="text-white/60 font-normal">
+                              {balance < 0 ? "over" : "left"}
+                            </span>
+                          </span>
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-white/12 border border-white/15 text-white/90">
+                            {pct(totalSpent, totalIncome)}%
+                          </span>
+                        </>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-white/10 border border-white/12 text-white/55">
+                          No budget set
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </motion.div>
@@ -315,7 +320,10 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
                 <Separator />
                 <CardContent className="px-0 pb-2 pt-0">
                   {recentExpenses.length === 0 ? (
-                    <p className="text-muted-foreground text-sm text-center py-6 px-4">
+                    <p
+                      className="text-muted-foreground text-sm text-center py-6 px-4"
+                      data-ocid="expense.empty_state"
+                    >
                       No expenses this month yet
                     </p>
                   ) : (
