@@ -26,8 +26,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  ChevronDown,
+  ChevronUp,
   Download,
   Fingerprint,
   Loader2,
@@ -82,6 +85,10 @@ export default function SettingsTab() {
   const exportForJSON = useExportExpenses();
 
   const [currency, setCurrency] = useState(settings?.currency ?? "USD");
+  const [currencyOpen, setCurrencyOpen] = useState(true);
+  const [categoriesOpen, setCategoriesOpen] = useState(true);
+  const [exportOpen, setExportOpen] = useState(true);
+  const [dangerOpen, setDangerOpen] = useState(true);
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -343,162 +350,248 @@ export default function SettingsTab() {
 
         {/* Currency */}
         <Card className="border-0 shadow-sm">
-          <CardHeader className="pb-3 pt-4 px-4">
-            <CardTitle className="font-display text-base font-semibold">
-              Currency
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-4">
-            <Select value={currency} onValueChange={handleSaveCurrency}>
-              <SelectTrigger
-                data-ocid="settings.currency.select"
-                className="h-11"
+          <CardHeader className="pb-1 pt-4 px-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="font-display text-base font-semibold">
+                Currency
+              </CardTitle>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => setCurrencyOpen((prev) => !prev)}
+                data-ocid="settings.currency.toggle"
+                aria-label={
+                  currencyOpen ? "Collapse currency" : "Expand currency"
+                }
               >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CURRENCIES.map((c) => (
-                  <SelectItem key={c.code} value={c.code}>
-                    <span className="font-medium">{c.symbol}</span>
-                    <span className="ml-2 text-muted-foreground">
-                      {c.name} ({c.code})
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </CardContent>
+                {currencyOpen ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </CardHeader>
+          <Separator />
+          {currencyOpen && (
+            <CardContent className="px-4 pb-4 pt-3">
+              <Select value={currency} onValueChange={handleSaveCurrency}>
+                <SelectTrigger
+                  data-ocid="settings.currency.select"
+                  className="h-11"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CURRENCIES.map((c) => (
+                    <SelectItem key={c.code} value={c.code}>
+                      <span className="font-medium">{c.symbol}</span>
+                      <span className="ml-2 text-muted-foreground">
+                        {c.name} ({c.code})
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </CardContent>
+          )}
         </Card>
 
         {/* Categories */}
         <Card className="border-0 shadow-sm">
-          <CardHeader className="pb-3 pt-4 px-4">
+          <CardHeader className="pb-1 pt-4 px-4">
             <div className="flex items-center justify-between">
               <CardTitle className="font-display text-base font-semibold">
                 Categories
               </CardTitle>
-              <Button
-                size="sm"
-                className="h-8 gap-1.5 text-xs"
-                onClick={openAddCategory}
-                data-ocid="settings.add_category.button"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Add
-              </Button>
+              <div className="flex items-center gap-1">
+                {categoriesOpen && (
+                  <Button
+                    size="sm"
+                    className="h-8 gap-1.5 text-xs"
+                    onClick={openAddCategory}
+                    data-ocid="settings.add_category.button"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Add
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setCategoriesOpen((prev) => !prev)}
+                  data-ocid="settings.categories.toggle"
+                  aria-label={
+                    categoriesOpen ? "Collapse categories" : "Expand categories"
+                  }
+                >
+                  {categoriesOpen ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
             </div>
           </CardHeader>
-          <CardContent className="px-0 pb-2">
-            {categories.length === 0 ? (
-              <p className="text-muted-foreground text-sm text-center py-6 px-4">
-                No categories yet
-              </p>
-            ) : (
-              <ul className="divide-y divide-border">
-                {categories.map((cat, i) => (
-                  <li
-                    key={cat.id}
-                    className="flex items-center gap-3 px-4 py-3"
-                    data-ocid={`category.item.${i + 1}`}
-                  >
-                    <div
-                      className="w-5 h-5 rounded-full flex-shrink-0 ring-2 ring-offset-2 ring-border"
-                      style={{ backgroundColor: cat.color }}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm">{cat.name}</p>
-                      {cat.budget > 0 && (
-                        <p className="text-xs text-muted-foreground">
-                          Budget: {cat.budget}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={() => openEditCategory(cat)}
-                        data-ocid={`category.edit_button.${i + 1}`}
-                        aria-label={`Edit ${cat.name}`}
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-destructive hover:text-destructive"
-                        onClick={() => setDeleteCategoryId(cat.id)}
-                        data-ocid={`category.delete_button.${i + 1}`}
-                        aria-label={`Delete ${cat.name}`}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
+          <Separator />
+          {categoriesOpen && (
+            <CardContent className="px-0 pb-2 pt-0">
+              {categories.length === 0 ? (
+                <p className="text-muted-foreground text-sm text-center py-6 px-4">
+                  No categories yet
+                </p>
+              ) : (
+                <ul className="divide-y divide-border">
+                  {categories.map((cat, i) => (
+                    <li
+                      key={cat.id}
+                      className="flex items-center gap-3 px-4 py-3"
+                      data-ocid={`category.item.${i + 1}`}
+                    >
+                      <div
+                        className="w-5 h-5 rounded-full flex-shrink-0 ring-2 ring-offset-2 ring-border"
+                        style={{ backgroundColor: cat.color }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm">{cat.name}</p>
+                        {cat.budget > 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            Budget: {cat.budget}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => openEditCategory(cat)}
+                          data-ocid={`category.edit_button.${i + 1}`}
+                          aria-label={`Edit ${cat.name}`}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-destructive hover:text-destructive"
+                          onClick={() => setDeleteCategoryId(cat.id)}
+                          data-ocid={`category.delete_button.${i + 1}`}
+                          aria-label={`Delete ${cat.name}`}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          )}
         </Card>
 
         {/* Export */}
         <Card className="border-0 shadow-sm">
-          <CardHeader className="pb-3 pt-4 px-4">
-            <CardTitle className="font-display text-base font-semibold">
-              Export Data
-            </CardTitle>
+          <CardHeader className="pb-1 pt-4 px-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="font-display text-base font-semibold">
+                Export Data
+              </CardTitle>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => setExportOpen((prev) => !prev)}
+                data-ocid="settings.export.toggle"
+                aria-label={
+                  exportOpen ? "Collapse export data" : "Expand export data"
+                }
+              >
+                {exportOpen ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
           </CardHeader>
-          <CardContent className="px-4 pb-4 space-y-2">
-            <Button
-              variant="outline"
-              className="w-full gap-2 h-11"
-              onClick={handleExportCSV}
-              disabled={exportForCSV.isPending}
-              data-ocid="settings.export_csv.button"
-            >
-              {exportForCSV.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Download className="h-4 w-4" />
-              )}
-              Export as CSV
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full gap-2 h-11"
-              onClick={handleExportJSON}
-              disabled={exportForJSON.isPending}
-              data-ocid="settings.export_json.button"
-            >
-              {exportForJSON.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Download className="h-4 w-4" />
-              )}
-              Export as JSON
-            </Button>
-          </CardContent>
+          <Separator />
+          {exportOpen && (
+            <CardContent className="px-4 pb-4 pt-3 space-y-2">
+              <Button
+                variant="outline"
+                className="w-full gap-2 h-11"
+                onClick={handleExportCSV}
+                disabled={exportForCSV.isPending}
+                data-ocid="settings.export_csv.button"
+              >
+                {exportForCSV.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+                Export as CSV
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full gap-2 h-11"
+                onClick={handleExportJSON}
+                disabled={exportForJSON.isPending}
+                data-ocid="settings.export_json.button"
+              >
+                {exportForJSON.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+                Export as JSON
+              </Button>
+            </CardContent>
+          )}
         </Card>
 
         {/* Danger Zone */}
         <Card className="border border-destructive/20 shadow-sm">
-          <CardHeader className="pb-3 pt-4 px-4">
-            <CardTitle className="font-display text-base font-semibold text-destructive">
-              Danger Zone
-            </CardTitle>
+          <CardHeader className="pb-1 pt-4 px-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="font-display text-base font-semibold text-destructive">
+                Danger Zone
+              </CardTitle>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => setDangerOpen((prev) => !prev)}
+                data-ocid="settings.danger.toggle"
+                aria-label={
+                  dangerOpen ? "Collapse danger zone" : "Expand danger zone"
+                }
+              >
+                {dangerOpen ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
           </CardHeader>
-          <CardContent className="px-4 pb-4">
-            <Button
-              variant="destructive"
-              className="w-full gap-2 h-11"
-              onClick={() => setShowResetDialog(true)}
-              data-ocid="settings.reset.button"
-            >
-              <RotateCcw className="h-4 w-4" />
-              Reset All Data
-            </Button>
-          </CardContent>
+          <Separator />
+          {dangerOpen && (
+            <CardContent className="px-4 pb-4 pt-3">
+              <Button
+                variant="destructive"
+                className="w-full gap-2 h-11"
+                onClick={() => setShowResetDialog(true)}
+                data-ocid="settings.reset.button"
+              >
+                <RotateCcw className="h-4 w-4" />
+                Reset All Data
+              </Button>
+            </CardContent>
+          )}
         </Card>
 
         {/* Category Dialog */}

@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Check,
@@ -235,12 +236,18 @@ export default function ReportsTab() {
             {/* Category breakdown */}
             <motion.div variants={itemVariants}>
               <Card className="border-0 shadow-sm">
-                <CardHeader className="pb-3 pt-4 px-4">
-                  <CardTitle className="font-display text-base font-semibold">
-                    Category Breakdown
-                  </CardTitle>
+                <CardHeader className="pb-1 pt-4 px-4">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="font-display text-base font-semibold">
+                      Category Breakdown
+                    </CardTitle>
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Amount
+                    </span>
+                  </div>
                 </CardHeader>
-                <CardContent className="px-4 pb-4 space-y-4">
+                <Separator />
+                <CardContent className="px-4 pb-4 pt-3 space-y-4">
                   {(summary?.categoryBreakdown?.length ?? 0) === 0 ? (
                     <p className="text-muted-foreground text-sm text-center py-6">
                       No expenses this month
