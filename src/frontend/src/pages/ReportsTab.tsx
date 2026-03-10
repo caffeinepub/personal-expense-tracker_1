@@ -236,7 +236,7 @@ export default function ReportsTab() {
             {/* Category breakdown */}
             <motion.div variants={itemVariants}>
               <Card className="border-0 shadow-sm">
-                <CardHeader className="pb-1 pt-4 px-4">
+                <CardHeader className="pb-0 pt-4 px-4">
                   <div className="flex items-center justify-between">
                     <CardTitle className="font-display text-base font-semibold">
                       Category Breakdown

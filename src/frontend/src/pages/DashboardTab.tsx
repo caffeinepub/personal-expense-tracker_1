@@ -229,7 +229,7 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
             {(summary?.categoryBreakdown?.length ?? 0) > 0 && (
               <motion.div variants={itemVariants}>
                 <Card className="border-0 shadow-sm">
-                  <CardHeader className="pb-1 pt-4 px-4">
+                  <CardHeader className="pb-0 pt-4 px-4">
                     <div className="flex items-center justify-between">
                       <CardTitle className="font-display text-base font-semibold">
                         By Category
@@ -307,7 +307,7 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
             {/* Recent transactions */}
             <motion.div variants={itemVariants}>
               <Card className="border-0 shadow-sm">
-                <CardHeader className="pb-1 pt-4 px-4">
+                <CardHeader className="pb-0 pt-4 px-4">
                   <div className="flex items-center justify-between">
                     <CardTitle className="font-display text-base font-semibold">
                       Recent Transactions

@@ -350,7 +350,7 @@ export default function SettingsTab() {
 
         {/* Currency */}
         <Card className="border-0 shadow-sm">
-          <CardHeader className="pb-1 pt-4 px-4">
+          <CardHeader className="pb-0 pt-4 px-4">
             <div className="flex items-center justify-between">
               <CardTitle className="font-display text-base font-semibold">
                 Currency
@@ -400,7 +400,7 @@ export default function SettingsTab() {
 
         {/* Categories */}
         <Card className="border-0 shadow-sm">
-          <CardHeader className="pb-1 pt-4 px-4">
+          <CardHeader className="pb-0 pt-4 px-4">
             <div className="flex items-center justify-between">
               <CardTitle className="font-display text-base font-semibold">
                 Categories
@@ -495,7 +495,7 @@ export default function SettingsTab() {
 
         {/* Export */}
         <Card className="border-0 shadow-sm">
-          <CardHeader className="pb-1 pt-4 px-4">
+          <CardHeader className="pb-0 pt-4 px-4">
             <div className="flex items-center justify-between">
               <CardTitle className="font-display text-base font-semibold">
                 Export Data
@@ -555,7 +555,7 @@ export default function SettingsTab() {
 
         {/* Danger Zone */}
         <Card className="border border-destructive/20 shadow-sm">
-          <CardHeader className="pb-1 pt-4 px-4">
+          <CardHeader className="pb-0 pt-4 px-4">
             <div className="flex items-center justify-between">
               <CardTitle className="font-display text-base font-semibold text-destructive">
                 Danger Zone
