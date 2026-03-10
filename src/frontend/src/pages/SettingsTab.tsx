@@ -29,10 +29,14 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  Calendar,
   ChevronDown,
   ChevronUp,
+  CreditCard,
   Download,
   Fingerprint,
+  Hash,
+  Info,
   Loader2,
   Lock,
   Pencil,
@@ -41,6 +45,7 @@ import {
   ShieldCheck,
   Smartphone,
   Trash2,
+  Wallet,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -68,7 +73,58 @@ const CURRENCIES = [
   { code: "JPY", symbol: "¥", name: "Japanese Yen" },
   { code: "CAD", symbol: "C$", name: "Canadian Dollar" },
   { code: "AUD", symbol: "A$", name: "Australian Dollar" },
+  { code: "CHF", symbol: "CHF", name: "Swiss Franc" },
+  { code: "CNY", symbol: "¥", name: "Chinese Yuan" },
+  { code: "SEK", symbol: "kr", name: "Swedish Krona" },
+  { code: "NOK", symbol: "kr", name: "Norwegian Krone" },
+  { code: "DKK", symbol: "kr", name: "Danish Krone" },
+  { code: "PLN", symbol: "zł", name: "Polish Zloty" },
+  { code: "CZK", symbol: "Kč", name: "Czech Koruna" },
+  { code: "HUF", symbol: "Ft", name: "Hungarian Forint" },
+  { code: "BRL", symbol: "R$", name: "Brazilian Real" },
+  { code: "MXN", symbol: "$", name: "Mexican Peso" },
+  { code: "SGD", symbol: "S$", name: "Singapore Dollar" },
+  { code: "HKD", symbol: "HK$", name: "Hong Kong Dollar" },
+  { code: "KRW", symbol: "₩", name: "South Korean Won" },
 ];
+
+const DEFAULT_PAYMENT_METHODS = [
+  "Cash",
+  "Credit Card",
+  "Debit Card",
+  "Bank Transfer",
+  "PayPal",
+  "Apple Pay",
+  "Google Pay",
+];
+
+const NUMBER_FORMATS = [
+  {
+    id: "en-US",
+    label: "1,234.56",
+    description: "US / UK (comma thousands, dot decimal)",
+  },
+  {
+    id: "de-DE",
+    label: "1.234,56",
+    description: "Europe (dot thousands, comma decimal)",
+  },
+  {
+    id: "fr-FR",
+    label: "1 234,56",
+    description: "French (space thousands, comma decimal)",
+  },
+  { id: "en-IN", label: "1,23,456", description: "Indian numbering system" },
+];
+
+const DATE_FORMATS = [
+  { id: "DD.MM.YYYY", label: "DD.MM.YYYY", example: "14.03.2026" },
+  { id: "MM/DD/YYYY", label: "MM/DD/YYYY", example: "03/14/2026" },
+  { id: "YYYY-MM-DD", label: "YYYY-MM-DD", example: "2026-03-14" },
+  { id: "DD/MM/YYYY", label: "DD/MM/YYYY", example: "14/03/2026" },
+];
+
+const APP_VERSION = "1.0.0";
 
 export default function SettingsTab() {
   const { identity, login, isInitializing, isLoggingIn } =
@@ -80,19 +136,44 @@ export default function SettingsTab() {
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
   const resetData = useResetUserData();
-  // Two separate mutation instances so CSV and JSON exports have independent pending states
   const exportForCSV = useExportExpenses();
   const exportForJSON = useExportExpenses();
 
   const [currency, setCurrency] = useState(settings?.currency ?? "USD");
-  const [currencyOpen, setCurrencyOpen] = useState(true);
-  const [categoriesOpen, setCategoriesOpen] = useState(true);
-  const [exportOpen, setExportOpen] = useState(true);
-  const [dangerOpen, setDangerOpen] = useState(true);
+
+  // All sections default closed
+  const [currencyOpen, setCurrencyOpen] = useState(false);
+  const [categoriesOpen, setCategoriesOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [dangerOpen, setDangerOpen] = useState(false);
+  const [budgetOpen, setBudgetOpen] = useState(false);
+  const [paymentMethodsOpen, setPaymentMethodsOpen] = useState(false);
+  const [formatsOpen, setFormatsOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
+
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [deleteCategoryId, setDeleteCategoryId] = useState<string | null>(null);
+
+  // Payment methods state (local, persisted to localStorage)
+  const [paymentMethods, setPaymentMethods] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem("pe_payment_methods");
+      return stored ? JSON.parse(stored) : DEFAULT_PAYMENT_METHODS;
+    } catch {
+      return DEFAULT_PAYMENT_METHODS;
+    }
+  });
+  const [newPaymentMethod, setNewPaymentMethod] = useState("");
+
+  // Format preferences (local)
+  const [numberFormat, setNumberFormat] = useState(
+    () => localStorage.getItem("pe_number_format") ?? "en-US",
+  );
+  const [dateFormat, setDateFormat] = useState(
+    () => localStorage.getItem("pe_date_format") ?? "DD.MM.YYYY",
+  );
 
   // Category form state
   const [catName, setCatName] = useState("");
@@ -202,9 +283,64 @@ export default function SettingsTab() {
     }
   }
 
+  function addPaymentMethod() {
+    const name = newPaymentMethod.trim();
+    if (!name) return;
+    if (paymentMethods.includes(name)) {
+      toast.error("Payment method already exists");
+      return;
+    }
+    const updated = [...paymentMethods, name];
+    setPaymentMethods(updated);
+    localStorage.setItem("pe_payment_methods", JSON.stringify(updated));
+    setNewPaymentMethod("");
+    toast.success("Payment method added");
+  }
+
+  function removePaymentMethod(method: string) {
+    const updated = paymentMethods.filter((m) => m !== method);
+    setPaymentMethods(updated);
+    localStorage.setItem("pe_payment_methods", JSON.stringify(updated));
+    toast.success("Payment method removed");
+  }
+
+  function handleNumberFormatChange(val: string) {
+    setNumberFormat(val);
+    localStorage.setItem("pe_number_format", val);
+    toast.success("Number format updated");
+  }
+
+  function handleDateFormatChange(val: string) {
+    setDateFormat(val);
+    localStorage.setItem("pe_date_format", val);
+    toast.success("Date format updated");
+  }
+
   const isSavingCategory = createCategory.isPending || updateCategory.isPending;
 
-  // ── Auth loading state ──────────────────────────────────────────────────────
+  // Section toggle helper
+  function SectionToggle({
+    open,
+    onToggle,
+    label,
+  }: { open: boolean; onToggle: () => void; label: string }) {
+    return (
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-7 w-7"
+        onClick={onToggle}
+        aria-label={open ? `Collapse ${label}` : `Expand ${label}`}
+      >
+        {open ? (
+          <ChevronUp className="h-4 w-4" />
+        ) : (
+          <ChevronDown className="h-4 w-4" />
+        )}
+      </Button>
+    );
+  }
+
   if (isInitializing) {
     return (
       <div className="space-y-5 pb-24" data-ocid="settings.loading_state">
@@ -222,27 +358,20 @@ export default function SettingsTab() {
     );
   }
 
-  // ── Auth gate ───────────────────────────────────────────────────────────────
   if (!identity) {
     return (
       <div className="space-y-5 pb-24">
         <AppHeader />
-
         <div className="px-4 space-y-5">
           <Card className="border-0 shadow-sm overflow-hidden">
-            {/* Top accent strip */}
             <div className="h-1 w-full bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
-
             <CardContent className="px-6 py-8 flex flex-col items-center text-center gap-6">
-              {/* Lock icon with layered glow */}
               <div className="relative">
                 <div className="absolute inset-0 rounded-full bg-primary/10 blur-xl scale-150" />
                 <div className="relative w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center ring-1 ring-primary/20">
                   <Lock className="h-7 w-7 text-primary" />
                 </div>
               </div>
-
-              {/* Heading */}
               <div className="space-y-1.5">
                 <h2 className="font-display font-bold text-xl tracking-tight">
                   Sign in to continue
@@ -252,8 +381,6 @@ export default function SettingsTab() {
                   needed.
                 </p>
               </div>
-
-              {/* Internet Identity sign-in button */}
               <Button
                 onClick={login}
                 disabled={isLoggingIn}
@@ -272,53 +399,41 @@ export default function SettingsTab() {
                   </>
                 )}
               </Button>
-
-              {/* Feature bullets */}
               <div className="w-full space-y-3 pt-1">
-                <div className="flex items-start gap-3 text-left rounded-xl bg-muted/50 px-4 py-3">
-                  <div className="mt-0.5 flex-shrink-0 w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Fingerprint className="h-3.5 w-3.5 text-primary" />
+                {[
+                  {
+                    icon: <Fingerprint className="h-3.5 w-3.5 text-primary" />,
+                    title: "No passwords",
+                    desc: "Use your device passkey, Face ID, or Touch ID to authenticate instantly.",
+                  },
+                  {
+                    icon: <ShieldCheck className="h-3.5 w-3.5 text-primary" />,
+                    title: "Privacy-preserving",
+                    desc: "No email address, no tracking, no third-party accounts required.",
+                  },
+                  {
+                    icon: <Smartphone className="h-3.5 w-3.5 text-primary" />,
+                    title: "Works across your devices",
+                    desc: "Use a hardware security key or authenticator app across all your devices.",
+                  },
+                ].map(({ icon, title, desc }) => (
+                  <div
+                    key={title}
+                    className="flex items-start gap-3 text-left rounded-xl bg-muted/50 px-4 py-3"
+                  >
+                    <div className="mt-0.5 flex-shrink-0 w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                      {icon}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium leading-snug">
+                        {title}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                        {desc}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium leading-snug">
-                      No passwords
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                      Use your device passkey, Face ID, or Touch ID to
-                      authenticate instantly.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3 text-left rounded-xl bg-muted/50 px-4 py-3">
-                  <div className="mt-0.5 flex-shrink-0 w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <ShieldCheck className="h-3.5 w-3.5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium leading-snug">
-                      Privacy-preserving
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                      No email address, no tracking, no third-party accounts
-                      required.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3 text-left rounded-xl bg-muted/50 px-4 py-3">
-                  <div className="mt-0.5 flex-shrink-0 w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Smartphone className="h-3.5 w-3.5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium leading-snug">
-                      Works across your devices
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                      Use a hardware security key or authenticator app across
-                      all your devices.
-                    </p>
-                  </div>
-                </div>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -355,22 +470,11 @@ export default function SettingsTab() {
               <CardTitle className="font-display text-base font-semibold">
                 Currency
               </CardTitle>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => setCurrencyOpen((prev) => !prev)}
-                data-ocid="settings.currency.toggle"
-                aria-label={
-                  currencyOpen ? "Collapse currency" : "Expand currency"
-                }
-              >
-                {currencyOpen ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
-              </Button>
+              <SectionToggle
+                open={currencyOpen}
+                onToggle={() => setCurrencyOpen((p) => !p)}
+                label="currency"
+              />
             </div>
           </CardHeader>
           <Separator />
@@ -417,22 +521,11 @@ export default function SettingsTab() {
                     Add
                   </Button>
                 )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => setCategoriesOpen((prev) => !prev)}
-                  data-ocid="settings.categories.toggle"
-                  aria-label={
-                    categoriesOpen ? "Collapse categories" : "Expand categories"
-                  }
-                >
-                  {categoriesOpen ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </Button>
+                <SectionToggle
+                  open={categoriesOpen}
+                  onToggle={() => setCategoriesOpen((p) => !p)}
+                  label="categories"
+                />
               </div>
             </div>
           </CardHeader>
@@ -493,6 +586,227 @@ export default function SettingsTab() {
           )}
         </Card>
 
+        {/* Budget Settings */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-0 pt-4 px-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Wallet className="h-4 w-4 text-primary" />
+                <CardTitle className="font-display text-base font-semibold">
+                  Budget Settings
+                </CardTitle>
+              </div>
+              <SectionToggle
+                open={budgetOpen}
+                onToggle={() => setBudgetOpen((p) => !p)}
+                label="budget settings"
+              />
+            </div>
+          </CardHeader>
+          <Separator />
+          {budgetOpen && (
+            <CardContent className="px-4 pb-4 pt-3 space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Set a monthly budget per category. Edit any category to assign a
+                budget amount — it will show as a progress bar in your Reports.
+              </p>
+              {categories.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-2">
+                  Add categories first to set budgets.
+                </p>
+              ) : (
+                <ul className="space-y-2">
+                  {categories.map((cat, i) => (
+                    <li
+                      key={cat.id}
+                      className="flex items-center justify-between rounded-xl bg-muted/40 px-3 py-2.5"
+                      data-ocid={`budget.item.${i + 1}`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-3 h-3 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: cat.color }}
+                        />
+                        <span className="text-sm font-medium">{cat.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {cat.budget > 0 ? (
+                          <span className="text-sm font-semibold text-primary">
+                            {cat.budget.toFixed(2)}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">
+                            No budget
+                          </span>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => openEditCategory(cat)}
+                          aria-label={`Set budget for ${cat.name}`}
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          )}
+        </Card>
+
+        {/* Payment Methods */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-0 pt-4 px-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4 text-primary" />
+                <CardTitle className="font-display text-base font-semibold">
+                  Payment Methods
+                </CardTitle>
+              </div>
+              <SectionToggle
+                open={paymentMethodsOpen}
+                onToggle={() => setPaymentMethodsOpen((p) => !p)}
+                label="payment methods"
+              />
+            </div>
+          </CardHeader>
+          <Separator />
+          {paymentMethodsOpen && (
+            <CardContent className="px-4 pb-4 pt-3 space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Customize the payment methods available when adding expenses.
+              </p>
+              <ul className="divide-y divide-border">
+                {paymentMethods.map((method, i) => (
+                  <li
+                    key={method}
+                    className="flex items-center justify-between py-2.5"
+                    data-ocid={`payment_method.item.${i + 1}`}
+                  >
+                    <span className="text-sm font-medium">{method}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-destructive hover:text-destructive"
+                      onClick={() => removePaymentMethod(method)}
+                      aria-label={`Remove ${method}`}
+                      data-ocid={`payment_method.delete_button.${i + 1}`}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+              <div className="flex gap-2 pt-1">
+                <Input
+                  placeholder="New payment method..."
+                  value={newPaymentMethod}
+                  onChange={(e) => setNewPaymentMethod(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && addPaymentMethod()}
+                  className="h-10"
+                  data-ocid="settings.payment_method.input"
+                />
+                <Button
+                  size="sm"
+                  className="h-10 px-3 gap-1"
+                  onClick={addPaymentMethod}
+                  data-ocid="settings.payment_method.button"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add
+                </Button>
+              </div>
+            </CardContent>
+          )}
+        </Card>
+
+        {/* Number & Date Format */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-0 pt-4 px-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Hash className="h-4 w-4 text-primary" />
+                <CardTitle className="font-display text-base font-semibold">
+                  Number &amp; Date Format
+                </CardTitle>
+              </div>
+              <SectionToggle
+                open={formatsOpen}
+                onToggle={() => setFormatsOpen((p) => !p)}
+                label="formats"
+              />
+            </div>
+          </CardHeader>
+          <Separator />
+          {formatsOpen && (
+            <CardContent className="px-4 pb-4 pt-3 space-y-5">
+              {/* Number format */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5">
+                  <Hash className="h-3.5 w-3.5 text-muted-foreground" />
+                  <Label className="text-sm font-medium">Number Format</Label>
+                </div>
+                <div className="space-y-2">
+                  {NUMBER_FORMATS.map((fmt) => (
+                    <button
+                      key={fmt.id}
+                      type="button"
+                      onClick={() => handleNumberFormatChange(fmt.id)}
+                      className={`w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-left transition-colors border ${
+                        numberFormat === fmt.id
+                          ? "border-primary bg-primary/5"
+                          : "border-border bg-muted/30 hover:bg-muted/60"
+                      }`}
+                      data-ocid={`settings.number_format.${fmt.id.toLowerCase().replace("-", "_")}.toggle`}
+                    >
+                      <span className="text-sm font-mono font-semibold">
+                        {fmt.label}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {fmt.description}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Date format */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                  <Label className="text-sm font-medium">Date Format</Label>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {DATE_FORMATS.map((fmt) => (
+                    <button
+                      key={fmt.id}
+                      type="button"
+                      onClick={() => handleDateFormatChange(fmt.id)}
+                      className={`flex flex-col items-start rounded-xl px-3 py-2.5 text-left transition-colors border ${
+                        dateFormat === fmt.id
+                          ? "border-primary bg-primary/5"
+                          : "border-border bg-muted/30 hover:bg-muted/60"
+                      }`}
+                      data-ocid={`settings.date_format.${fmt.id.toLowerCase().replace(/\//g, "_").replace(/\./g, "_")}.toggle`}
+                    >
+                      <span className="text-xs font-mono font-semibold">
+                        {fmt.label}
+                      </span>
+                      <span className="text-xs text-muted-foreground mt-0.5">
+                        {fmt.example}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          )}
+        </Card>
+
         {/* Export */}
         <Card className="border-0 shadow-sm">
           <CardHeader className="pb-0 pt-4 px-4">
@@ -500,22 +814,11 @@ export default function SettingsTab() {
               <CardTitle className="font-display text-base font-semibold">
                 Export Data
               </CardTitle>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => setExportOpen((prev) => !prev)}
-                data-ocid="settings.export.toggle"
-                aria-label={
-                  exportOpen ? "Collapse export data" : "Expand export data"
-                }
-              >
-                {exportOpen ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
-              </Button>
+              <SectionToggle
+                open={exportOpen}
+                onToggle={() => setExportOpen((p) => !p)}
+                label="export data"
+              />
             </div>
           </CardHeader>
           <Separator />
@@ -560,22 +863,11 @@ export default function SettingsTab() {
               <CardTitle className="font-display text-base font-semibold text-destructive">
                 Danger Zone
               </CardTitle>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => setDangerOpen((prev) => !prev)}
-                data-ocid="settings.danger.toggle"
-                aria-label={
-                  dangerOpen ? "Collapse danger zone" : "Expand danger zone"
-                }
-              >
-                {dangerOpen ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
-              </Button>
+              <SectionToggle
+                open={dangerOpen}
+                onToggle={() => setDangerOpen((p) => !p)}
+                label="danger zone"
+              />
             </div>
           </CardHeader>
           <Separator />
@@ -590,6 +882,86 @@ export default function SettingsTab() {
                 <RotateCcw className="h-4 w-4" />
                 Reset All Data
               </Button>
+            </CardContent>
+          )}
+        </Card>
+
+        {/* About */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-0 pt-4 px-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Info className="h-4 w-4 text-primary" />
+                <CardTitle className="font-display text-base font-semibold">
+                  About
+                </CardTitle>
+              </div>
+              <SectionToggle
+                open={aboutOpen}
+                onToggle={() => setAboutOpen((p) => !p)}
+                label="about"
+              />
+            </div>
+          </CardHeader>
+          <Separator />
+          {aboutOpen && (
+            <CardContent className="px-4 pb-4 pt-3 space-y-4">
+              <div className="flex items-center gap-3 rounded-xl bg-muted/40 px-4 py-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Wallet className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">PE Tracker</p>
+                  <p className="text-xs text-muted-foreground">
+                    Personal Expense Tracker
+                  </p>
+                </div>
+                <div className="ml-auto">
+                  <span className="text-xs bg-primary/10 text-primary font-mono px-2 py-1 rounded-full">
+                    v{APP_VERSION}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                {[
+                  {
+                    icon: <ShieldCheck className="h-3.5 w-3.5 text-primary" />,
+                    label: "Authentication",
+                    value: "Internet Identity",
+                  },
+                  {
+                    icon: <Lock className="h-3.5 w-3.5 text-primary" />,
+                    label: "Storage",
+                    value: "Private · On-chain",
+                  },
+                  {
+                    icon: <Smartphone className="h-3.5 w-3.5 text-primary" />,
+                    label: "Platform",
+                    value: "Internet Computer (ICP)",
+                  },
+                ].map(({ icon, label, value }) => (
+                  <div
+                    key={label}
+                    className="flex items-center justify-between py-2 border-b border-border/50 last:border-0"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center">
+                        {icon}
+                      </div>
+                      <span className="text-sm text-muted-foreground">
+                        {label}
+                      </span>
+                    </div>
+                    <span className="text-sm font-medium">{value}</span>
+                  </div>
+                ))}
+              </div>
+
+              <p className="text-xs text-muted-foreground text-center pt-1">
+                Your data is private and stored only in your personal canister
+                on the Internet Computer. No third parties can access it.
+              </p>
             </CardContent>
           )}
         </Card>
@@ -613,7 +985,6 @@ export default function SettingsTab() {
                   className="h-11"
                 />
               </div>
-
               <div className="space-y-1.5">
                 <Label>Color</Label>
                 <div className="flex flex-wrap gap-2">
@@ -621,11 +992,7 @@ export default function SettingsTab() {
                     <button
                       key={color}
                       type="button"
-                      className={`w-8 h-8 rounded-full transition-transform hover:scale-110 ${
-                        catColor === color
-                          ? "ring-2 ring-ring ring-offset-2 scale-110"
-                          : ""
-                      }`}
+                      className={`w-8 h-8 rounded-full transition-transform hover:scale-110 ${catColor === color ? "ring-2 ring-ring ring-offset-2 scale-110" : ""}`}
                       style={{ backgroundColor: color }}
                       onClick={() => setCatColor(color)}
                       aria-label={`Select color ${color}`}
@@ -633,7 +1000,6 @@ export default function SettingsTab() {
                   ))}
                 </div>
               </div>
-
               <div className="space-y-1.5">
                 <Label htmlFor="cat-budget">
                   Monthly Budget{" "}
@@ -653,7 +1019,6 @@ export default function SettingsTab() {
                 />
               </div>
             </div>
-
             <DialogFooter className="gap-2 sm:gap-0">
               <Button
                 variant="outline"

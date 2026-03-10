@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Popover,
   PopoverContent,
@@ -402,9 +402,17 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
                 <Card className="border-0 shadow-sm">
                   <CardHeader className="pb-0 pt-4 px-4">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="font-display text-base font-semibold">
-                        By Category
-                      </CardTitle>
+                      <div className="flex items-baseline gap-2 flex-1">
+                        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                          Dashboard
+                        </p>
+                        <span className="text-xs text-muted-foreground/50">
+                          |
+                        </span>
+                        <h3 className="font-display text-base font-semibold">
+                          By Category
+                        </h3>
+                      </div>
                       <div className="flex items-center gap-1.5">
                         <span className="text-xs font-medium text-muted-foreground">
                           Amount
@@ -601,9 +609,17 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
               <Card className="border-0 shadow-sm">
                 <CardHeader className="pb-0 pt-4 px-4">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="font-display text-base font-semibold">
-                      Recent Transactions
-                    </CardTitle>
+                    <div className="flex items-baseline gap-2 flex-1">
+                      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                        Dashboard
+                      </p>
+                      <span className="text-xs text-muted-foreground/50">
+                        |
+                      </span>
+                      <h3 className="font-display text-base font-semibold">
+                        Recent Transactions
+                      </h3>
+                    </div>
                     <span className="text-xs font-medium text-muted-foreground">
                       Amount
                     </span>

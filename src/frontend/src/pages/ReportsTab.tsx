@@ -1,8 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Check,
@@ -10,6 +9,7 @@ import {
   ChevronRight,
   Minus,
   Pencil,
+  PiggyBank,
   TrendingDown,
   TrendingUp,
   X,
@@ -54,6 +54,11 @@ export default function ReportsTab() {
   const balance = totalIncome - totalExpenses;
   const isOver = balance < 0;
 
+  const savingsRate =
+    totalIncome > 0
+      ? (((totalIncome - totalExpenses) / totalIncome) * 100).toFixed(1)
+      : null;
+
   async function handleSaveIncome() {
     const amount = Number.parseFloat(incomeInput);
     if (Number.isNaN(amount) || amount < 0) {
@@ -80,7 +85,7 @@ export default function ReportsTab() {
   } as const;
 
   return (
-    <div className="space-y-5 pb-24">
+    <div className="space-y-5 pb-28">
       <AppHeader />
 
       <div className="px-4 space-y-5">
@@ -233,20 +238,90 @@ export default function ReportsTab() {
               </div>
             </motion.div>
 
+            {/* Savings rate chip */}
+            <motion.div variants={itemVariants}>
+              <div
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${
+                  savingsRate === null
+                    ? "bg-muted/40 border-border"
+                    : Number(savingsRate) >= 0
+                      ? "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800/40"
+                      : "bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-800/40"
+                }`}
+                data-ocid="reports.savings.card"
+              >
+                <div
+                  className={`p-2 rounded-lg ${
+                    savingsRate === null
+                      ? "bg-muted"
+                      : Number(savingsRate) >= 0
+                        ? "bg-emerald-100 dark:bg-emerald-900/40"
+                        : "bg-red-100 dark:bg-red-900/40"
+                  }`}
+                >
+                  <PiggyBank
+                    className={`h-4 w-4 ${
+                      savingsRate === null
+                        ? "text-muted-foreground"
+                        : Number(savingsRate) >= 0
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : "text-red-600 dark:text-red-400"
+                    }`}
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                    Savings Rate
+                  </p>
+                  {savingsRate === null ? (
+                    <p className="text-sm font-medium text-muted-foreground mt-0.5">
+                      Set income to see savings rate
+                    </p>
+                  ) : Number(savingsRate) >= 0 ? (
+                    <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300 mt-0.5">
+                      Saved {savingsRate}% this month 🎉
+                    </p>
+                  ) : (
+                    <p className="text-sm font-semibold text-red-700 dark:text-red-400 mt-0.5">
+                      Over budget by {Math.abs(Number(savingsRate)).toFixed(1)}%
+                    </p>
+                  )}
+                </div>
+                {savingsRate !== null && (
+                  <span
+                    className={`text-lg font-bold font-display ${
+                      Number(savingsRate) >= 0
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : "text-red-600 dark:text-red-400"
+                    }`}
+                  >
+                    {savingsRate}%
+                  </span>
+                )}
+              </div>
+            </motion.div>
+
             {/* Category breakdown */}
             <motion.div variants={itemVariants}>
               <Card className="border-0 shadow-sm">
                 <CardHeader className="pb-0 pt-4 px-4">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="font-display text-base font-semibold">
-                      Category Breakdown
-                    </CardTitle>
+                    <div className="flex items-baseline gap-2 flex-1">
+                      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                        Reports
+                      </p>
+                      <span className="text-xs text-muted-foreground/50">
+                        |
+                      </span>
+                      <h3 className="font-display text-base font-semibold">
+                        Category Breakdown
+                      </h3>
+                    </div>
                     <span className="text-xs font-medium text-muted-foreground">
                       Amount
                     </span>
                   </div>
                 </CardHeader>
-                <Separator />
                 <CardContent className="px-4 pb-4 pt-3 space-y-4">
                   {(summary?.categoryBreakdown?.length ?? 0) === 0 ? (
                     <p className="text-muted-foreground text-sm text-center py-6">
@@ -299,7 +374,6 @@ export default function ReportsTab() {
                                   value={budgetPct}
                                   className="h-2"
                                   style={{
-                                    // Override progress bar color via CSS variable trick
                                     ["--progress-color" as string]: overBudget
                                       ? "oklch(var(--destructive))"
                                       : (cat?.color ?? "#B0B0B0"),
@@ -339,6 +413,17 @@ export default function ReportsTab() {
                   )}
                 </CardContent>
               </Card>
+            </motion.div>
+
+            {/* End-of-report footer */}
+            <motion.div variants={itemVariants}>
+              <div className="flex items-center gap-3 py-2">
+                <div className="flex-1 h-px bg-border" />
+                <p className="text-xs text-muted-foreground/60 font-medium whitespace-nowrap">
+                  End of report · {formatMonthYear(month)}
+                </p>
+                <div className="flex-1 h-px bg-border" />
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -383,6 +468,7 @@ function ReportsSkeleton() {
         <Skeleton className="h-20 rounded-xl" />
         <Skeleton className="h-20 rounded-xl" />
       </div>
+      <Skeleton className="h-12 rounded-xl w-full" />
       <Skeleton className="h-48 rounded-xl w-full" />
     </div>
   );
