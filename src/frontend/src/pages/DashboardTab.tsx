@@ -1,10 +1,36 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MoreVertical, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import {
+  BarChart2,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  MoreVertical,
+  PieChart as PieChartIcon,
+  TrendingDown,
+  TrendingUp,
+  Wallet,
+} from "lucide-react";
 import { motion } from "motion/react";
 import { useMemo, useState } from "react";
+import {
+  Bar,
+  BarChart,
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import type { Expense } from "../backend.d";
 import AppHeader from "../components/AppHeader";
 import ThemePickerDialog from "../components/ThemePickerDialog";
@@ -17,6 +43,8 @@ import {
 } from "../hooks/useQueries";
 import { getCategoryById } from "../utils/categories";
 import {
+  nextMonth as _nextMonth,
+  prevMonth as _prevMonth,
   currentMonth,
   formatCurrency,
   formatDateShort,
@@ -24,12 +52,31 @@ import {
   pct,
 } from "../utils/format";
 
+const MONTH_NAMES = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
 interface DashboardTabProps {
   onEditExpense: (expense: Expense) => void;
 }
 
 export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
-  const month = currentMonth();
+  const [month, setMonth] = useState(currentMonth);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerYear, setPickerYear] = useState(() => new Date().getFullYear());
+  const [chartView, setChartView] = useState<"donut" | "bar">("donut");
+
   const { data: expenses = [], isLoading: loadingExpenses } =
     useExpensesByMonth(month);
   const { data: summary, isLoading: loadingSummary } = useMonthlySummary(month);
@@ -60,6 +107,16 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
 
   const isLoading = loadingExpenses || loadingSummary;
 
+  // Month picker helpers
+  function selectMonth(m: number) {
+    const mm = String(m + 1).padStart(2, "0");
+    setMonth(`${pickerYear}-${mm}`);
+    setPickerOpen(false);
+  }
+
+  const selectedYear = Number.parseInt(month.split("-")[0], 10);
+  const selectedMonthIdx = Number.parseInt(month.split("-")[1], 10) - 1;
+
   const containerVariants = {
     hidden: { opacity: 0 },
     show: {
@@ -73,21 +130,95 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
     show: { opacity: 1, y: 0, transition: { duration: 0.35 } },
   } as const;
 
+  // Chart data
+  const chartData = useMemo(() => {
+    return (
+      summary?.categoryBreakdown
+        ?.sort((a, b) => b.total - a.total)
+        .map((item) => {
+          const cat = getCategoryById(categories, item.categoryId);
+          return {
+            name: item.categoryName,
+            value: item.total,
+            color: cat?.color ?? "#B0B0B0",
+          };
+        }) ?? []
+    );
+  }, [summary, categories]);
+
   return (
     <div className="space-y-5 pb-24">
       <AppHeader />
 
       <div className="px-4 space-y-5">
-        {/* Sub-header: Monthly Overview */}
+        {/* Sub-header: Monthly Overview with month picker */}
         <div>
           <div className="flex items-baseline gap-2">
             <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Monthly Overview
             </p>
             <span className="text-xs text-muted-foreground/50">|</span>
-            <h2 className="font-display text-xl font-bold tracking-tight">
-              {formatMonthYear(month)}
-            </h2>
+
+            {/* Tappable month picker trigger */}
+            <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  data-ocid="dashboard.month_picker.open_modal_button"
+                  className="flex items-center gap-1 font-display text-xl font-bold tracking-tight hover:text-primary transition-colors group"
+                >
+                  {formatMonthYear(month)}
+                  <ChevronDown className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors mt-0.5" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="w-72 p-3"
+                align="start"
+                data-ocid="dashboard.month_picker.popover"
+              >
+                {/* Year navigation */}
+                <div className="flex items-center justify-between mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setPickerYear((y) => y - 1)}
+                    className="p-1.5 rounded-md hover:bg-muted transition-colors"
+                    aria-label="Previous year"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <span className="font-semibold text-sm">{pickerYear}</span>
+                  <button
+                    type="button"
+                    onClick={() => setPickerYear((y) => y + 1)}
+                    className="p-1.5 rounded-md hover:bg-muted transition-colors"
+                    aria-label="Next year"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+                {/* Month grid */}
+                <div className="grid grid-cols-3 gap-1.5">
+                  {MONTH_NAMES.map((name, idx) => {
+                    const isSelected =
+                      idx === selectedMonthIdx && pickerYear === selectedYear;
+                    return (
+                      <button
+                        key={name}
+                        type="button"
+                        onClick={() => selectMonth(idx)}
+                        className={`py-2 rounded-lg text-sm font-medium transition-colors ${
+                          isSelected
+                            ? "bg-primary text-primary-foreground"
+                            : "hover:bg-muted text-foreground"
+                        }`}
+                      >
+                        {name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
           <p className="text-sm text-muted-foreground mt-0.5">
             Your spending summary and recent transactions for this month.
@@ -171,26 +302,24 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
                     </div>
                   </div>
 
-                  {/* ── Row 3: shimmer bar (always visible) ── */}
+                  {/* ── Row 3: progress bar (always visible) ── */}
                   <div className="mt-5">
                     <div className="relative h-2 bg-white/15 rounded-full overflow-hidden">
-                      {/* Filled portion */}
-                      {spentPct > 0 && (
-                        <div
-                          className="absolute left-0 top-0 h-full rounded-full transition-all duration-700 ease-out"
-                          style={{
-                            width: `${spentPct}%`,
-                            background: `linear-gradient(90deg, ${theme.highlight}cc, ${theme.highlight})`,
-                          }}
-                        />
-                      )}
+                      {/* Filled portion – always white so it's visible on every theme */}
+                      <div
+                        className="absolute left-0 top-0 h-full rounded-full transition-all duration-700 ease-out"
+                        style={{
+                          width: `${spentPct > 0 ? spentPct : 3}%`,
+                          background: "rgba(255,255,255,0.85)",
+                        }}
+                      />
                       {/* Shimmer overlay – always running */}
                       <div
                         aria-hidden="true"
                         className="absolute top-0 left-0 h-full w-1/4 animate-shimmer"
                         style={{
                           background:
-                            "linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent)",
+                            "linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent)",
                         }}
                       />
                     </div>
@@ -225,8 +354,50 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
               </Card>
             </motion.div>
 
+            {/* ── Quick Stats Row ──────────────────────────────── */}
+            <motion.div variants={itemVariants}>
+              <div
+                className="grid grid-cols-3 gap-3"
+                data-ocid="dashboard.stats.card"
+              >
+                {/* Income */}
+                <div className="rounded-xl border border-border bg-card p-3 shadow-sm flex flex-col gap-1">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Income
+                  </p>
+                  <p className="font-display font-bold text-base leading-tight text-foreground truncate">
+                    {formatCurrency(totalIncome, currency)}
+                  </p>
+                </div>
+                {/* Expenses */}
+                <div className="rounded-xl border border-border bg-card p-3 shadow-sm flex flex-col gap-1">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Expenses
+                  </p>
+                  <p className="font-display font-bold text-base leading-tight text-foreground truncate">
+                    {formatCurrency(totalSpent, currency)}
+                  </p>
+                </div>
+                {/* Balance */}
+                <div className="rounded-xl border border-border bg-card p-3 shadow-sm flex flex-col gap-1">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Balance
+                  </p>
+                  <p
+                    className={`font-display font-bold text-base leading-tight truncate ${
+                      balance >= 0
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : "text-destructive"
+                    }`}
+                  >
+                    {formatCurrency(balance, currency)}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+
             {/* Category breakdown */}
-            {(summary?.categoryBreakdown?.length ?? 0) > 0 && (
+            {chartData.length > 0 && (
               <motion.div variants={itemVariants}>
                 <Card className="border-0 shadow-sm">
                   <CardHeader className="pb-0 pt-4 px-4">
@@ -234,71 +405,192 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
                       <CardTitle className="font-display text-base font-semibold">
                         By Category
                       </CardTitle>
-                      <span className="text-xs font-medium text-muted-foreground">
-                        Amount
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Amount
+                        </span>
+                        <button
+                          type="button"
+                          data-ocid="dashboard.chart_toggle.toggle"
+                          onClick={() =>
+                            setChartView((v) =>
+                              v === "donut" ? "bar" : "donut",
+                            )
+                          }
+                          className="h-8 w-8 flex items-center justify-center rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
+                          aria-label={`Switch to ${
+                            chartView === "donut" ? "bar" : "donut"
+                          } chart`}
+                        >
+                          {chartView === "donut" ? (
+                            <BarChart2 className="h-4 w-4" />
+                          ) : (
+                            <PieChartIcon className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </CardHeader>
                   <Separator />
-                  <CardContent className="px-4 pb-4 pt-3 space-y-3">
-                    {summary!.categoryBreakdown
-                      .sort((a, b) => b.total - a.total)
-                      .map((item) => {
-                        const cat = getCategoryById(
-                          categories,
-                          item.categoryId,
-                        );
-                        const percentage = pct(item.total, totalSpent);
-                        const budget = cat?.budget ?? 0;
-                        return (
-                          <div key={item.categoryId} className="space-y-1.5">
-                            <div className="flex items-center justify-between text-sm">
-                              <div className="flex items-center gap-2">
-                                <span
-                                  className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                  <CardContent className="px-4 pb-4 pt-4 space-y-5">
+                    {/* ── Donut Chart ── */}
+                    {chartView === "donut" && (
+                      <div
+                        data-ocid="dashboard.donut_chart.canvas_target"
+                        style={{ height: 220 }}
+                      >
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={chartData}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={58}
+                              outerRadius={90}
+                              paddingAngle={2}
+                              dataKey="value"
+                            >
+                              {chartData.map((entry) => (
+                                <Cell
+                                  key={`cell-${entry.name}`}
+                                  fill={entry.color}
+                                />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              formatter={(value: number) =>
+                                formatCurrency(value, currency)
+                              }
+                              contentStyle={{
+                                borderRadius: 8,
+                                fontSize: 12,
+                                border: "1px solid var(--border)",
+                                background: "var(--card)",
+                                color: "var(--card-foreground)",
+                              }}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+
+                    {/* ── Horizontal Bar Chart ── */}
+                    {chartView === "bar" && (
+                      <div
+                        data-ocid="dashboard.bar_chart.canvas_target"
+                        style={{
+                          height: Math.max(chartData.length * 44, 100),
+                        }}
+                      >
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart
+                            data={chartData}
+                            layout="vertical"
+                            margin={{ top: 0, right: 8, left: 0, bottom: 0 }}
+                          >
+                            <XAxis
+                              type="number"
+                              tick={{ fontSize: 10 }}
+                              tickFormatter={(v) => formatCurrency(v, currency)}
+                              axisLine={false}
+                              tickLine={false}
+                            />
+                            <YAxis
+                              type="category"
+                              dataKey="name"
+                              width={72}
+                              tick={{ fontSize: 11 }}
+                              axisLine={false}
+                              tickLine={false}
+                            />
+                            <Tooltip
+                              formatter={(value: number) =>
+                                formatCurrency(value, currency)
+                              }
+                              contentStyle={{
+                                borderRadius: 8,
+                                fontSize: 12,
+                                border: "1px solid var(--border)",
+                                background: "var(--card)",
+                                color: "var(--card-foreground)",
+                              }}
+                            />
+                            <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                              {chartData.map((entry) => (
+                                <Cell
+                                  key={`bar-${entry.name}`}
+                                  fill={entry.color}
+                                />
+                              ))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+
+                    <Separator />
+
+                    {/* ── Category list with progress bars ── */}
+                    <div className="space-y-3">
+                      {summary!.categoryBreakdown
+                        .sort((a, b) => b.total - a.total)
+                        .map((item) => {
+                          const cat = getCategoryById(
+                            categories,
+                            item.categoryId,
+                          );
+                          const percentage = pct(item.total, totalSpent);
+                          const budget = cat?.budget ?? 0;
+                          return (
+                            <div key={item.categoryId} className="space-y-1.5">
+                              <div className="flex items-center justify-between text-sm">
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                    style={{
+                                      backgroundColor: cat?.color ?? "#B0B0B0",
+                                    }}
+                                  />
+                                  <span className="font-medium truncate max-w-[120px]">
+                                    {item.categoryName}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 text-right">
+                                  <span className="text-muted-foreground text-xs">
+                                    {percentage}%
+                                  </span>
+                                  <span className="font-semibold text-foreground">
+                                    {formatCurrency(item.total, currency)}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="relative h-1.5 bg-muted rounded-full overflow-hidden">
+                                <div
+                                  className="absolute left-0 top-0 h-full rounded-full transition-all duration-500"
                                   style={{
+                                    width: `${percentage}%`,
                                     backgroundColor: cat?.color ?? "#B0B0B0",
                                   }}
                                 />
-                                <span className="font-medium truncate max-w-[120px]">
-                                  {item.categoryName}
-                                </span>
+                                {budget > 0 && item.total > budget && (
+                                  <div className="absolute right-0 top-0 w-0.5 h-full bg-destructive" />
+                                )}
                               </div>
-                              <div className="flex items-center gap-2 text-right">
-                                <span className="text-muted-foreground text-xs">
-                                  {percentage}%
-                                </span>
-                                <span className="font-semibold text-foreground">
-                                  {formatCurrency(item.total, currency)}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="relative h-1.5 bg-muted rounded-full overflow-hidden">
-                              <div
-                                className="absolute left-0 top-0 h-full rounded-full transition-all duration-500"
-                                style={{
-                                  width: `${percentage}%`,
-                                  backgroundColor: cat?.color ?? "#B0B0B0",
-                                }}
-                              />
-                              {budget > 0 && item.total > budget && (
-                                <div className="absolute right-0 top-0 w-0.5 h-full bg-destructive" />
+                              {budget > 0 && (
+                                <p className="text-xs text-muted-foreground">
+                                  {formatCurrency(item.total, currency)} of{" "}
+                                  {formatCurrency(budget, currency)} budget
+                                  {item.total > budget && (
+                                    <span className="text-destructive ml-1 font-medium">
+                                      (over!)
+                                    </span>
+                                  )}
+                                </p>
                               )}
                             </div>
-                            {budget > 0 && (
-                              <p className="text-xs text-muted-foreground">
-                                {formatCurrency(item.total, currency)} of{" "}
-                                {formatCurrency(budget, currency)} budget
-                                {item.total > budget && (
-                                  <span className="text-destructive ml-1 font-medium">
-                                    (over!)
-                                  </span>
-                                )}
-                              </p>
-                            )}
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                    </div>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -400,7 +692,8 @@ function DashboardSkeleton() {
   return (
     <div className="space-y-5" data-ocid="dashboard.loading_state">
       <Skeleton className="h-36 rounded-2xl w-full" />
-      <Skeleton className="h-48 rounded-2xl w-full" />
+      <Skeleton className="h-16 rounded-xl w-full" />
+      <Skeleton className="h-72 rounded-2xl w-full" />
       <Skeleton className="h-64 rounded-2xl w-full" />
     </div>
   );

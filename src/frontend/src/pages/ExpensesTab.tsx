@@ -11,6 +11,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -23,6 +29,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   ChevronLeft,
   ChevronRight,
+  MoreVertical,
   Pencil,
   Receipt,
   Search,
@@ -90,6 +97,11 @@ export default function ExpensesTab({ onEditExpense }: ExpensesTabProps) {
   const grouped = useMemo(() => groupByDate(filtered), [filtered]);
   const sortedDates = Object.keys(grouped).sort(
     (a, b) => new Date(b).getTime() - new Date(a).getTime(),
+  );
+
+  const totalAmount = useMemo(
+    () => filtered.reduce((sum, e) => sum + Number(e.amount), 0),
+    [filtered],
   );
 
   async function handleDelete(id: string) {
@@ -188,6 +200,21 @@ export default function ExpensesTab({ onEditExpense }: ExpensesTabProps) {
           </Select>
         </div>
 
+        {/* Monthly summary pill */}
+        {!isLoading && filtered.length > 0 && (
+          <div className="flex items-center justify-between px-1">
+            <span className="text-xs text-muted-foreground">
+              <span className="font-medium text-foreground/70">
+                {filtered.length}
+              </span>{" "}
+              transaction{filtered.length !== 1 ? "s" : ""}
+            </span>
+            <span className="text-xs font-semibold text-foreground/80">
+              {formatCurrency(totalAmount, currency)} total
+            </span>
+          </div>
+        )}
+
         {/* Expense list */}
         {isLoading ? (
           <ExpenseListSkeleton />
@@ -231,7 +258,7 @@ export default function ExpensesTab({ onEditExpense }: ExpensesTabProps) {
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, height: 0 }}
                             transition={{ duration: 0.2, delay: i * 0.04 }}
-                            className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0 group"
+                            className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0"
                             data-ocid={`expense.item.${globalIndex}`}
                           >
                             <div
@@ -264,32 +291,44 @@ export default function ExpensesTab({ onEditExpense }: ExpensesTabProps) {
                               )}
                             </div>
 
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-2">
                               <span className="font-semibold text-sm">
                                 {formatCurrency(expense.amount, currency)}
                               </span>
-                              <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7"
-                                  onClick={() => onEditExpense(expense)}
-                                  data-ocid={`expense.edit_button.${globalIndex}`}
-                                  aria-label="Edit expense"
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                                    data-ocid={`expense.dropdown_menu.${globalIndex}`}
+                                    aria-label="More options"
+                                  >
+                                    <MoreVertical className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent
+                                  align="end"
+                                  className="w-36"
                                 >
-                                  <Pencil className="h-3.5 w-3.5" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7 text-destructive hover:text-destructive"
-                                  onClick={() => setDeleteId(expense.id)}
-                                  data-ocid={`expense.delete_button.${globalIndex}`}
-                                  aria-label="Delete expense"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
-                              </div>
+                                  <DropdownMenuItem
+                                    onClick={() => onEditExpense(expense)}
+                                    data-ocid={`expense.edit_button.${globalIndex}`}
+                                    className="gap-2"
+                                  >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => setDeleteId(expense.id)}
+                                    data-ocid={`expense.delete_button.${globalIndex}`}
+                                    className="gap-2 text-destructive focus:text-destructive"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
                           </motion.div>
                         );
@@ -299,6 +338,28 @@ export default function ExpensesTab({ onEditExpense }: ExpensesTabProps) {
                 </Card>
               </div>
             ))}
+
+            {/* End of list indicator */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="flex flex-col items-center gap-1.5 py-6"
+            >
+              <div className="flex items-center gap-2 text-xs text-muted-foreground/50">
+                <span className="h-px w-8 bg-border" />
+                <Receipt className="h-3.5 w-3.5" />
+                <span>
+                  {filtered.length} transaction
+                  {filtered.length !== 1 ? "s" : ""} &middot;{" "}
+                  {formatCurrency(totalAmount, currency)}
+                </span>
+                <span className="h-px w-8 bg-border" />
+              </div>
+              <p className="text-xs text-muted-foreground/40">
+                {formatMonthYear(month)}
+              </p>
+            </motion.div>
           </div>
         )}
 
