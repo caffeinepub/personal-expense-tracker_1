@@ -95,7 +95,6 @@ export default function ExpenseDialog({
     const parsedAmount = Number.parseFloat(amount);
 
     if (entryType === "income") {
-      // Derive month from date (YYYY-MM)
       const month = date.substring(0, 7);
       await onSaveIncome({ month, amount: parsedAmount });
       return;
@@ -205,62 +204,98 @@ export default function ExpenseDialog({
         )}
 
         <div className="space-y-4 py-2">
-          {/* Row: Amount + Category + Payment (Category & Payment hidden for income) */}
+          {/* Row 1: Amount (full width) */}
+          <div className="space-y-1.5">
+            <Label htmlFor="amount" className="text-sm font-medium">
+              Amount <span className="text-destructive">*</span>
+            </Label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold z-10 pointer-events-none select-none">
+                {getCurrencyPrefix()}
+              </span>
+              <Input
+                id="amount"
+                data-ocid="expense.amount.input"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className={[
+                  "pl-8 pr-10 text-xl font-bold font-display h-12",
+                  "[appearance:textfield]",
+                  "[&::-webkit-inner-spin-button]:appearance-none",
+                  "[&::-webkit-outer-spin-button]:appearance-none",
+                ].join(" ")}
+              />
+              <div className="absolute right-1 top-1/2 -translate-y-1/2 flex flex-col gap-0">
+                <button
+                  type="button"
+                  aria-label="Increase amount"
+                  onClick={incrementAmount}
+                  className="flex items-center justify-center h-5 w-7 rounded-t text-foreground hover:bg-accent hover:text-accent-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <ChevronUp className="h-3.5 w-3.5" strokeWidth={2.5} />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Decrease amount"
+                  onClick={decrementAmount}
+                  className="flex items-center justify-center h-5 w-7 rounded-b text-foreground hover:bg-accent hover:text-accent-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <ChevronDown className="h-3.5 w-3.5" strokeWidth={2.5} />
+                </button>
+              </div>
+            </div>
+            {errors.amount && (
+              <p
+                className="text-destructive text-xs"
+                data-ocid="expense.amount.error_state"
+              >
+                {errors.amount}
+              </p>
+            )}
+          </div>
+
+          {/* Row 2: Date + Category + Payment (equal width, or Date full width for income) */}
           <div
             className={`grid gap-2 items-start ${
-              isIncome ? "grid-cols-1" : "grid-cols-[2fr_1.5fr_1.5fr]"
+              isIncome ? "grid-cols-1" : "grid-cols-3"
             }`}
           >
-            {/* Amount */}
+            {/* Date */}
             <div className="space-y-1.5">
-              <Label htmlFor="amount" className="text-sm font-medium">
-                Amount <span className="text-destructive">*</span>
+              <Label htmlFor="date" className="text-sm font-medium">
+                {isIncome ? "Month" : "Date"}{" "}
+                <span className="text-destructive">*</span>
               </Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold z-10 pointer-events-none select-none">
-                  {getCurrencyPrefix()}
-                </span>
+              <div className="relative w-full">
                 <Input
-                  id="amount"
-                  data-ocid="expense.amount.input"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  ref={dateInputRef}
+                  id="date"
+                  data-ocid="expense.date.input"
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
                   className={[
-                    "pl-8 pr-10 text-xl font-bold font-display h-12",
-                    "[appearance:textfield]",
-                    "[&::-webkit-inner-spin-button]:appearance-none",
-                    "[&::-webkit-outer-spin-button]:appearance-none",
+                    "h-11 w-full pr-9",
+                    "[&::-webkit-calendar-picker-indicator]:hidden",
+                    "[&::-webkit-calendar-picker-indicator]:appearance-none",
                   ].join(" ")}
                 />
-                <div className="absolute right-1 top-1/2 -translate-y-1/2 flex flex-col gap-0">
-                  <button
-                    type="button"
-                    aria-label="Increase amount"
-                    onClick={incrementAmount}
-                    className="flex items-center justify-center h-5 w-7 rounded-t text-foreground hover:bg-accent hover:text-accent-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    <ChevronUp className="h-3.5 w-3.5" strokeWidth={2.5} />
-                  </button>
-                  <button
-                    type="button"
-                    aria-label="Decrease amount"
-                    onClick={decrementAmount}
-                    className="flex items-center justify-center h-5 w-7 rounded-b text-foreground hover:bg-accent hover:text-accent-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    <ChevronDown className="h-3.5 w-3.5" strokeWidth={2.5} />
-                  </button>
-                </div>
-              </div>
-              {errors.amount && (
-                <p
-                  className="text-destructive text-xs"
-                  data-ocid="expense.amount.error_state"
+                <button
+                  type="button"
+                  aria-label="Open date picker"
+                  onClick={openDatePicker}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center justify-center text-foreground hover:text-primary transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
                 >
-                  {errors.amount}
+                  <Calendar className="h-4 w-4" />
+                </button>
+              </div>
+              {isIncome && (
+                <p className="text-xs text-muted-foreground">
+                  Income will be set for the selected month.
                 </p>
               )}
             </div>
@@ -274,7 +309,7 @@ export default function ExpenseDialog({
                 <Select value={categoryId} onValueChange={setCategoryId}>
                   <SelectTrigger
                     data-ocid="expense.category.select"
-                    className="h-12 text-xs px-2"
+                    className="h-11 w-full text-xs px-2"
                   >
                     <SelectValue placeholder="Category" />
                   </SelectTrigger>
@@ -312,7 +347,7 @@ export default function ExpenseDialog({
                 <Select value={paymentMethod} onValueChange={setPaymentMethod}>
                   <SelectTrigger
                     data-ocid="expense.payment.select"
-                    className="h-12 text-xs px-2"
+                    className="h-11 w-full text-xs px-2"
                   >
                     <SelectValue />
                   </SelectTrigger>
@@ -325,41 +360,6 @@ export default function ExpenseDialog({
                   </SelectContent>
                 </Select>
               </div>
-            )}
-          </div>
-
-          {/* Date */}
-          <div className="space-y-1.5">
-            <Label htmlFor="date" className="text-sm font-medium">
-              {isIncome ? "Month" : "Date"}
-            </Label>
-            <div className="relative">
-              <Input
-                ref={dateInputRef}
-                id="date"
-                data-ocid="expense.date.input"
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className={[
-                  "h-11 pr-10",
-                  "[&::-webkit-calendar-picker-indicator]:hidden",
-                  "[&::-webkit-calendar-picker-indicator]:appearance-none",
-                ].join(" ")}
-              />
-              <button
-                type="button"
-                aria-label="Open date picker"
-                onClick={openDatePicker}
-                className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center text-foreground hover:text-primary transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
-              >
-                <Calendar className="h-4 w-4" />
-              </button>
-            </div>
-            {isIncome && (
-              <p className="text-xs text-muted-foreground">
-                Income will be set for the selected month.
-              </p>
             )}
           </div>
 
@@ -386,8 +386,9 @@ export default function ExpenseDialog({
 
         <div className="flex gap-3 pt-2">
           <Button
-            variant="outline"
-            className="flex-1"
+            type="button"
+            className="flex-1 bg-muted text-muted-foreground hover:bg-muted/80 border border-border"
+            style={{ backgroundColor: undefined }}
             onClick={() => onOpenChange(false)}
             data-ocid="expense.cancel.button"
             disabled={isSaving}
@@ -412,6 +413,12 @@ export default function ExpenseDialog({
             )}
           </Button>
         </div>
+
+        {/* Required fields footnote */}
+        <p className="text-xs text-muted-foreground pt-1">
+          <span className="text-destructive font-semibold">*</span> Required
+          fields
+        </p>
       </DialogContent>
     </Dialog>
   );
