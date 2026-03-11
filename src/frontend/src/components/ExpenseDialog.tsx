@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Calendar, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import type { Category, Expense } from "../backend.d";
+import type { Category, Expense, MonthlyIncome } from "../backend.d";
 import { todayISO } from "../utils/format";
 
 interface ExpenseDialogProps {
@@ -26,10 +26,13 @@ interface ExpenseDialogProps {
   categories: Category[];
   currency: string;
   onSave: (expense: Expense) => Promise<void>;
+  onSaveIncome: (income: MonthlyIncome) => Promise<void>;
   isSaving?: boolean;
 }
 
 const PAYMENT_METHODS = ["Cash", "Card", "UPI", "Bank Transfer", "Other"];
+
+type EntryType = "expense" | "income";
 
 export default function ExpenseDialog({
   open,
@@ -38,10 +41,12 @@ export default function ExpenseDialog({
   categories,
   currency,
   onSave,
+  onSaveIncome,
   isSaving = false,
 }: ExpenseDialogProps) {
   const isEditing = !!expense;
 
+  const [entryType, setEntryType] = useState<EntryType>("expense");
   const [amount, setAmount] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [date, setDate] = useState(todayISO());
@@ -49,19 +54,19 @@ export default function ExpenseDialog({
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Ref for programmatic date picker open
   const dateInputRef = useRef<HTMLInputElement>(null);
 
-  // Populate form when editing
   useEffect(() => {
     if (open) {
       if (expense) {
+        setEntryType("expense");
         setAmount(expense.amount.toString());
         setCategoryId(expense.categoryId);
         setDate(expense.date);
         setNote(expense.note ?? "");
         setPaymentMethod(expense.paymentMethod ?? "Cash");
       } else {
+        setEntryType("expense");
         setAmount("");
         setCategoryId(categories[0]?.id ?? "");
         setDate(todayISO());
@@ -78,7 +83,7 @@ export default function ExpenseDialog({
     if (!amount || Number.isNaN(parsedAmount) || parsedAmount <= 0) {
       newErrors.amount = "Amount must be greater than 0";
     }
-    if (!categoryId) {
+    if (entryType === "expense" && !categoryId) {
       newErrors.category = "Please select a category";
     }
     setErrors(newErrors);
@@ -87,13 +92,20 @@ export default function ExpenseDialog({
 
   async function handleSave() {
     if (!validate()) return;
+    const parsedAmount = Number.parseFloat(amount);
+
+    if (entryType === "income") {
+      // Derive month from date (YYYY-MM)
+      const month = date.substring(0, 7);
+      await onSaveIncome({ month, amount: parsedAmount });
+      return;
+    }
 
     const id = expense?.id ?? crypto.randomUUID();
     const createdAt = expense?.createdAt ?? BigInt(Date.now());
-
     await onSave({
       id,
-      amount: Number.parseFloat(amount),
+      amount: parsedAmount,
       categoryId,
       date,
       note: note.trim(),
@@ -115,7 +127,6 @@ export default function ExpenseDialog({
     return symbols[currency] ?? currency;
   };
 
-  // Increment / decrement amount by 1
   function incrementAmount() {
     const current = Number.parseFloat(amount) || 0;
     setAmount((current + 1).toFixed(2));
@@ -127,15 +138,26 @@ export default function ExpenseDialog({
     setAmount(next.toFixed(2));
   }
 
-  // Open the native date picker via the custom calendar icon
   function openDatePicker() {
     try {
       dateInputRef.current?.showPicker();
     } catch {
-      // Fallback: focus the input so the user can open it via keyboard
       dateInputRef.current?.focus();
     }
   }
+
+  const isIncome = entryType === "income";
+
+  const dialogTitle = isEditing
+    ? "Edit Expense"
+    : isIncome
+      ? "Add Income"
+      : "Add Expense";
+  const saveLabel = isEditing
+    ? "Update"
+    : isIncome
+      ? "Add Income"
+      : "Add Expense";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -145,25 +167,59 @@ export default function ExpenseDialog({
       >
         <DialogHeader>
           <DialogTitle className="font-display text-xl font-bold">
-            {isEditing ? "Edit Expense" : "Add Expense"}
+            {dialogTitle}
           </DialogTitle>
         </DialogHeader>
 
+        {/* Expense / Income toggle — hidden when editing an existing expense */}
+        {!isEditing && (
+          <div
+            className="flex rounded-xl bg-muted p-1 gap-1"
+            data-ocid="entry_type.toggle"
+          >
+            <button
+              type="button"
+              data-ocid="entry_type.expense.button"
+              onClick={() => setEntryType("expense")}
+              className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                !isIncome
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Expense
+            </button>
+            <button
+              type="button"
+              data-ocid="entry_type.income.button"
+              onClick={() => setEntryType("income")}
+              className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                isIncome
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Income
+            </button>
+          </div>
+        )}
+
         <div className="space-y-4 py-2">
-          {/* Row: Amount + Category + Payment Method */}
-          <div className="grid grid-cols-[2fr_1.5fr_1.5fr] gap-2 items-start">
+          {/* Row: Amount + Category + Payment (Category & Payment hidden for income) */}
+          <div
+            className={`grid gap-2 items-start ${
+              isIncome ? "grid-cols-1" : "grid-cols-[2fr_1.5fr_1.5fr]"
+            }`}
+          >
             {/* Amount */}
             <div className="space-y-1.5">
               <Label htmlFor="amount" className="text-sm font-medium">
                 Amount <span className="text-destructive">*</span>
               </Label>
               <div className="relative">
-                {/* Currency prefix */}
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold z-10 pointer-events-none select-none">
                   {getCurrencyPrefix()}
                 </span>
-
-                {/* Number input – native spinners hidden */}
                 <Input
                   id="amount"
                   data-ocid="expense.amount.input"
@@ -180,8 +236,6 @@ export default function ExpenseDialog({
                     "[&::-webkit-outer-spin-button]:appearance-none",
                   ].join(" ")}
                 />
-
-                {/* Custom up / down stepper */}
                 <div className="absolute right-1 top-1/2 -translate-y-1/2 flex flex-col gap-0">
                   <button
                     type="button"
@@ -211,72 +265,75 @@ export default function ExpenseDialog({
               )}
             </div>
 
-            {/* Category */}
-            <div className="space-y-1.5">
-              <Label className="text-sm font-medium">
-                Category <span className="text-destructive">*</span>
-              </Label>
-              <Select value={categoryId} onValueChange={setCategoryId}>
-                <SelectTrigger
-                  data-ocid="expense.category.select"
-                  className="h-12 text-xs px-2"
-                >
-                  <SelectValue placeholder="Category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: cat.color }}
-                        />
-                        <span className="truncate max-w-[80px]">
-                          {cat.name}
-                        </span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.category && (
-                <p
-                  className="text-destructive text-xs"
-                  data-ocid="expense.category.error_state"
-                >
-                  {errors.category}
-                </p>
-              )}
-            </div>
+            {/* Category — expense only */}
+            {!isIncome && (
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">
+                  Category <span className="text-destructive">*</span>
+                </Label>
+                <Select value={categoryId} onValueChange={setCategoryId}>
+                  <SelectTrigger
+                    data-ocid="expense.category.select"
+                    className="h-12 text-xs px-2"
+                  >
+                    <SelectValue placeholder="Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: cat.color }}
+                          />
+                          <span className="truncate max-w-[80px]">
+                            {cat.name}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.category && (
+                  <p
+                    className="text-destructive text-xs"
+                    data-ocid="expense.category.error_state"
+                  >
+                    {errors.category}
+                  </p>
+                )}
+              </div>
+            )}
 
-            {/* Payment Method */}
-            <div className="space-y-1.5">
-              <Label className="text-sm font-medium">Payment</Label>
-              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                <SelectTrigger
-                  data-ocid="expense.payment.select"
-                  className="h-12 text-xs px-2"
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PAYMENT_METHODS.map((m) => (
-                    <SelectItem key={m} value={m}>
-                      {m}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Payment Method — expense only */}
+            {!isIncome && (
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Payment</Label>
+                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <SelectTrigger
+                    data-ocid="expense.payment.select"
+                    className="h-12 text-xs px-2"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PAYMENT_METHODS.map((m) => (
+                      <SelectItem key={m} value={m}>
+                        {m}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
 
           {/* Date */}
           <div className="space-y-1.5">
             <Label htmlFor="date" className="text-sm font-medium">
-              Date
+              {isIncome ? "Month" : "Date"}
             </Label>
             <div className="relative">
-              {/* Native date input with browser icon hidden */}
               <Input
                 ref={dateInputRef}
                 id="date"
@@ -290,8 +347,6 @@ export default function ExpenseDialog({
                   "[&::-webkit-calendar-picker-indicator]:appearance-none",
                 ].join(" ")}
               />
-
-              {/* Custom calendar icon – clickable, visible in both modes */}
               <button
                 type="button"
                 aria-label="Open date picker"
@@ -301,23 +356,32 @@ export default function ExpenseDialog({
                 <Calendar className="h-4 w-4" />
               </button>
             </div>
+            {isIncome && (
+              <p className="text-xs text-muted-foreground">
+                Income will be set for the selected month.
+              </p>
+            )}
           </div>
 
-          {/* Note */}
-          <div className="space-y-1.5">
-            <Label htmlFor="note" className="text-sm font-medium">
-              Note{" "}
-              <span className="text-muted-foreground text-xs">(optional)</span>
-            </Label>
-            <Input
-              id="note"
-              data-ocid="expense.note.input"
-              placeholder="What was this for?"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              className="h-11"
-            />
-          </div>
+          {/* Note — expense only */}
+          {!isIncome && (
+            <div className="space-y-1.5">
+              <Label htmlFor="note" className="text-sm font-medium">
+                Note{" "}
+                <span className="text-muted-foreground text-xs">
+                  (optional)
+                </span>
+              </Label>
+              <Input
+                id="note"
+                data-ocid="expense.note.input"
+                placeholder="What was this for?"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                className="h-11"
+              />
+            </div>
+          )}
         </div>
 
         <div className="flex gap-3 pt-2">
@@ -331,7 +395,9 @@ export default function ExpenseDialog({
             Cancel
           </Button>
           <Button
-            className="flex-1"
+            className={`flex-1 ${
+              isIncome ? "bg-emerald-600 hover:bg-emerald-700 text-white" : ""
+            }`}
             onClick={handleSave}
             disabled={isSaving}
             data-ocid="expense.save.button"
@@ -341,10 +407,8 @@ export default function ExpenseDialog({
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Saving...
               </>
-            ) : isEditing ? (
-              "Update"
             ) : (
-              "Add Expense"
+              saveLabel
             )}
           </Button>
         </div>

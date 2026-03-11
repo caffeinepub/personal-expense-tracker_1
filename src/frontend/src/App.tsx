@@ -3,7 +3,7 @@ import { BarChart3, LayoutDashboard, List, Plus, Settings } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import type { Expense } from "./backend.d";
+import type { Expense, MonthlyIncome } from "./backend.d";
 import ExpenseDialog from "./components/ExpenseDialog";
 import { useActor } from "./hooks/useActor";
 import {
@@ -12,6 +12,7 @@ import {
   useCreateCategory,
   useCreateExpense,
   useSetAppSettings,
+  useSetMonthlyIncome,
   useUpdateExpense,
 } from "./hooks/useQueries";
 import DashboardTab from "./pages/DashboardTab";
@@ -60,6 +61,7 @@ export default function App() {
   const createCategory = useCreateCategory();
   const createExpense = useCreateExpense();
   const updateExpense = useUpdateExpense();
+  const setMonthlyIncome = useSetMonthlyIncome();
   const setAppSettings = useSetAppSettings();
 
   const currency = settings?.currency ?? "USD";
@@ -70,12 +72,10 @@ export default function App() {
     if (!actor || actorLoading || loadingCats) return;
     if (categories.length > 0) return;
 
-    // Seed defaults
     const seedDefaults = async () => {
       for (const cat of DEFAULT_CATEGORIES) {
         await createCategory.mutateAsync(cat).catch(() => {});
       }
-      // Seed default settings
       if (!settings) {
         await setAppSettings
           .mutateAsync({
@@ -115,7 +115,20 @@ export default function App() {
     }
   }
 
-  const isSaving = createExpense.isPending || updateExpense.isPending;
+  async function handleSaveIncome(income: MonthlyIncome) {
+    try {
+      await setMonthlyIncome.mutateAsync(income);
+      toast.success("Income saved");
+      setExpenseDialogOpen(false);
+    } catch {
+      toast.error("Failed to save income");
+    }
+  }
+
+  const isSaving =
+    createExpense.isPending ||
+    updateExpense.isPending ||
+    setMonthlyIncome.isPending;
 
   const tabVariants = {
     hidden: { opacity: 0, y: 6 },
@@ -125,9 +138,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* App shell — mobile-first, max 480px centered */}
       <div className="w-full max-w-[480px] mx-auto flex flex-col flex-1 relative">
-        {/* Page content */}
         <main className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 pb-16">
           <AnimatePresence mode="wait">
             {activeTab === "dashboard" && (
@@ -224,7 +235,7 @@ export default function App() {
           </div>
         </nav>
 
-        {/* FAB — centered above bottom nav */}
+        {/* FAB */}
         <div className="fixed bottom-[4.5rem] left-1/2 -translate-x-1/2 z-50">
           <motion.button
             type="button"
@@ -240,7 +251,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* Expense Dialog */}
+      {/* Expense / Income Dialog */}
       <ExpenseDialog
         open={expenseDialogOpen}
         onOpenChange={(open) => {
@@ -251,6 +262,7 @@ export default function App() {
         categories={categories}
         currency={currency}
         onSave={handleSaveExpense}
+        onSaveIncome={handleSaveIncome}
         isSaving={isSaving}
       />
 
