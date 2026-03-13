@@ -17,6 +17,7 @@ import {
 import { Calendar, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { Category, Expense, MonthlyIncome } from "../backend.d";
+import { useLanguage } from "../i18n/LanguageContext";
 import { todayISO } from "../utils/format";
 
 interface ExpenseDialogProps {
@@ -29,8 +30,6 @@ interface ExpenseDialogProps {
   onSaveIncome: (income: MonthlyIncome) => Promise<void>;
   isSaving?: boolean;
 }
-
-const PAYMENT_METHODS = ["Cash", "Card", "UPI", "Bank Transfer", "Other"];
 
 type EntryType = "expense" | "income";
 
@@ -45,6 +44,7 @@ export default function ExpenseDialog({
   isSaving = false,
 }: ExpenseDialogProps) {
   const isEditing = !!expense;
+  const { t } = useLanguage();
 
   const [entryType, setEntryType] = useState<EntryType>("expense");
   const [amount, setAmount] = useState("");
@@ -53,6 +53,16 @@ export default function ExpenseDialog({
   const [note, setNote] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [paymentMethods] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem("pe_payment_methods");
+      return stored
+        ? JSON.parse(stored)
+        : ["Cash", "Card", "Bank Transfer", "Other"];
+    } catch {
+      return ["Cash", "Card", "Bank Transfer", "Other"];
+    }
+  });
 
   const dateInputRef = useRef<HTMLInputElement>(null);
 
@@ -81,10 +91,10 @@ export default function ExpenseDialog({
     const newErrors: Record<string, string> = {};
     const parsedAmount = Number.parseFloat(amount);
     if (!amount || Number.isNaN(parsedAmount) || parsedAmount <= 0) {
-      newErrors.amount = "Amount must be greater than 0";
+      newErrors.amount = t("amount_error");
     }
     if (entryType === "expense" && !categoryId) {
-      newErrors.category = "Please select a category";
+      newErrors.category = t("category_error");
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -148,15 +158,15 @@ export default function ExpenseDialog({
   const isIncome = entryType === "income";
 
   const dialogTitle = isEditing
-    ? "Edit Expense"
+    ? t("edit_expense")
     : isIncome
-      ? "Add Income"
-      : "Add Expense";
+      ? t("add_income")
+      : t("add_expense");
   const saveLabel = isEditing
-    ? "Update"
+    ? t("update")
     : isIncome
-      ? "Add Income"
-      : "Add Expense";
+      ? t("add_income")
+      : t("add_expense");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -170,7 +180,7 @@ export default function ExpenseDialog({
           </DialogTitle>
         </DialogHeader>
 
-        {/* Expense / Income toggle — hidden when editing an existing expense */}
+        {/* Expense / Income toggle */}
         {!isEditing && (
           <div
             className="flex rounded-xl bg-muted p-1 gap-1"
@@ -186,7 +196,7 @@ export default function ExpenseDialog({
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              Expense
+              {t("expense")}
             </button>
             <button
               type="button"
@@ -198,76 +208,72 @@ export default function ExpenseDialog({
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              Income
+              {t("income")}
             </button>
           </div>
         )}
 
         <div className="space-y-4 py-2">
-          {/* Row 1: Amount (full width) */}
-          <div className="space-y-1.5">
-            <Label htmlFor="amount" className="text-sm font-medium">
-              Amount <span className="text-destructive">*</span>
-            </Label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold z-10 pointer-events-none select-none">
-                {getCurrencyPrefix()}
-              </span>
-              <Input
-                id="amount"
-                data-ocid="expense.amount.input"
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="0.00"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className={[
-                  "pl-8 pr-10 text-xl font-bold font-display h-12",
-                  "[appearance:textfield]",
-                  "[&::-webkit-inner-spin-button]:appearance-none",
-                  "[&::-webkit-outer-spin-button]:appearance-none",
-                ].join(" ")}
-              />
-              <div className="absolute right-1 top-1/2 -translate-y-1/2 flex flex-col gap-0">
-                <button
-                  type="button"
-                  aria-label="Increase amount"
-                  onClick={incrementAmount}
-                  className="flex items-center justify-center h-5 w-7 rounded-t text-foreground hover:bg-accent hover:text-accent-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <ChevronUp className="h-3.5 w-3.5" strokeWidth={2.5} />
-                </button>
-                <button
-                  type="button"
-                  aria-label="Decrease amount"
-                  onClick={decrementAmount}
-                  className="flex items-center justify-center h-5 w-7 rounded-b text-foreground hover:bg-accent hover:text-accent-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <ChevronDown className="h-3.5 w-3.5" strokeWidth={2.5} />
-                </button>
+          {/* Row 1: Amount + Date */}
+          <div className="grid grid-cols-2 gap-2 items-start">
+            {/* Amount */}
+            <div className="space-y-1.5">
+              <Label htmlFor="amount" className="text-sm font-medium">
+                {t("amount_label")} <span className="text-destructive">*</span>
+              </Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold z-10 pointer-events-none select-none">
+                  {getCurrencyPrefix()}
+                </span>
+                <Input
+                  id="amount"
+                  data-ocid="expense.amount.input"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder={t("amount_placeholder")}
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className={[
+                    "pl-8 pr-10 text-xl font-bold font-display h-11",
+                    "[appearance:textfield]",
+                    "[&::-webkit-inner-spin-button]:appearance-none",
+                    "[&::-webkit-outer-spin-button]:appearance-none",
+                  ].join(" ")}
+                />
+                <div className="absolute right-1 top-1/2 -translate-y-1/2 flex flex-col gap-0">
+                  <button
+                    type="button"
+                    aria-label={t("increase_amount")}
+                    onClick={incrementAmount}
+                    className="flex items-center justify-center h-5 w-7 rounded-t text-foreground hover:bg-accent hover:text-accent-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <ChevronUp className="h-3.5 w-3.5" strokeWidth={2.5} />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={t("decrease_amount")}
+                    onClick={decrementAmount}
+                    className="flex items-center justify-center h-5 w-7 rounded-b text-foreground hover:bg-accent hover:text-accent-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <ChevronDown className="h-3.5 w-3.5" strokeWidth={2.5} />
+                  </button>
+                </div>
               </div>
+              {errors.amount && (
+                <p
+                  className="text-destructive text-xs"
+                  data-ocid="expense.amount.error_state"
+                >
+                  {errors.amount}
+                </p>
+              )}
             </div>
-            {errors.amount && (
-              <p
-                className="text-destructive text-xs"
-                data-ocid="expense.amount.error_state"
-              >
-                {errors.amount}
-              </p>
-            )}
-          </div>
 
-          {/* Row 2: Date + Category + Payment (equal width, or Date full width for income) */}
-          <div
-            className={`grid gap-2 items-start ${
-              isIncome ? "grid-cols-1" : "grid-cols-3"
-            }`}
-          >
             {/* Date */}
             <div className="space-y-1.5">
               <Label htmlFor="date" className="text-sm font-medium">
-                {isIncome ? "Month" : "Date"}{" "}
+                {isIncome ? t("month_label") : t("date_label")}{" "}
                 <span className="text-destructive">*</span>
               </Label>
               <div className="relative w-full">
@@ -286,7 +292,7 @@ export default function ExpenseDialog({
                 />
                 <button
                   type="button"
-                  aria-label="Open date picker"
+                  aria-label={t("open_date_picker")}
                   onClick={openDatePicker}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center justify-center text-foreground hover:text-primary transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
                 >
@@ -295,23 +301,27 @@ export default function ExpenseDialog({
               </div>
               {isIncome && (
                 <p className="text-xs text-muted-foreground">
-                  Income will be set for the selected month.
+                  {t("income_month_hint")}
                 </p>
               )}
             </div>
+          </div>
 
-            {/* Category — expense only */}
-            {!isIncome && (
+          {/* Row 2: Category + Payment — expense only */}
+          {!isIncome && (
+            <div className="grid grid-cols-2 gap-2 items-start">
+              {/* Category */}
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium">
-                  Category <span className="text-destructive">*</span>
+                  {t("category_label")}{" "}
+                  <span className="text-destructive">*</span>
                 </Label>
                 <Select value={categoryId} onValueChange={setCategoryId}>
                   <SelectTrigger
                     data-ocid="expense.category.select"
                     className="h-11 w-full text-xs px-2"
                   >
-                    <SelectValue placeholder="Category" />
+                    <SelectValue placeholder={t("category_label")} />
                   </SelectTrigger>
                   <SelectContent>
                     {categories.map((cat) => (
@@ -338,12 +348,12 @@ export default function ExpenseDialog({
                   </p>
                 )}
               </div>
-            )}
 
-            {/* Payment Method — expense only */}
-            {!isIncome && (
+              {/* Payment Method */}
               <div className="space-y-1.5">
-                <Label className="text-sm font-medium">Payment</Label>
+                <Label className="text-sm font-medium">
+                  {t("payment_label")}
+                </Label>
                 <Select value={paymentMethod} onValueChange={setPaymentMethod}>
                   <SelectTrigger
                     data-ocid="expense.payment.select"
@@ -352,7 +362,7 @@ export default function ExpenseDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {PAYMENT_METHODS.map((m) => (
+                    {paymentMethods.map((m) => (
                       <SelectItem key={m} value={m}>
                         {m}
                       </SelectItem>
@@ -360,22 +370,22 @@ export default function ExpenseDialog({
                   </SelectContent>
                 </Select>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Note — expense only */}
           {!isIncome && (
             <div className="space-y-1.5">
               <Label htmlFor="note" className="text-sm font-medium">
-                Note{" "}
+                {t("note_label")}{" "}
                 <span className="text-muted-foreground text-xs">
-                  (optional)
+                  {t("optional")}
                 </span>
               </Label>
               <Input
                 id="note"
                 data-ocid="expense.note.input"
-                placeholder="What was this for?"
+                placeholder={t("note_placeholder")}
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 className="h-11"
@@ -393,7 +403,7 @@ export default function ExpenseDialog({
             data-ocid="expense.cancel.button"
             disabled={isSaving}
           >
-            Cancel
+            {t("cancel")}
           </Button>
           <Button
             className={`flex-1 ${
@@ -406,7 +416,7 @@ export default function ExpenseDialog({
             {isSaving ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
+                {t("saving")}
               </>
             ) : (
               saveLabel
@@ -416,8 +426,8 @@ export default function ExpenseDialog({
 
         {/* Required fields footnote */}
         <p className="text-xs text-muted-foreground pt-1">
-          <span className="text-destructive font-semibold">*</span> Required
-          fields
+          <span className="text-destructive font-semibold">*</span>{" "}
+          {t("required_fields")}
         </p>
       </DialogContent>
     </Dialog>

@@ -1,11 +1,13 @@
 import { Toaster } from "@/components/ui/sonner";
 import { BarChart3, LayoutDashboard, List, Plus, Settings } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import type React from "react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { Expense, MonthlyIncome } from "./backend.d";
 import ExpenseDialog from "./components/ExpenseDialog";
 import { useActor } from "./hooks/useActor";
+import { useCardTheme } from "./hooks/useCardTheme";
 import {
   useAppSettings,
   useCategories,
@@ -15,45 +17,38 @@ import {
   useSetMonthlyIncome,
   useUpdateExpense,
 } from "./hooks/useQueries";
+import { useLanguage } from "./i18n/LanguageContext";
 import DashboardTab from "./pages/DashboardTab";
 import ExpensesTab from "./pages/ExpensesTab";
 import ReportsTab from "./pages/ReportsTab";
 import SettingsTab from "./pages/SettingsTab";
 import { DEFAULT_CATEGORIES } from "./utils/categories";
+import { currentMonth } from "./utils/format";
 
 type Tab = "dashboard" | "expenses" | "reports" | "settings";
 
-const TAB_CONFIG = [
-  {
-    id: "dashboard" as Tab,
-    label: "Dashboard",
-    icon: LayoutDashboard,
-    ocid: "dashboard.tab",
-  },
-  {
-    id: "expenses" as Tab,
-    label: "Expenses",
-    icon: List,
-    ocid: "expenses.tab",
-  },
-  {
-    id: "reports" as Tab,
-    label: "Reports",
-    icon: BarChart3,
-    ocid: "reports.tab",
-  },
-  {
-    id: "settings" as Tab,
-    label: "Settings",
-    icon: Settings,
-    ocid: "settings.tab",
-  },
+const TAB_IDS: Tab[] = ["dashboard", "expenses", "reports", "settings"];
+const TAB_ICONS = [LayoutDashboard, List, BarChart3, Settings];
+const TAB_OCIDS = [
+  "dashboard.tab",
+  "expenses.tab",
+  "reports.tab",
+  "settings.tab",
+];
+const TAB_KEYS = [
+  "tab_dashboard",
+  "tab_expenses",
+  "tab_reports",
+  "tab_settings",
 ];
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>("dashboard");
   const [expenseDialogOpen, setExpenseDialogOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [month, setMonth] = useState(currentMonth);
+  const { theme, themeId, setThemeId } = useCardTheme();
+  const { t } = useLanguage();
 
   const { actor, isFetching: actorLoading } = useActor();
   const { data: categories = [], isLoading: loadingCats } = useCategories();
@@ -103,25 +98,25 @@ export default function App() {
     try {
       if (editingExpense) {
         await updateExpense.mutateAsync(expense);
-        toast.success("Expense updated");
+        toast.success(t("expense_updated"));
       } else {
         await createExpense.mutateAsync(expense);
-        toast.success("Expense added");
+        toast.success(t("expense_added"));
       }
       setExpenseDialogOpen(false);
       setEditingExpense(null);
     } catch {
-      toast.error("Failed to save expense");
+      toast.error(t("failed_save_expense"));
     }
   }
 
   async function handleSaveIncome(income: MonthlyIncome) {
     try {
       await setMonthlyIncome.mutateAsync(income);
-      toast.success("Income saved");
+      toast.success(t("income_updated"));
       setExpenseDialogOpen(false);
     } catch {
-      toast.error("Failed to save income");
+      toast.error(t("failed_update_income"));
     }
   }
 
@@ -138,7 +133,10 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <div className="w-full max-w-[480px] mx-auto flex flex-col flex-1 relative">
+      <div
+        className="w-full max-w-[480px] mx-auto flex flex-col flex-1 relative"
+        style={{ "--theme-tint": theme.orb } as React.CSSProperties}
+      >
         <main className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 pb-16">
           <AnimatePresence mode="wait">
             {activeTab === "dashboard" && (
@@ -149,7 +147,15 @@ export default function App() {
                 animate="show"
                 exit="exit"
               >
-                <DashboardTab onEditExpense={openEditExpense} />
+                <DashboardTab
+                  onEditExpense={openEditExpense}
+                  onViewAll={() => setActiveTab("expenses")}
+                  month={month}
+                  setMonth={setMonth}
+                  theme={theme}
+                  themeId={themeId}
+                  setThemeId={setThemeId}
+                />
               </motion.div>
             )}
             {activeTab === "expenses" && (
@@ -160,7 +166,11 @@ export default function App() {
                 animate="show"
                 exit="exit"
               >
-                <ExpensesTab onEditExpense={openEditExpense} />
+                <ExpensesTab
+                  onEditExpense={openEditExpense}
+                  month={month}
+                  setMonth={setMonth}
+                />
               </motion.div>
             )}
             {activeTab === "reports" && (
@@ -171,7 +181,7 @@ export default function App() {
                 animate="show"
                 exit="exit"
               >
-                <ReportsTab />
+                <ReportsTab month={month} setMonth={setMonth} />
               </motion.div>
             )}
             {activeTab === "settings" && (
@@ -189,24 +199,29 @@ export default function App() {
         </main>
 
         {/* Bottom navigation */}
-        <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-card/95 backdrop-blur-lg border-t border-border z-40 safe-bottom">
+        <nav
+          className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-card/95 backdrop-blur-lg border-t border-border z-40 safe-bottom"
+          style={{
+            backgroundColor: `color-mix(in oklch, ${theme.orb} 10%, transparent)`,
+          }}
+        >
           <div className="flex items-center justify-around px-2 py-1">
-            {TAB_CONFIG.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
+            {TAB_IDS.map((tabId, idx) => {
+              const Icon = TAB_ICONS[idx];
+              const isActive = activeTab === tabId;
               return (
                 <button
-                  key={tab.id}
+                  key={tabId}
                   type="button"
-                  data-ocid={tab.ocid}
-                  onClick={() => setActiveTab(tab.id)}
+                  data-ocid={TAB_OCIDS[idx]}
+                  onClick={() => setActiveTab(tabId)}
                   className={`flex flex-col items-center gap-0.5 px-4 py-2 rounded-xl transition-all duration-200 ${
                     isActive
                       ? "text-primary"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                   aria-current={isActive ? "page" : undefined}
-                  aria-label={tab.label}
+                  aria-label={t(TAB_KEYS[idx])}
                 >
                   <div className="relative">
                     <Icon
@@ -227,7 +242,7 @@ export default function App() {
                     )}
                   </div>
                   <span className="text-[10px] font-medium leading-none mt-0.5">
-                    {tab.label}
+                    {t(TAB_KEYS[idx])}
                   </span>
                 </button>
               );
@@ -244,7 +259,7 @@ export default function App() {
             className="w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:shadow-xl active:scale-95 transition-shadow"
             whileHover={{ scale: 1.08 }}
             whileTap={{ scale: 0.92 }}
-            aria-label="Add expense"
+            aria-label={t("add_expense")}
           >
             <Plus className="h-6 w-6" strokeWidth={2.5} />
           </motion.button>

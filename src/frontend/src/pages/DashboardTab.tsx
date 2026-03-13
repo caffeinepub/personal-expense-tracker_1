@@ -34,48 +34,68 @@ import {
 import type { Expense } from "../backend.d";
 import AppHeader from "../components/AppHeader";
 import ThemePickerDialog from "../components/ThemePickerDialog";
-import { useCardTheme } from "../hooks/useCardTheme";
+import type { CardThemeId } from "../hooks/useCardTheme";
 import {
   useAppSettings,
   useCategories,
   useExpensesByMonth,
   useMonthlySummary,
 } from "../hooks/useQueries";
+import { useLanguage } from "../i18n/LanguageContext";
 import { getCategoryById } from "../utils/categories";
 import {
   nextMonth as _nextMonth,
   prevMonth as _prevMonth,
-  currentMonth,
   formatCurrency,
   formatDateShort,
   formatMonthYear,
   pct,
 } from "../utils/format";
 
-const MONTH_NAMES = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
+const MONTH_KEYS = [
+  "month_jan",
+  "month_feb",
+  "month_mar",
+  "month_apr",
+  "month_may",
+  "month_jun",
+  "month_jul",
+  "month_aug",
+  "month_sep",
+  "month_oct",
+  "month_nov",
+  "month_dec",
 ];
 
 interface DashboardTabProps {
   onEditExpense: (expense: Expense) => void;
+  onViewAll: () => void;
+  month: string;
+  setMonth: (m: string) => void;
+  theme: {
+    gradient: string;
+    orb: string;
+    highlight: string;
+    id: string;
+    name: string;
+  };
+  themeId: CardThemeId;
+  setThemeId: (id: CardThemeId) => void;
 }
 
-export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
-  const [month, setMonth] = useState(currentMonth);
+export default function DashboardTab({
+  onEditExpense,
+  onViewAll,
+  month,
+  setMonth,
+  theme,
+  themeId,
+  setThemeId,
+}: DashboardTabProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerYear, setPickerYear] = useState(() => new Date().getFullYear());
   const [chartView, setChartView] = useState<"donut" | "bar">("donut");
+  const { t } = useLanguage();
 
   const { data: expenses = [], isLoading: loadingExpenses } =
     useExpensesByMonth(month);
@@ -84,7 +104,6 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
   const { data: settings } = useAppSettings();
   const currency = settings?.currency ?? "USD";
 
-  const { theme, themeId, setThemeId } = useCardTheme();
   const [themeDialogOpen, setThemeDialogOpen] = useState(false);
 
   const recentExpenses = useMemo(
@@ -107,7 +126,6 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
 
   const isLoading = loadingExpenses || loadingSummary;
 
-  // Month picker helpers
   function selectMonth(m: number) {
     const mm = String(m + 1).padStart(2, "0");
     setMonth(`${pickerYear}-${mm}`);
@@ -130,7 +148,6 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
     show: { opacity: 1, y: 0, transition: { duration: 0.35 } },
   } as const;
 
-  // Chart data
   const chartData = useMemo(() => {
     return (
       summary?.categoryBreakdown
@@ -155,7 +172,7 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
         <div>
           <div className="flex items-baseline gap-2">
             <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Monthly Overview
+              {t("monthly_overview")}
             </p>
             <span className="text-xs text-muted-foreground/50">|</span>
 
@@ -198,12 +215,12 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
                 </div>
                 {/* Month grid */}
                 <div className="grid grid-cols-3 gap-1.5">
-                  {MONTH_NAMES.map((name, idx) => {
+                  {MONTH_KEYS.map((key, idx) => {
                     const isSelected =
                       idx === selectedMonthIdx && pickerYear === selectedYear;
                     return (
                       <button
-                        key={name}
+                        key={key}
                         type="button"
                         onClick={() => selectMonth(idx)}
                         className={`py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -212,7 +229,7 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
                             : "hover:bg-muted text-foreground"
                         }`}
                       >
-                        {name}
+                        {t(key)}
                       </button>
                     );
                   })}
@@ -221,7 +238,7 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
             </Popover>
           </div>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Your spending summary and recent transactions for this month.
+            {t("monthly_overview_desc")}
           </p>
         </div>
 
@@ -240,7 +257,6 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
                 className="relative overflow-hidden border-0 shadow-xl rounded-2xl"
                 style={{ background: theme.gradient }}
               >
-                {/* Decorative glowing orb */}
                 <div
                   aria-hidden="true"
                   className="pointer-events-none absolute -top-8 -right-8 w-48 h-48 rounded-full opacity-25"
@@ -249,7 +265,6 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
                     filter: "blur(18px)",
                   }}
                 />
-                {/* Subtle top-edge highlight stripe */}
                 <div
                   aria-hidden="true"
                   className="pointer-events-none absolute inset-x-0 top-0 h-px opacity-40"
@@ -259,11 +274,11 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
                 />
 
                 <CardContent className="relative pt-4 pb-5 px-5">
-                  {/* ── Row 1: pill label  +  three-dots ── */}
+                  {/* Row 1: pill label + three-dots */}
                   <div className="flex items-center justify-between mb-4">
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-widest bg-white/15 text-white/90 border border-white/20 backdrop-blur-sm">
                       <span className="w-1.5 h-1.5 rounded-full bg-white/70 inline-block" />
-                      Total Spent
+                      {t("total_spent")}
                     </span>
 
                     <button
@@ -271,13 +286,13 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
                       data-ocid="total_spent.open_modal_button"
                       onClick={() => setThemeDialogOpen(true)}
                       className="p-1.5 rounded-full bg-white/15 border border-white/20 text-white/80 hover:bg-white/25 transition-colors"
-                      aria-label="Change card theme"
+                      aria-label={t("change_card_theme")}
                     >
                       <MoreVertical className="h-4 w-4" />
                     </button>
                   </div>
 
-                  {/* ── Row 2: hero amount  +  wallet icon ── */}
+                  {/* Row 2: hero amount + wallet icon */}
                   <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0">
                       <p className="font-display text-5xl font-bold tracking-tight leading-none text-white">
@@ -285,12 +300,13 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
                       </p>
                       {totalIncome > 0 && (
                         <p className="text-white/60 text-xs mt-2 font-medium">
-                          of {formatCurrency(totalIncome, currency)} income
+                          {t("of_income", {
+                            amount: formatCurrency(totalIncome, currency),
+                          })}
                         </p>
                       )}
                     </div>
 
-                    {/* Wallet icon – frosted glow circle */}
                     <div className="relative ml-4 flex-shrink-0">
                       <div
                         className="absolute inset-0 rounded-2xl opacity-40"
@@ -302,10 +318,9 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
                     </div>
                   </div>
 
-                  {/* ── Row 3: progress bar (always visible) ── */}
+                  {/* Row 3: progress bar */}
                   <div className="mt-5">
                     <div className="relative h-2 bg-white/15 rounded-full overflow-hidden">
-                      {/* Filled portion – always white so it's visible on every theme */}
                       <div
                         className="absolute left-0 top-0 h-full rounded-full transition-all duration-700 ease-out"
                         style={{
@@ -313,7 +328,6 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
                           background: "rgba(255,255,255,0.85)",
                         }}
                       />
-                      {/* Shimmer overlay – always running */}
                       <div
                         aria-hidden="true"
                         className="absolute top-0 left-0 h-full w-1/4 animate-shimmer"
@@ -324,7 +338,7 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
                       />
                     </div>
 
-                    {/* ── Row 4: bottom chips (always visible) ── */}
+                    {/* Row 4: bottom chips */}
                     <div className="flex items-center justify-between mt-3 gap-2">
                       {totalIncome > 0 ? (
                         <>
@@ -336,7 +350,7 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
                             )}
                             {formatCurrency(Math.abs(balance), currency)}
                             <span className="text-white/60 font-normal">
-                              {balance < 0 ? "over" : "left"}
+                              {balance < 0 ? t("over") : t("left")}
                             </span>
                           </span>
                           <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-white/12 border border-white/15 text-white/90">
@@ -345,7 +359,7 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
                         </>
                       ) : (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-white/10 border border-white/12 text-white/55">
-                          No budget set
+                          {t("no_budget_set")}
                         </span>
                       )}
                     </div>
@@ -360,28 +374,25 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
                 className="grid grid-cols-3 gap-3"
                 data-ocid="dashboard.stats.card"
               >
-                {/* Income */}
                 <div className="rounded-xl border border-border bg-card p-3 shadow-sm flex flex-col gap-1">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Income
+                    {t("income")}
                   </p>
                   <p className="font-display font-bold text-base leading-tight text-foreground truncate">
                     {formatCurrency(totalIncome, currency)}
                   </p>
                 </div>
-                {/* Expenses */}
                 <div className="rounded-xl border border-border bg-card p-3 shadow-sm flex flex-col gap-1">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Expenses
+                    {t("expenses")}
                   </p>
                   <p className="font-display font-bold text-base leading-tight text-foreground truncate">
                     {formatCurrency(totalSpent, currency)}
                   </p>
                 </div>
-                {/* Balance */}
                 <div className="rounded-xl border border-border bg-card p-3 shadow-sm flex flex-col gap-1">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Balance
+                    {t("balance")}
                   </p>
                   <p
                     className={`font-display font-bold text-base leading-tight truncate ${
@@ -404,18 +415,18 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
                     <div className="flex items-center justify-between">
                       <div className="flex items-baseline gap-2 flex-1">
                         <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                          Dashboard
+                          {t("dashboard_label")}
                         </p>
                         <span className="text-xs text-muted-foreground/50">
                           |
                         </span>
                         <h3 className="font-display text-base font-semibold">
-                          By Category
+                          {t("by_category")}
                         </h3>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <span className="text-xs font-medium text-muted-foreground">
-                          Amount
+                          {t("amount")}
                         </span>
                         <button
                           type="button"
@@ -426,9 +437,11 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
                             )
                           }
                           className="h-8 w-8 flex items-center justify-center rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
-                          aria-label={`Switch to ${
-                            chartView === "donut" ? "bar" : "donut"
-                          } chart`}
+                          aria-label={t(
+                            chartView === "donut"
+                              ? "switch_to_bar_chart"
+                              : "switch_to_donut_chart",
+                          )}
                         >
                           {chartView === "donut" ? (
                             <BarChart2 className="h-4 w-4" />
@@ -441,7 +454,7 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
                   </CardHeader>
                   <Separator />
                   <CardContent className="px-4 pb-4 pt-4 space-y-5">
-                    {/* ── Donut Chart ── */}
+                    {/* Donut Chart */}
                     {chartView === "donut" && (
                       <div
                         data-ocid="dashboard.donut_chart.canvas_target"
@@ -482,7 +495,7 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
                       </div>
                     )}
 
-                    {/* ── Horizontal Bar Chart ── */}
+                    {/* Horizontal Bar Chart */}
                     {chartView === "bar" && (
                       <div
                         data-ocid="dashboard.bar_chart.canvas_target"
@@ -538,7 +551,7 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
 
                     <Separator />
 
-                    {/* ── Category list with progress bars ── */}
+                    {/* Category list with progress bars */}
                     <div className="space-y-3">
                       {summary!.categoryBreakdown
                         .sort((a, b) => b.total - a.total)
@@ -586,11 +599,13 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
                               </div>
                               {budget > 0 && (
                                 <p className="text-xs text-muted-foreground">
-                                  {formatCurrency(item.total, currency)} of{" "}
-                                  {formatCurrency(budget, currency)} budget
+                                  {t("budget_of", {
+                                    spent: formatCurrency(item.total, currency),
+                                    budget: formatCurrency(budget, currency),
+                                  })}
                                   {item.total > budget && (
                                     <span className="text-destructive ml-1 font-medium">
-                                      (over!)
+                                      {t("over_budget")}
                                     </span>
                                   )}
                                 </p>
@@ -611,18 +626,30 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
                   <div className="flex items-center justify-between">
                     <div className="flex items-baseline gap-2 flex-1">
                       <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                        Dashboard
+                        {t("dashboard_label")}
                       </p>
                       <span className="text-xs text-muted-foreground/50">
                         |
                       </span>
                       <h3 className="font-display text-base font-semibold">
-                        Recent Transactions
+                        {t("recent_transactions")}
                       </h3>
                     </div>
-                    <span className="text-xs font-medium text-muted-foreground">
-                      Amount
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {recentExpenses.length > 0 && (
+                        <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full font-medium">
+                          {recentExpenses.length}
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={onViewAll}
+                        data-ocid="dashboard.view_all.button"
+                        className="text-xs font-medium text-primary hover:underline"
+                      >
+                        View All
+                      </button>
+                    </div>
                   </div>
                 </CardHeader>
                 <Separator />
@@ -632,7 +659,7 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
                       className="text-muted-foreground text-sm text-center py-6 px-4"
                       data-ocid="expense.empty_state"
                     >
-                      No expenses this month yet
+                      {t("no_expenses_this_month")}
                     </p>
                   ) : (
                     <ul className="divide-y divide-border">
@@ -666,7 +693,7 @@ export default function DashboardTab({ onEditExpense }: DashboardTabProps) {
                                       border: "none",
                                     }}
                                   >
-                                    {cat?.name ?? "Unknown"}
+                                    {cat?.name ?? t("unknown_category")}
                                   </Badge>
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-0.5 truncate">

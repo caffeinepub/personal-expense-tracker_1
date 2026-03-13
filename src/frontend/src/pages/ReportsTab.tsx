@@ -25,9 +25,9 @@ import {
   useMonthlySummary,
   useSetMonthlyIncome,
 } from "../hooks/useQueries";
+import { useLanguage } from "../i18n/LanguageContext";
 import { getCategoryById } from "../utils/categories";
 import {
-  currentMonth,
   formatCurrency,
   formatMonthYear,
   isCurrentMonth,
@@ -36,10 +36,13 @@ import {
   prevMonth,
 } from "../utils/format";
 
-export default function ReportsTab() {
-  const [month, setMonth] = useState(currentMonth());
+export default function ReportsTab({
+  month,
+  setMonth,
+}: { month: string; setMonth: (m: string) => void }) {
   const [editingIncome, setEditingIncome] = useState(false);
   const [incomeInput, setIncomeInput] = useState("");
+  const { t } = useLanguage();
 
   const { data: summary, isLoading } = useMonthlySummary(month);
   const { data: incomeData } = useMonthlyIncome(month);
@@ -62,15 +65,15 @@ export default function ReportsTab() {
   async function handleSaveIncome() {
     const amount = Number.parseFloat(incomeInput);
     if (Number.isNaN(amount) || amount < 0) {
-      toast.error("Please enter a valid income amount");
+      toast.error(t("please_enter_valid_income"));
       return;
     }
     try {
       await setIncome.mutateAsync({ month, amount });
-      toast.success("Income updated");
+      toast.success(t("income_updated"));
       setEditingIncome(false);
     } catch {
-      toast.error("Failed to update income");
+      toast.error(t("failed_update_income"));
     }
   }
 
@@ -93,7 +96,7 @@ export default function ReportsTab() {
         <div>
           <div className="flex items-baseline gap-2">
             <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Monthly Report
+              {t("monthly_report")}
             </p>
             <span className="text-xs text-muted-foreground/50">|</span>
             <h2 className="font-display text-xl font-bold tracking-tight">
@@ -101,7 +104,7 @@ export default function ReportsTab() {
             </h2>
           </div>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Income, expenses, and category breakdown.
+            {t("monthly_report_desc")}
           </p>
         </div>
 
@@ -112,7 +115,7 @@ export default function ReportsTab() {
             size="icon"
             className="h-8 w-8"
             onClick={() => setMonth(prevMonth(month))}
-            aria-label="Previous month"
+            aria-label={t("prev_month")}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -128,7 +131,7 @@ export default function ReportsTab() {
             className="h-8 w-8"
             onClick={() => setMonth(nextMonth(month))}
             disabled={isCurrentMonth(month)}
-            aria-label="Next month"
+            aria-label={t("next_month")}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -150,7 +153,7 @@ export default function ReportsTab() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                        Monthly Income
+                        {t("monthly_income")}
                       </p>
                       {editingIncome ? (
                         <div className="flex items-center gap-2 mt-1.5">
@@ -205,7 +208,7 @@ export default function ReportsTab() {
                         }}
                       >
                         <Pencil className="h-3 w-3" />
-                        {totalIncome > 0 ? "Edit" : "Set Income"}
+                        {totalIncome > 0 ? t("edit") : t("set_income")}
                       </Button>
                     )}
                   </div>
@@ -217,19 +220,19 @@ export default function ReportsTab() {
             <motion.div variants={itemVariants}>
               <div className="grid grid-cols-3 gap-2">
                 <SummaryCard
-                  label="Income"
+                  label={t("income")}
                   value={formatCurrency(totalIncome, currency)}
                   icon={<TrendingUp className="h-4 w-4" />}
                   color="text-positive"
                 />
                 <SummaryCard
-                  label="Expenses"
+                  label={t("expenses")}
                   value={formatCurrency(totalExpenses, currency)}
                   icon={<TrendingDown className="h-4 w-4" />}
                   color="text-negative"
                 />
                 <SummaryCard
-                  label="Balance"
+                  label={t("balance")}
                   value={formatCurrency(Math.abs(balance), currency)}
                   icon={<Minus className="h-4 w-4" />}
                   color={isOver ? "text-negative" : "text-positive"}
@@ -271,19 +274,21 @@ export default function ReportsTab() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                    Savings Rate
+                    {t("savings_rate")}
                   </p>
                   {savingsRate === null ? (
                     <p className="text-sm font-medium text-muted-foreground mt-0.5">
-                      Set income to see savings rate
+                      {t("set_income_to_see")}
                     </p>
                   ) : Number(savingsRate) >= 0 ? (
                     <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300 mt-0.5">
-                      Saved {savingsRate}% this month 🎉
+                      {t("saved_pct", { pct: savingsRate })}
                     </p>
                   ) : (
                     <p className="text-sm font-semibold text-red-700 dark:text-red-400 mt-0.5">
-                      Over budget by {Math.abs(Number(savingsRate)).toFixed(1)}%
+                      {t("over_budget_by_pct", {
+                        pct: Math.abs(Number(savingsRate)).toFixed(1),
+                      })}
                     </p>
                   )}
                 </div>
@@ -308,24 +313,24 @@ export default function ReportsTab() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-baseline gap-2 flex-1">
                       <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                        Reports
+                        {t("reports_label")}
                       </p>
                       <span className="text-xs text-muted-foreground/50">
                         |
                       </span>
                       <h3 className="font-display text-base font-semibold">
-                        Category Breakdown
+                        {t("category_breakdown")}
                       </h3>
                     </div>
                     <span className="text-xs font-medium text-muted-foreground">
-                      Amount
+                      {t("amount")}
                     </span>
                   </div>
                 </CardHeader>
                 <CardContent className="px-4 pb-4 pt-3 space-y-4">
                   {(summary?.categoryBreakdown?.length ?? 0) === 0 ? (
                     <p className="text-muted-foreground text-sm text-center py-6">
-                      No expenses this month
+                      {t("no_expenses_month")}
                     </p>
                   ) : (
                     summary!.categoryBreakdown
@@ -381,18 +386,25 @@ export default function ReportsTab() {
                                 />
                                 <div className="flex justify-between text-xs text-muted-foreground">
                                   <span>
-                                    Budget: {formatCurrency(budget, currency)}
+                                    {t("budget_colon", {
+                                      amount: formatCurrency(budget, currency),
+                                    })}
                                   </span>
                                   {overBudget ? (
                                     <span className="text-destructive font-medium">
-                                      Over by{" "}
-                                      {formatCurrency(
-                                        item.total - budget,
-                                        currency,
-                                      )}
+                                      {t("over_by", {
+                                        amount: formatCurrency(
+                                          item.total - budget,
+                                          currency,
+                                        ),
+                                      })}
                                     </span>
                                   ) : (
-                                    <span>{budgetPct}% used</span>
+                                    <span>
+                                      {t("pct_used", {
+                                        pct: String(budgetPct),
+                                      })}
+                                    </span>
                                   )}
                                 </div>
                               </div>
@@ -420,7 +432,7 @@ export default function ReportsTab() {
               <div className="flex items-center gap-3 py-2">
                 <div className="flex-1 h-px bg-border" />
                 <p className="text-xs text-muted-foreground/60 font-medium whitespace-nowrap">
-                  End of report · {formatMonthYear(month)}
+                  {t("end_of_report", { month: formatMonthYear(month) })}
                 </p>
                 <div className="flex-1 h-px bg-border" />
               </div>

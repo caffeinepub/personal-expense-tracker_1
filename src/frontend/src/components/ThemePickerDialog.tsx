@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/dialog";
 import { CheckCircle2 } from "lucide-react";
 import { CARD_THEMES, type CardThemeId } from "../hooks/useCardTheme";
+import { useLanguage } from "../i18n/LanguageContext";
 
 interface ThemePickerDialogProps {
   open: boolean;
@@ -20,6 +21,8 @@ export default function ThemePickerDialog({
   selectedThemeId,
   onSelect,
 }: ThemePickerDialogProps) {
+  const { t } = useLanguage();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -28,7 +31,7 @@ export default function ThemePickerDialog({
       >
         <DialogHeader>
           <DialogTitle className="font-display text-lg font-bold">
-            Card Theme
+            {t("card_theme")}
           </DialogTitle>
         </DialogHeader>
 

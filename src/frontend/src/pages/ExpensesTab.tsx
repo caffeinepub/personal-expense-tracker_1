@@ -46,9 +46,9 @@ import {
   useDeleteExpense,
   useExpensesByMonth,
 } from "../hooks/useQueries";
+import { useLanguage } from "../i18n/LanguageContext";
 import { getCategoryById } from "../utils/categories";
 import {
-  currentMonth,
   formatCurrency,
   formatDate,
   formatMonthYear,
@@ -60,13 +60,19 @@ import {
 
 interface ExpensesTabProps {
   onEditExpense: (expense: Expense) => void;
+  month: string;
+  setMonth: (m: string) => void;
 }
 
-export default function ExpensesTab({ onEditExpense }: ExpensesTabProps) {
-  const [month, setMonth] = useState(currentMonth());
+export default function ExpensesTab({
+  onEditExpense,
+  month,
+  setMonth,
+}: ExpensesTabProps) {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const { t } = useLanguage();
 
   const { data: expenses = [], isLoading } = useExpensesByMonth(month);
   const { data: categories = [] } = useCategories();
@@ -107,9 +113,9 @@ export default function ExpensesTab({ onEditExpense }: ExpensesTabProps) {
   async function handleDelete(id: string) {
     try {
       await deleteExpense.mutateAsync(id);
-      toast.success("Expense deleted");
+      toast.success(t("expense_deleted"));
     } catch {
-      toast.error("Failed to delete expense");
+      toast.error(t("failed_delete_expense"));
     }
     setDeleteId(null);
   }
@@ -123,15 +129,15 @@ export default function ExpensesTab({ onEditExpense }: ExpensesTabProps) {
         <div>
           <div className="flex items-baseline gap-2">
             <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Expenses
+              {t("expenses_label")}
             </p>
             <span className="text-xs text-muted-foreground/50">|</span>
             <h2 className="font-display text-xl font-bold tracking-tight">
-              Browse &amp; Manage
+              {t("browse_manage")}
             </h2>
           </div>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Search, filter, and manage your transactions.
+            {t("browse_manage_desc")}
           </p>
         </div>
 
@@ -142,7 +148,7 @@ export default function ExpensesTab({ onEditExpense }: ExpensesTabProps) {
             size="icon"
             className="h-8 w-8"
             onClick={() => setMonth(prevMonth(month))}
-            aria-label="Previous month"
+            aria-label={t("prev_month")}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -158,7 +164,7 @@ export default function ExpensesTab({ onEditExpense }: ExpensesTabProps) {
             className="h-8 w-8"
             onClick={() => setMonth(nextMonth(month))}
             disabled={isCurrentMonth(month)}
-            aria-label="Next month"
+            aria-label={t("next_month")}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -170,7 +176,7 @@ export default function ExpensesTab({ onEditExpense }: ExpensesTabProps) {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
               data-ocid="expenses.search_input"
-              placeholder="Search expenses..."
+              placeholder={t("search_expenses")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-8 h-9 text-sm"
@@ -181,10 +187,10 @@ export default function ExpensesTab({ onEditExpense }: ExpensesTabProps) {
               data-ocid="expenses.category.select"
               className="h-9 w-32 text-sm"
             >
-              <SelectValue placeholder="All" />
+              <SelectValue placeholder={t("all_categories")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="all">{t("all_categories")}</SelectItem>
               {categories.map((cat) => (
                 <SelectItem key={cat.id} value={cat.id}>
                   <div className="flex items-center gap-2">
@@ -207,10 +213,10 @@ export default function ExpensesTab({ onEditExpense }: ExpensesTabProps) {
               <span className="font-medium text-foreground/70">
                 {filtered.length}
               </span>{" "}
-              transaction{filtered.length !== 1 ? "s" : ""}
+              {filtered.length !== 1 ? t("transactions") : t("transaction")}
             </span>
             <span className="text-xs font-semibold text-foreground/80">
-              {formatCurrency(totalAmount, currency)} total
+              {formatCurrency(totalAmount, currency)} {t("total")}
             </span>
           </div>
         )}
@@ -227,12 +233,12 @@ export default function ExpensesTab({ onEditExpense }: ExpensesTabProps) {
               <Receipt className="h-7 w-7 text-muted-foreground" />
             </div>
             <h3 className="font-display font-semibold text-base mb-1">
-              No expenses found
+              {t("no_expenses_found")}
             </h3>
             <p className="text-muted-foreground text-sm">
               {searchQuery || categoryFilter !== "all"
-                ? "Try adjusting your filters"
-                : "Add your first expense using the + button"}
+                ? t("try_adjusting_filters")
+                : t("add_first_expense")}
             </p>
           </div>
         ) : (
@@ -278,7 +284,7 @@ export default function ExpensesTab({ onEditExpense }: ExpensesTabProps) {
                                     border: "none",
                                   }}
                                 >
-                                  {cat?.name ?? "Unknown"}
+                                  {cat?.name ?? t("unknown_category")}
                                 </Badge>
                                 <span className="text-xs text-muted-foreground">
                                   {expense.paymentMethod}
@@ -302,7 +308,7 @@ export default function ExpensesTab({ onEditExpense }: ExpensesTabProps) {
                                     size="icon"
                                     className="h-7 w-7 text-muted-foreground hover:text-foreground"
                                     data-ocid={`expense.dropdown_menu.${globalIndex}`}
-                                    aria-label="More options"
+                                    aria-label={t("more_options")}
                                   >
                                     <MoreVertical className="h-4 w-4" />
                                   </Button>
@@ -317,7 +323,7 @@ export default function ExpensesTab({ onEditExpense }: ExpensesTabProps) {
                                     className="gap-2"
                                   >
                                     <Pencil className="h-3.5 w-3.5" />
-                                    Edit
+                                    {t("edit")}
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     onClick={() => setDeleteId(expense.id)}
@@ -325,7 +331,7 @@ export default function ExpensesTab({ onEditExpense }: ExpensesTabProps) {
                                     className="gap-2 text-destructive focus:text-destructive"
                                   >
                                     <Trash2 className="h-3.5 w-3.5" />
-                                    Delete
+                                    {t("delete")}
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
@@ -350,9 +356,9 @@ export default function ExpensesTab({ onEditExpense }: ExpensesTabProps) {
                 <span className="h-px w-8 bg-border" />
                 <Receipt className="h-3.5 w-3.5" />
                 <span>
-                  {filtered.length} transaction
-                  {filtered.length !== 1 ? "s" : ""} &middot;{" "}
-                  {formatCurrency(totalAmount, currency)}
+                  {filtered.length}{" "}
+                  {filtered.length !== 1 ? t("transactions") : t("transaction")}{" "}
+                  &middot; {formatCurrency(totalAmount, currency)}
                 </span>
                 <span className="h-px w-8 bg-border" />
               </div>
@@ -368,22 +374,22 @@ export default function ExpensesTab({ onEditExpense }: ExpensesTabProps) {
           <AlertDialogContent className="max-w-sm">
             <AlertDialogHeader>
               <AlertDialogTitle className="font-display">
-                Delete this expense?
+                {t("delete_expense_title")}
               </AlertDialogTitle>
               <AlertDialogDescription>
-                This action cannot be undone.
+                {t("delete_expense_desc")}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel data-ocid="reset.cancel.button">
-                Cancel
+                {t("cancel")}
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={() => deleteId && handleDelete(deleteId)}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 data-ocid="reset.confirm.button"
               >
-                Delete
+                {t("delete")}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

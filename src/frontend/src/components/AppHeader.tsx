@@ -1,14 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { LogOut, Moon, Sun } from "lucide-react";
+import type React from "react";
 import { useEffect, useState } from "react";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
+import { useLanguage } from "../i18n/LanguageContext";
 
 interface AppHeaderProps {
   showTitle?: boolean;
+  style?: React.CSSProperties;
 }
 
-export default function AppHeader({ showTitle = true }: AppHeaderProps) {
+export default function AppHeader({ showTitle = true, style }: AppHeaderProps) {
   const { clear } = useInternetIdentity();
+  const { t } = useLanguage();
 
   const [isDark, setIsDark] = useState(() =>
     document.documentElement.classList.contains("dark"),
@@ -23,17 +27,24 @@ export default function AppHeader({ showTitle = true }: AppHeaderProps) {
   }, [isDark]);
 
   return (
-    <div>
+    <div
+      style={
+        style ?? {
+          backgroundColor:
+            "color-mix(in oklch, var(--theme-tint, transparent) 10%, transparent)",
+        }
+      }
+    >
       <div className="flex items-center justify-between px-4 pt-5 pb-3">
-        {/* Left: App title + subtitle (hidden on tabs that don't need it) */}
+        {/* Left: App title + subtitle */}
         <div>
           {showTitle && (
             <>
               <h1 className="font-display text-2xl font-bold tracking-tight leading-tight">
-                PE Tracker
+                {t("app_title")}
               </h1>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Personal Expense Tracker
+                {t("app_subtitle")}
               </p>
             </>
           )}
@@ -44,7 +55,7 @@ export default function AppHeader({ showTitle = true }: AppHeaderProps) {
           <Button
             variant="ghost"
             size="icon"
-            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            aria-label={isDark ? t("switch_light_mode") : t("switch_dark_mode")}
             data-ocid="app.theme.toggle"
             onClick={() => setIsDark((prev) => !prev)}
           >
@@ -57,7 +68,7 @@ export default function AppHeader({ showTitle = true }: AppHeaderProps) {
           <Button
             variant="ghost"
             size="icon"
-            aria-label="Logout"
+            aria-label={t("logout")}
             data-ocid="app.logout.button"
             onClick={() => clear()}
           >
