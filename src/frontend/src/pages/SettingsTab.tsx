@@ -148,6 +148,12 @@ export default function SettingsTab() {
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [exportMode, setExportMode] = useState<"month" | "year">("month");
+  const [exportMonth, setExportMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
+  const [exportYear, setExportYear] = useState(() => new Date().getFullYear());
   const [dangerOpen, setDangerOpen] = useState(false);
   const [budgetOpen, setBudgetOpen] = useState(false);
   const [paymentMethodsOpen, setPaymentMethodsOpen] = useState(false);
@@ -266,7 +272,12 @@ export default function SettingsTab() {
 
   async function handleExportCSV() {
     try {
-      const expenses = await exportForCSV.mutateAsync();
+      const allExpenses = await exportForCSV.mutateAsync();
+      const expenses = allExpenses.filter((e) =>
+        exportMode === "month"
+          ? e.date.startsWith(exportMonth)
+          : e.date.startsWith(String(exportYear)),
+      );
       exportToCSV(expenses, categories);
       toast.success(t("export_success"));
     } catch {
@@ -276,7 +287,12 @@ export default function SettingsTab() {
 
   async function handleExportJSON() {
     try {
-      const expenses = await exportForJSON.mutateAsync();
+      const allExpenses = await exportForJSON.mutateAsync();
+      const expenses = allExpenses.filter((e) =>
+        exportMode === "month"
+          ? e.date.startsWith(exportMonth)
+          : e.date.startsWith(String(exportYear)),
+      );
       exportToJSON(expenses, categories);
       toast.success(t("export_success"));
     } catch {
@@ -853,7 +869,77 @@ export default function SettingsTab() {
             </div>
           </CardHeader>
           {exportOpen && (
-            <CardContent className="px-4 pb-4 pt-2 space-y-2">
+            <CardContent className="px-4 pb-4 pt-2 space-y-3">
+              {/* Range mode toggle */}
+              <div className="flex gap-1.5 p-1 bg-muted rounded-lg">
+                <button
+                  type="button"
+                  data-ocid="settings.export_mode_month.toggle"
+                  onClick={() => setExportMode("month")}
+                  className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+                    exportMode === "month"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {t("month")}
+                </button>
+                <button
+                  type="button"
+                  data-ocid="settings.export_mode_year.toggle"
+                  onClick={() => setExportMode("year")}
+                  className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+                    exportMode === "year"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {t("year")}
+                </button>
+              </div>
+
+              {/* Range selector */}
+              {exportMode === "month" ? (
+                <select
+                  data-ocid="settings.export_month.select"
+                  value={exportMonth}
+                  onChange={(e) => setExportMonth(e.target.value)}
+                  className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                >
+                  {Array.from({ length: 24 }, (_, i) => {
+                    const d = new Date();
+                    d.setDate(1);
+                    d.setMonth(d.getMonth() - i);
+                    const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+                    const label = d.toLocaleDateString("en-US", {
+                      month: "long",
+                      year: "numeric",
+                    });
+                    return (
+                      <option key={val} value={val}>
+                        {label}
+                      </option>
+                    );
+                  })}
+                </select>
+              ) : (
+                <select
+                  data-ocid="settings.export_year.select"
+                  value={exportYear}
+                  onChange={(e) => setExportYear(Number(e.target.value))}
+                  className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                >
+                  {Array.from({ length: 5 }, (_, i) => {
+                    const y = new Date().getFullYear() - i;
+                    return (
+                      <option key={y} value={y}>
+                        {y}
+                      </option>
+                    );
+                  })}
+                </select>
+              )}
+
               <Button
                 variant="outline"
                 className="w-full gap-2 h-11"

@@ -424,10 +424,13 @@ export default function DashboardTab({
                           {t("by_category")}
                         </h3>
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-medium text-muted-foreground">
-                          {t("amount")}
-                        </span>
+                    </div>
+                  </CardHeader>
+                  <Separator />
+                  <CardContent className="px-4 pb-4 pt-4 space-y-5">
+                    {/* Donut Chart */}
+                    {chartView === "donut" && (
+                      <div className="relative">
                         <button
                           type="button"
                           data-ocid="dashboard.chart_toggle.toggle"
@@ -436,116 +439,119 @@ export default function DashboardTab({
                               v === "donut" ? "bar" : "donut",
                             )
                           }
-                          className="h-8 w-8 flex items-center justify-center rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
-                          aria-label={t(
-                            chartView === "donut"
-                              ? "switch_to_bar_chart"
-                              : "switch_to_donut_chart",
-                          )}
+                          className="absolute top-2 right-2 z-10 h-8 w-8 flex items-center justify-center rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
+                          aria-label={t("switch_to_bar_chart")}
                         >
-                          {chartView === "donut" ? (
-                            <BarChart2 className="h-4 w-4" />
-                          ) : (
-                            <PieChartIcon className="h-4 w-4" />
-                          )}
+                          <BarChart2 className="h-4 w-4" />
                         </button>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <Separator />
-                  <CardContent className="px-4 pb-4 pt-4 space-y-5">
-                    {/* Donut Chart */}
-                    {chartView === "donut" && (
-                      <div
-                        data-ocid="dashboard.donut_chart.canvas_target"
-                        style={{ height: 220 }}
-                      >
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={chartData}
-                              cx="50%"
-                              cy="50%"
-                              innerRadius={58}
-                              outerRadius={90}
-                              paddingAngle={2}
-                              dataKey="value"
-                            >
-                              {chartData.map((entry) => (
-                                <Cell
-                                  key={`cell-${entry.name}`}
-                                  fill={entry.color}
-                                />
-                              ))}
-                            </Pie>
-                            <Tooltip
-                              formatter={(value: number) =>
-                                formatCurrency(value, currency)
-                              }
-                              contentStyle={{
-                                borderRadius: 8,
-                                fontSize: 12,
-                                border: "1px solid var(--border)",
-                                background: "var(--card)",
-                                color: "var(--card-foreground)",
-                              }}
-                            />
-                          </PieChart>
-                        </ResponsiveContainer>
+                        <div
+                          data-ocid="dashboard.donut_chart.canvas_target"
+                          style={{ height: 220 }}
+                        >
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={chartData}
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={58}
+                                outerRadius={90}
+                                paddingAngle={2}
+                                dataKey="value"
+                              >
+                                {chartData.map((entry) => (
+                                  <Cell
+                                    key={`cell-${entry.name}`}
+                                    fill={entry.color}
+                                  />
+                                ))}
+                              </Pie>
+                              <Tooltip
+                                formatter={(value: number) =>
+                                  formatCurrency(value, currency)
+                                }
+                                contentStyle={{
+                                  borderRadius: 8,
+                                  fontSize: 12,
+                                  border: "1px solid var(--border)",
+                                  background: "var(--card)",
+                                  color: "var(--card-foreground)",
+                                }}
+                              />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
                       </div>
                     )}
 
                     {/* Horizontal Bar Chart */}
                     {chartView === "bar" && (
-                      <div
-                        data-ocid="dashboard.bar_chart.canvas_target"
-                        style={{
-                          height: Math.max(chartData.length * 44, 100),
-                        }}
-                      >
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart
-                            data={chartData}
-                            layout="vertical"
-                            margin={{ top: 0, right: 8, left: 0, bottom: 0 }}
-                          >
-                            <XAxis
-                              type="number"
-                              tick={{ fontSize: 10 }}
-                              tickFormatter={(v) => formatCurrency(v, currency)}
-                              axisLine={false}
-                              tickLine={false}
-                            />
-                            <YAxis
-                              type="category"
-                              dataKey="name"
-                              width={72}
-                              tick={{ fontSize: 11 }}
-                              axisLine={false}
-                              tickLine={false}
-                            />
-                            <Tooltip
-                              formatter={(value: number) =>
-                                formatCurrency(value, currency)
-                              }
-                              contentStyle={{
-                                borderRadius: 8,
-                                fontSize: 12,
-                                border: "1px solid var(--border)",
-                                background: "var(--card)",
-                                color: "var(--card-foreground)",
-                              }}
-                            />
-                            <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                              {chartData.map((entry) => (
-                                <Cell
-                                  key={`bar-${entry.name}`}
-                                  fill={entry.color}
-                                />
-                              ))}
-                            </Bar>
-                          </BarChart>
-                        </ResponsiveContainer>
+                      <div className="relative">
+                        <button
+                          type="button"
+                          data-ocid="dashboard.chart_toggle.toggle"
+                          onClick={() =>
+                            setChartView((v) =>
+                              v === "donut" ? "bar" : "donut",
+                            )
+                          }
+                          className="absolute top-2 right-2 z-10 h-8 w-8 flex items-center justify-center rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
+                          aria-label={t("switch_to_donut_chart")}
+                        >
+                          <PieChartIcon className="h-4 w-4" />
+                        </button>
+                        <div
+                          data-ocid="dashboard.bar_chart.canvas_target"
+                          style={{
+                            height: Math.max(chartData.length * 44, 100),
+                          }}
+                        >
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart
+                              data={chartData}
+                              layout="vertical"
+                              margin={{ top: 0, right: 8, left: 0, bottom: 0 }}
+                            >
+                              <XAxis
+                                type="number"
+                                tick={{ fontSize: 10 }}
+                                tickFormatter={(v) =>
+                                  formatCurrency(v, currency)
+                                }
+                                axisLine={false}
+                                tickLine={false}
+                              />
+                              <YAxis
+                                type="category"
+                                dataKey="name"
+                                width={72}
+                                tick={{ fontSize: 11 }}
+                                axisLine={false}
+                                tickLine={false}
+                              />
+                              <Tooltip
+                                formatter={(value: number) =>
+                                  formatCurrency(value, currency)
+                                }
+                                contentStyle={{
+                                  borderRadius: 8,
+                                  fontSize: 12,
+                                  border: "1px solid var(--border)",
+                                  background: "var(--card)",
+                                  color: "var(--card-foreground)",
+                                }}
+                              />
+                              <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                                {chartData.map((entry) => (
+                                  <Cell
+                                    key={`bar-${entry.name}`}
+                                    fill={entry.color}
+                                  />
+                                ))}
+                              </Bar>
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
                       </div>
                     )}
 

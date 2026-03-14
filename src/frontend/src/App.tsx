@@ -170,6 +170,7 @@ export default function App() {
                   onEditExpense={openEditExpense}
                   month={month}
                   setMonth={setMonth}
+                  onBack={() => setActiveTab("dashboard")}
                 />
               </motion.div>
             )}
@@ -181,7 +182,11 @@ export default function App() {
                 animate="show"
                 exit="exit"
               >
-                <ReportsTab month={month} setMonth={setMonth} />
+                <ReportsTab
+                  month={month}
+                  setMonth={setMonth}
+                  onBack={() => setActiveTab("dashboard")}
+                />
               </motion.div>
             )}
             {activeTab === "settings" && (

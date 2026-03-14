@@ -1,10 +1,17 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  ArrowLeft,
   Check,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Minus,
@@ -36,12 +43,30 @@ import {
   prevMonth,
 } from "../utils/format";
 
+const MONTH_KEYS = [
+  "month_jan",
+  "month_feb",
+  "month_mar",
+  "month_apr",
+  "month_may",
+  "month_jun",
+  "month_jul",
+  "month_aug",
+  "month_sep",
+  "month_oct",
+  "month_nov",
+  "month_dec",
+];
+
 export default function ReportsTab({
   month,
   setMonth,
-}: { month: string; setMonth: (m: string) => void }) {
+  onBack,
+}: { month: string; setMonth: (m: string) => void; onBack: () => void }) {
   const [editingIncome, setEditingIncome] = useState(false);
   const [incomeInput, setIncomeInput] = useState("");
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerYear, setPickerYear] = useState(() => new Date().getFullYear());
   const { t } = useLanguage();
 
   const { data: summary, isLoading } = useMonthlySummary(month);
@@ -61,6 +86,15 @@ export default function ReportsTab({
     totalIncome > 0
       ? (((totalIncome - totalExpenses) / totalIncome) * 100).toFixed(1)
       : null;
+
+  const selectedYear = Number.parseInt(month.split("-")[0], 10);
+  const selectedMonthIdx = Number.parseInt(month.split("-")[1], 10) - 1;
+
+  function selectMonth(m: number) {
+    const mm = String(m + 1).padStart(2, "0");
+    setMonth(`${pickerYear}-${mm}`);
+    setPickerOpen(false);
+  }
 
   async function handleSaveIncome() {
     const amount = Number.parseFloat(incomeInput);
@@ -108,33 +142,96 @@ export default function ReportsTab({
           </p>
         </div>
 
-        {/* Month selector */}
-        <div className="flex items-center justify-between bg-card border border-border rounded-xl px-3 py-2">
+        {/* Back + Month selector row */}
+        <div className="flex items-center gap-2">
           <Button
             variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => setMonth(prevMonth(month))}
-            aria-label={t("prev_month")}
+            size="sm"
+            className="flex items-center gap-1 text-muted-foreground hover:text-foreground h-9 px-2 flex-shrink-0"
+            onClick={onBack}
+            data-ocid="reports.back.button"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ArrowLeft className="h-4 w-4" />
+            <span className="text-xs font-medium">{t("back")}</span>
           </Button>
-          <span
-            className="font-display font-semibold text-sm"
-            data-ocid="reports.month.select"
-          >
-            {formatMonthYear(month)}
-          </span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => setMonth(nextMonth(month))}
-            disabled={isCurrentMonth(month)}
-            aria-label={t("next_month")}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center justify-between bg-card border border-border rounded-xl px-3 py-2 flex-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setMonth(prevMonth(month))}
+              aria-label={t("prev_month")}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  data-ocid="reports.month.select"
+                  className="flex items-center gap-1 font-display font-semibold text-sm hover:text-primary transition-colors group"
+                >
+                  {formatMonthYear(month)}
+                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="w-72 p-3"
+                align="center"
+                data-ocid="reports.month_picker.popover"
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setPickerYear((y) => y - 1)}
+                    className="p-1.5 rounded-md hover:bg-muted transition-colors"
+                    aria-label="Previous year"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <span className="font-semibold text-sm">{pickerYear}</span>
+                  <button
+                    type="button"
+                    onClick={() => setPickerYear((y) => y + 1)}
+                    className="p-1.5 rounded-md hover:bg-muted transition-colors"
+                    aria-label="Next year"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {MONTH_KEYS.map((key, idx) => {
+                    const isSelected =
+                      idx === selectedMonthIdx && pickerYear === selectedYear;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => selectMonth(idx)}
+                        className={`py-2 rounded-lg text-sm font-medium transition-colors ${
+                          isSelected
+                            ? "bg-primary text-primary-foreground"
+                            : "hover:bg-muted text-foreground"
+                        }`}
+                      >
+                        {t(key)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </PopoverContent>
+            </Popover>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setMonth(nextMonth(month))}
+              disabled={isCurrentMonth(month)}
+              aria-label={t("next_month")}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         {isLoading ? (
