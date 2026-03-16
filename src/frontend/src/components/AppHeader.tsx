@@ -28,10 +28,11 @@ export default function AppHeader({ showTitle = true, style }: AppHeaderProps) {
 
   return (
     <div
+      className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm"
       style={
         style ?? {
           backgroundColor:
-            "color-mix(in oklch, var(--theme-tint, transparent) 10%, transparent)",
+            "color-mix(in oklch, var(--theme-tint, transparent) 10%, hsl(var(--background) / 0.95))",
         }
       }
     >

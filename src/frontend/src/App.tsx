@@ -5,6 +5,7 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { Expense, MonthlyIncome } from "./backend.d";
+import AppHeader from "./components/AppHeader";
 import ExpenseDialog from "./components/ExpenseDialog";
 import { useActor } from "./hooks/useActor";
 import { useCardTheme } from "./hooks/useCardTheme";
@@ -137,6 +138,7 @@ export default function App() {
         className="w-full max-w-[480px] mx-auto flex flex-col flex-1 relative"
         style={{ "--theme-tint": theme.orb } as React.CSSProperties}
       >
+        <AppHeader />
         <main className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 pb-16">
           <AnimatePresence mode="wait">
             {activeTab === "dashboard" && (
@@ -281,6 +283,7 @@ export default function App() {
         expense={editingExpense}
         categories={categories}
         currency={currency}
+        month={month}
         onSave={handleSaveExpense}
         onSaveIncome={handleSaveIncome}
         isSaving={isSaving}

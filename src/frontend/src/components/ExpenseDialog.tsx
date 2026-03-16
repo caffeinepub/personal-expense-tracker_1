@@ -29,6 +29,7 @@ interface ExpenseDialogProps {
   onSave: (expense: Expense) => Promise<void>;
   onSaveIncome: (income: MonthlyIncome) => Promise<void>;
   isSaving?: boolean;
+  month?: string;
 }
 
 type EntryType = "expense" | "income";
@@ -42,6 +43,7 @@ export default function ExpenseDialog({
   onSave,
   onSaveIncome,
   isSaving = false,
+  month,
 }: ExpenseDialogProps) {
   const isEditing = !!expense;
   const { t } = useLanguage();
@@ -79,13 +81,28 @@ export default function ExpenseDialog({
         setEntryType("expense");
         setAmount("");
         setCategoryId(categories[0]?.id ?? "");
-        setDate(todayISO());
+        // Sync to selected dashboard month if it differs from today
+        const currentMonthISO = new Date().toISOString().substring(0, 7);
+        if (month && month !== currentMonthISO) {
+          setDate(`${month}-01`);
+        } else {
+          setDate(todayISO());
+        }
         setNote("");
         setPaymentMethod("Cash");
       }
       setErrors({});
     }
-  }, [open, expense, categories]);
+  }, [open, expense, categories, month]);
+
+  // Sync category budget to amount when category changes (new expense only)
+  useEffect(() => {
+    if (expense || entryType !== "expense") return;
+    const cat = categories.find((c) => c.id === categoryId);
+    if (cat?.budget && cat.budget > 0) {
+      setAmount(cat.budget.toString());
+    }
+  }, [categoryId, categories, expense, entryType]);
 
   function validate(): boolean {
     const newErrors: Record<string, string> = {};

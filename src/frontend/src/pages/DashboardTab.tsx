@@ -32,7 +32,7 @@ import {
   YAxis,
 } from "recharts";
 import type { Expense } from "../backend.d";
-import AppHeader from "../components/AppHeader";
+
 import ThemePickerDialog from "../components/ThemePickerDialog";
 import type { CardThemeId } from "../hooks/useCardTheme";
 import {
@@ -165,8 +165,6 @@ export default function DashboardTab({
 
   return (
     <div className="space-y-5 pb-24">
-      <AppHeader />
-
       <div className="px-4 space-y-5">
         {/* Sub-header: Monthly Overview with month picker */}
         <div>

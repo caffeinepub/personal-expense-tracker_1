@@ -51,7 +51,7 @@ import {
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { Category } from "../backend.d";
-import AppHeader from "../components/AppHeader";
+
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import {
   useAppSettings,
@@ -353,7 +353,6 @@ export default function SettingsTab() {
   if (isInitializing) {
     return (
       <div className="space-y-5 pb-24" data-ocid="settings.loading_state">
-        <AppHeader />
         <div className="px-4 space-y-5">
           <div>
             <Skeleton className="h-3 w-24 mb-2" />
@@ -370,7 +369,6 @@ export default function SettingsTab() {
   if (!identity) {
     return (
       <div className="space-y-5 pb-24">
-        <AppHeader />
         <div className="px-4 space-y-5">
           <Card className="border-0 shadow-sm overflow-hidden">
             <div className="h-1 w-full bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
@@ -452,8 +450,6 @@ export default function SettingsTab() {
 
   return (
     <div className="space-y-5 pb-24">
-      <AppHeader />
-
       <div className="px-4 space-y-3">
         {/* Section label */}
         <div>

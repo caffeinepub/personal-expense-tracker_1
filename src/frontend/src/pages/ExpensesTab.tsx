@@ -46,7 +46,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import type { Expense } from "../backend.d";
-import AppHeader from "../components/AppHeader";
+
 import {
   useAppSettings,
   useCategories,
@@ -157,8 +157,6 @@ export default function ExpensesTab({
 
   return (
     <div className="space-y-4 pb-24">
-      <AppHeader />
-
       <div className="px-4 space-y-4">
         {/* Section label */}
         <div>
@@ -179,9 +177,8 @@ export default function ExpensesTab({
         {/* Back + Month selector row */}
         <div className="flex items-center gap-2">
           <Button
-            variant="ghost"
             size="sm"
-            className="flex items-center gap-1 text-muted-foreground hover:text-foreground h-9 px-2 flex-shrink-0"
+            className="flex items-center gap-1 h-9 px-3 flex-shrink-0 bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground rounded-lg border border-border"
             onClick={onBack}
             data-ocid="expenses.back.button"
           >

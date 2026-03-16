@@ -24,7 +24,7 @@ import {
 import { motion } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
-import AppHeader from "../components/AppHeader";
+
 import {
   useAppSettings,
   useCategories,
@@ -123,8 +123,6 @@ export default function ReportsTab({
 
   return (
     <div className="space-y-5 pb-28">
-      <AppHeader />
-
       <div className="px-4 space-y-5">
         {/* Section label */}
         <div>
@@ -145,9 +143,8 @@ export default function ReportsTab({
         {/* Back + Month selector row */}
         <div className="flex items-center gap-2">
           <Button
-            variant="ghost"
             size="sm"
-            className="flex items-center gap-1 text-muted-foreground hover:text-foreground h-9 px-2 flex-shrink-0"
+            className="flex items-center gap-1 h-9 px-3 flex-shrink-0 bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground rounded-lg border border-border"
             onClick={onBack}
             data-ocid="reports.back.button"
           >
