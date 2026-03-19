@@ -1,10 +1,10 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import ReactDOM from "react-dom/client";
 import App from "./App";
-import { AutoLockProvider } from "./contexts/AutoLockContext";
 import { InternetIdentityProvider } from "./hooks/useInternetIdentity";
-import { LanguageProvider } from "./i18n/LanguageContext";
 import "./index.css";
+import { AutoLockProvider } from "./contexts/AutoLockContext";
+import { LanguageProvider } from "./i18n/LanguageContext";
 
 BigInt.prototype.toJSON = function () {
   return this.toString();

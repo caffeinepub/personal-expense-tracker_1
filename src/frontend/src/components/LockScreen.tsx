@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { Fingerprint, Lock, ShieldAlert } from "lucide-react";
+import { Delete, Fingerprint, Lock, ShieldAlert } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAutoLock } from "../contexts/AutoLockContext";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 
@@ -11,29 +11,26 @@ export default function LockScreen() {
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [isChecking, setIsChecking] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (isLocked) {
-      setTimeout(() => inputRef.current?.focus(), 150);
-    } else {
+    if (!isLocked) {
       setPin("");
       setError("");
     }
   }, [isLocked]);
 
-  async function handleUnlock() {
-    if (pin.length < pinLength) {
+  async function handleUnlock(currentPin?: string) {
+    const pinToCheck = currentPin ?? pin;
+    if (pinToCheck.length < pinLength) {
       setError("Enter your PIN to unlock");
       return;
     }
     setIsChecking(true);
-    const ok = await unlock(pin);
+    const ok = await unlock(pinToCheck);
     setIsChecking(false);
     if (!ok) {
       setError("Incorrect PIN. Try again.");
       setPin("");
-      setTimeout(() => inputRef.current?.focus(), 50);
     } else {
       setPin("");
       setError("");
@@ -50,11 +47,28 @@ export default function LockScreen() {
     }
   }
 
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter" && pin.length >= pinLength && !isChecking && hasPin) {
-      handleUnlock();
+  function handleDigit(digit: string) {
+    if (isChecking) return;
+    setError("");
+    const next = (pin + digit).slice(0, pinLength);
+    setPin(next);
+    if (next.length === pinLength) {
+      handleUnlock(next);
     }
   }
+
+  function handleBackspace() {
+    if (isChecking) return;
+    setPin((p) => p.slice(0, -1));
+    setError("");
+  }
+
+  const keypadRows = [
+    ["1", "2", "3"],
+    ["4", "5", "6"],
+    ["7", "8", "9"],
+    ["empty", "0", "backspace"],
+  ];
 
   return (
     <AnimatePresence>
@@ -113,7 +127,7 @@ export default function LockScreen() {
             </div>
 
             {/* PIN section */}
-            <div className="px-6 py-6 space-y-5">
+            <div className="px-6 py-6 space-y-4">
               {hasPin && (
                 <>
                   <div className="text-center">
@@ -121,13 +135,8 @@ export default function LockScreen() {
                       Enter your {pinLength}-digit PIN
                     </p>
 
-                    {/* PIN slots + invisible real input overlay */}
-                    <div
-                      className="relative flex gap-2 justify-center"
-                      onClick={() => inputRef.current?.focus()}
-                      onKeyDown={() => inputRef.current?.focus()}
-                    >
-                      {/* Visual PIN slots */}
+                    {/* PIN slots */}
+                    <div className="flex gap-2 justify-center mb-4">
                       {[...Array(pinLength)].map((_, slotIdx) => (
                         <div
                           key={slotIdx.toString()}
@@ -140,44 +149,61 @@ export default function LockScreen() {
                           {slotIdx < pin.length ? "●" : ""}
                         </div>
                       ))}
-
-                      {/* Real input: covers the PIN slot area, invisible but interactive */}
-                      <input
-                        ref={inputRef}
-                        type="tel"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        autoComplete="off"
-                        maxLength={pinLength}
-                        value={pin}
-                        onChange={(e) => {
-                          const val = e.target.value
-                            .replace(/\D/g, "")
-                            .slice(0, pinLength);
-                          setPin(val);
-                          setError("");
-                        }}
-                        onKeyDown={handleKeyDown}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        style={{ fontSize: 16 }}
-                        data-ocid="lock.input"
-                      />
                     </div>
 
                     {error && (
                       <div
-                        className="flex items-center justify-center gap-1.5 mt-3 text-sm text-destructive"
+                        className="flex items-center justify-center gap-1.5 mb-3 text-sm text-destructive"
                         data-ocid="lock.error_state"
                       >
                         <ShieldAlert className="w-4 h-4" />
                         {error}
                       </div>
                     )}
+
+                    {/* Numeric Keypad */}
+                    <div className="grid grid-cols-3 gap-2 max-w-[220px] mx-auto">
+                      {keypadRows.map((row, _rowIdx) =>
+                        row.map((key) => {
+                          if (key === "empty") {
+                            return (
+                              <div key="empty-key" className="w-full h-12" />
+                            );
+                          }
+                          if (key === "backspace") {
+                            return (
+                              <button
+                                key="backspace"
+                                type="button"
+                                onClick={handleBackspace}
+                                disabled={isChecking || pin.length === 0}
+                                className="w-full h-12 rounded-xl bg-muted hover:bg-muted/80 text-lg font-semibold transition-colors flex items-center justify-center disabled:opacity-30"
+                                data-ocid="lock.delete_button"
+                              >
+                                <Delete className="w-5 h-5" />
+                              </button>
+                            );
+                          }
+                          return (
+                            <button
+                              key={key}
+                              type="button"
+                              onClick={() => handleDigit(key)}
+                              disabled={isChecking}
+                              className="w-full h-12 rounded-xl bg-muted hover:bg-muted/80 text-lg font-semibold transition-colors disabled:opacity-50"
+                              data-ocid={"lock.button"}
+                            >
+                              {key}
+                            </button>
+                          );
+                        }),
+                      )}
+                    </div>
                   </div>
 
                   <Button
                     className="w-full h-11"
-                    onClick={handleUnlock}
+                    onClick={() => handleUnlock()}
                     disabled={pin.length < pinLength || isChecking}
                     data-ocid="lock.primary_button"
                   >

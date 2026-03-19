@@ -168,26 +168,9 @@ export default function DashboardTab({
   }, [summary, categories]);
 
   const chartDataIncome = useMemo(() => {
-    const incomeExpenses = expenses.filter((e) => (e as any).isIncome === true);
-    const map = new Map<
-      string,
-      { name: string; value: number; color: string }
-    >();
-    for (const e of incomeExpenses) {
-      const cat = getCategoryById(categories, e.categoryId);
-      const key = e.categoryId;
-      if (map.has(key)) {
-        map.get(key)!.value += e.amount;
-      } else {
-        map.set(key, {
-          name: cat?.name ?? "Other",
-          value: e.amount,
-          color: cat?.color ?? "#10b981",
-        });
-      }
-    }
-    return [...map.values()].sort((a, b) => b.value - a.value);
-  }, [expenses, categories]);
+    if (!totalIncome || totalIncome <= 0) return [];
+    return [{ name: "Income", value: totalIncome, color: "#10b981" }];
+  }, [totalIncome]);
 
   return (
     <div className="space-y-5 pb-24">
