@@ -14,9 +14,11 @@ export default function AppHeader({ showTitle = true, style }: AppHeaderProps) {
   const { clear } = useInternetIdentity();
   const { t } = useLanguage();
 
-  const [isDark, setIsDark] = useState(() =>
-    document.documentElement.classList.contains("dark"),
-  );
+  const [isDark, setIsDark] = useState(() => {
+    const saved = localStorage.getItem("pe_dark_mode");
+    if (saved !== null) return saved === "true";
+    return document.documentElement.classList.contains("dark");
+  });
 
   useEffect(() => {
     if (isDark) {
@@ -24,6 +26,7 @@ export default function AppHeader({ showTitle = true, style }: AppHeaderProps) {
     } else {
       document.documentElement.classList.remove("dark");
     }
+    localStorage.setItem("pe_dark_mode", String(isDark));
   }, [isDark]);
 
   return (
@@ -32,7 +35,7 @@ export default function AppHeader({ showTitle = true, style }: AppHeaderProps) {
       style={
         style ?? {
           backgroundColor:
-            "color-mix(in oklch, var(--theme-tint, transparent) 10%, hsl(var(--background) / 0.95))",
+            "color-mix(in oklch, var(--theme-tint, transparent) 10%, oklch(var(--background) / 0.95))",
         }
       }
     >

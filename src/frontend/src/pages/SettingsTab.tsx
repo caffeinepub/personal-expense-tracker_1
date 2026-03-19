@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import {
   Calendar,
   Check,
@@ -38,6 +39,7 @@ import {
   Globe,
   Hash,
   Info,
+  KeyRound,
   Loader2,
   Lock,
   Pencil,
@@ -45,6 +47,7 @@ import {
   RotateCcw,
   ShieldCheck,
   Smartphone,
+  Timer,
   Trash2,
   Wallet,
 } from "lucide-react";
@@ -52,6 +55,8 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { Category } from "../backend.d";
 
+import CreatePINDialog from "../components/CreatePINDialog";
+import { useAutoLock } from "../contexts/AutoLockContext";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import {
   useAppSettings,
@@ -160,8 +165,27 @@ export default function SettingsTab() {
   const [formatsOpen, setFormatsOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
+  const [autoLockOpen, setAutoLockOpen] = useState(false);
+  const [showCreatePINDialog, setShowCreatePINDialog] = useState(false);
+  const [pinDialogMode, setPinDialogMode] = useState<"create" | "change">(
+    "create",
+  );
+  const {
+    enabled: alEnabled,
+    lockAfterMinutes,
+    hasPin,
+    pinLength,
+    setEnabled: setAlEnabled,
+    setLockAfterMinutes,
+    unlock,
+    unlockWithII,
+  } = useAutoLock();
 
   const [showResetDialog, setShowResetDialog] = useState(false);
+  const [showVerifyReset, setShowVerifyReset] = useState(false);
+  const [verifyResetPin, setVerifyResetPin] = useState("");
+  const [verifyResetError, setVerifyResetError] = useState("");
+  const [isVerifyingReset, setIsVerifyingReset] = useState(false);
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [deleteCategoryId, setDeleteCategoryId] = useState<string | null>(null);
@@ -405,7 +429,7 @@ export default function SettingsTab() {
                   </>
                 )}
               </Button>
-              <div className="w-full space-y-3 pt-1">
+              <div className="w-full space-y-2 pt-0.5">
                 {[
                   {
                     icon: <Fingerprint className="h-3.5 w-3.5 text-primary" />,
@@ -425,7 +449,7 @@ export default function SettingsTab() {
                 ].map(({ icon, titleKey, descKey }) => (
                   <div
                     key={titleKey}
-                    className="flex items-start gap-3 text-left rounded-xl bg-muted/50 px-4 py-3"
+                    className="flex items-start gap-3 text-left rounded-xl bg-muted/50 px-4 py-2"
                   >
                     <div className="mt-0.5 flex-shrink-0 w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
                       {icon}
@@ -448,9 +472,27 @@ export default function SettingsTab() {
     );
   }
 
+  async function handleVerifyBeforeReset() {
+    if (!verifyResetPin || verifyResetPin.length < pinLength) {
+      setVerifyResetError("Enter your full PIN");
+      return;
+    }
+    setIsVerifyingReset(true);
+    const ok = await unlock(verifyResetPin);
+    setIsVerifyingReset(false);
+    if (ok) {
+      setShowVerifyReset(false);
+      setVerifyResetPin("");
+      setVerifyResetError("");
+      setShowResetDialog(true);
+    } else {
+      setVerifyResetError("Incorrect PIN. Try again.");
+    }
+  }
+
   return (
     <div className="space-y-5 pb-24">
-      <div className="px-4 space-y-3">
+      <div className="px-4 space-y-2.5">
         {/* Section label */}
         <div>
           <div className="flex items-baseline gap-2">
@@ -469,7 +511,7 @@ export default function SettingsTab() {
 
         {/* Language */}
         <Card className="bg-blue-50/60 dark:bg-blue-950/20 border-blue-100/80 dark:border-blue-900/30 shadow-sm">
-          <CardHeader className="pb-0 pt-3 px-4">
+          <CardHeader className="pb-0 pt-2.5 px-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Globe className="h-4 w-4 text-blue-500" />
@@ -496,7 +538,7 @@ export default function SettingsTab() {
                       type="button"
                       data-ocid={`settings.language.${lang.code}.toggle`}
                       onClick={() => setLanguage(lang.code)}
-                      className="w-full flex items-center justify-between px-4 py-2 hover:bg-blue-100/40 dark:hover:bg-blue-900/20 transition-colors"
+                      className="w-full flex items-center justify-between px-4 py-1.5 hover:bg-blue-100/40 dark:hover:bg-blue-900/20 transition-colors"
                     >
                       <span className="text-sm font-medium">{lang.label}</span>
                       {language === lang.code && (
@@ -512,7 +554,7 @@ export default function SettingsTab() {
 
         {/* Currency */}
         <Card className="bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-100/80 dark:border-emerald-900/30 shadow-sm">
-          <CardHeader className="pb-0 pt-3 px-4">
+          <CardHeader className="pb-0 pt-2.5 px-4">
             <div className="flex items-center justify-between">
               <CardTitle className="font-display text-base font-semibold">
                 {t("currency")}
@@ -550,7 +592,7 @@ export default function SettingsTab() {
 
         {/* Categories */}
         <Card className="bg-violet-50/60 dark:bg-violet-950/20 border-violet-100/80 dark:border-violet-900/30 shadow-sm">
-          <CardHeader className="pb-0 pt-3 px-4">
+          <CardHeader className="pb-0 pt-2.5 px-4">
             <div className="flex items-center justify-between">
               <CardTitle className="font-display text-base font-semibold">
                 {t("categories")}
@@ -586,7 +628,7 @@ export default function SettingsTab() {
                   {categories.map((cat, i) => (
                     <li
                       key={cat.id}
-                      className="flex items-center gap-3 px-4 py-2"
+                      className="flex items-center gap-3 px-4 py-1.5"
                       data-ocid={`category.item.${i + 1}`}
                     >
                       <div
@@ -635,7 +677,7 @@ export default function SettingsTab() {
 
         {/* Budget Settings */}
         <Card className="bg-amber-50/60 dark:bg-amber-950/20 border-amber-100/80 dark:border-amber-900/30 shadow-sm">
-          <CardHeader className="pb-0 pt-3 px-4">
+          <CardHeader className="pb-0 pt-2.5 px-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Wallet className="h-4 w-4 text-amber-500" />
@@ -651,7 +693,7 @@ export default function SettingsTab() {
             </div>
           </CardHeader>
           {budgetOpen && (
-            <CardContent className="px-4 pb-4 pt-2 space-y-3">
+            <CardContent className="px-4 pb-3 pt-1.5 space-y-2">
               <p className="text-sm text-muted-foreground">
                 {t("budget_settings_desc")}
               </p>
@@ -664,7 +706,7 @@ export default function SettingsTab() {
                   {categories.map((cat) => (
                     <li
                       key={cat.id}
-                      className="flex items-center justify-between rounded-xl bg-amber-100/40 dark:bg-amber-900/10 px-3 py-2"
+                      className="flex items-center justify-between rounded-xl bg-amber-100/40 dark:bg-amber-900/10 px-3 py-1.5"
                     >
                       <div className="flex items-center gap-2">
                         <div
@@ -703,7 +745,7 @@ export default function SettingsTab() {
 
         {/* Payment Methods */}
         <Card className="bg-teal-50/60 dark:bg-teal-950/20 border-teal-100/80 dark:border-teal-900/30 shadow-sm">
-          <CardHeader className="pb-0 pt-3 px-4">
+          <CardHeader className="pb-0 pt-2.5 px-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <CreditCard className="h-4 w-4 text-teal-500" />
@@ -719,7 +761,7 @@ export default function SettingsTab() {
             </div>
           </CardHeader>
           {paymentMethodsOpen && (
-            <CardContent className="px-4 pb-4 pt-2 space-y-3">
+            <CardContent className="px-4 pb-3 pt-1.5 space-y-2">
               <ul className="space-y-1">
                 {paymentMethods.map((method, i) => (
                   <li
@@ -766,7 +808,7 @@ export default function SettingsTab() {
 
         {/* Number & Date Format */}
         <Card className="bg-rose-50/60 dark:bg-rose-950/20 border-rose-100/80 dark:border-rose-900/30 shadow-sm">
-          <CardHeader className="pb-0 pt-3 px-4">
+          <CardHeader className="pb-0 pt-2.5 px-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Hash className="h-4 w-4 text-rose-500" />
@@ -852,7 +894,7 @@ export default function SettingsTab() {
 
         {/* Export */}
         <Card className="bg-sky-50/60 dark:bg-sky-950/20 border-sky-100/80 dark:border-sky-900/30 shadow-sm">
-          <CardHeader className="pb-0 pt-3 px-4">
+          <CardHeader className="pb-0 pt-2.5 px-4">
             <div className="flex items-center justify-between">
               <CardTitle className="font-display text-base font-semibold">
                 {t("export_data")}
@@ -865,7 +907,7 @@ export default function SettingsTab() {
             </div>
           </CardHeader>
           {exportOpen && (
-            <CardContent className="px-4 pb-4 pt-2 space-y-3">
+            <CardContent className="px-4 pb-3 pt-1.5 space-y-2">
               {/* Range mode toggle */}
               <div className="flex gap-1.5 p-1 bg-muted rounded-lg">
                 <button
@@ -968,9 +1010,115 @@ export default function SettingsTab() {
           )}
         </Card>
 
+        {/* Auto-Lock */}
+        <Card className="bg-indigo-50/60 dark:bg-indigo-950/20 border-indigo-100/80 dark:border-indigo-900/30 shadow-sm">
+          <CardHeader className="pb-0 pt-2.5 px-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Timer className="h-4 w-4 text-indigo-500" />
+                <CardTitle className="font-display text-base font-semibold">
+                  Auto-Lock
+                </CardTitle>
+              </div>
+              <SectionToggle
+                open={autoLockOpen}
+                onToggle={() => setAutoLockOpen((p) => !p)}
+                label="auto-lock"
+              />
+            </div>
+          </CardHeader>
+          {autoLockOpen && (
+            <CardContent className="px-4 pb-3 pt-2 space-y-2">
+              {/* Enable toggle */}
+              <div className="flex items-center justify-between py-1.5">
+                <div>
+                  <p className="text-sm font-medium">Auto-Lock</p>
+                  <p className="text-xs text-muted-foreground">
+                    Automatically lock session after inactivity
+                  </p>
+                </div>
+                <Switch
+                  checked={alEnabled}
+                  onCheckedChange={(val) => {
+                    if (val && !hasPin) {
+                      setPinDialogMode("create");
+                      setShowCreatePINDialog(true);
+                    } else {
+                      setAlEnabled(val);
+                    }
+                  }}
+                  data-ocid="settings.autolock.switch"
+                />
+              </div>
+              {/* Lock After */}
+              {alEnabled && (
+                <div className="flex items-center justify-between py-1.5">
+                  <div>
+                    <p className="text-sm font-medium">Lock After</p>
+                    <p className="text-xs text-muted-foreground">
+                      Session locks after this period
+                    </p>
+                  </div>
+                  <Select
+                    value={String(lockAfterMinutes)}
+                    onValueChange={(v) => setLockAfterMinutes(Number(v))}
+                  >
+                    <SelectTrigger
+                      className="w-28 h-9"
+                      data-ocid="settings.autolock.select"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">Never</SelectItem>
+                      <SelectItem value="1">1 min</SelectItem>
+                      <SelectItem value="5">5 min</SelectItem>
+                      <SelectItem value="10">10 min</SelectItem>
+                      <SelectItem value="15">15 min</SelectItem>
+                      <SelectItem value="30">30 min</SelectItem>
+                      <SelectItem value="60">1 hour</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {/* Change PIN */}
+              <div className="flex items-center justify-between py-1.5">
+                <div>
+                  <p className="text-sm font-medium">Change PIN</p>
+                  <p className="text-xs text-muted-foreground">
+                    {hasPin ? "Update your unlock PIN" : "No PIN set yet"}
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 h-8"
+                  onClick={() => {
+                    setPinDialogMode(hasPin ? "change" : "create");
+                    setShowCreatePINDialog(true);
+                  }}
+                  data-ocid="settings.pin.button"
+                >
+                  <KeyRound className="h-3.5 w-3.5" />
+                  {hasPin ? "Change" : "Set PIN"}
+                </Button>
+              </div>
+              {/* Session Security info */}
+              <div className="rounded-lg bg-indigo-100/40 dark:bg-indigo-900/20 px-3 py-2.5 flex items-start gap-2">
+                <ShieldCheck className="h-4 w-4 text-indigo-500 mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-muted-foreground">
+                  {alEnabled
+                    ? `Auto-Lock: Enabled · Locks after ${lockAfterMinutes === 0 ? "Never" : lockAfterMinutes >= 60 ? "1 hour" : `${lockAfterMinutes} min`} · ${hasPin ? "PIN configured" : "No PIN set"}`
+                    : "Auto-Lock: Disabled · Session will not lock automatically"}
+                </p>
+              </div>
+            </CardContent>
+          )}
+        </Card>
+
         {/* Danger Zone */}
         <Card className="bg-red-50/60 dark:bg-red-950/20 border border-destructive/20 shadow-sm">
-          <CardHeader className="pb-0 pt-3 px-4">
+          <CardHeader className="pb-0 pt-2.5 px-4">
             <div className="flex items-center justify-between">
               <CardTitle className="font-display text-base font-semibold text-destructive">
                 {t("danger_zone")}
@@ -987,7 +1135,15 @@ export default function SettingsTab() {
               <Button
                 variant="destructive"
                 className="w-full gap-2 h-11"
-                onClick={() => setShowResetDialog(true)}
+                onClick={() => {
+                  if (hasPin) {
+                    setVerifyResetPin("");
+                    setVerifyResetError("");
+                    setShowVerifyReset(true);
+                  } else {
+                    setShowResetDialog(true);
+                  }
+                }}
                 data-ocid="settings.reset.button"
               >
                 <RotateCcw className="h-4 w-4" />
@@ -999,7 +1155,7 @@ export default function SettingsTab() {
 
         {/* About */}
         <Card className="bg-slate-50/60 dark:bg-slate-950/20 border-slate-100/80 dark:border-slate-900/30 shadow-sm">
-          <CardHeader className="pb-0 pt-3 px-4">
+          <CardHeader className="pb-0 pt-2.5 px-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Info className="h-4 w-4 text-slate-500" />
@@ -1015,8 +1171,8 @@ export default function SettingsTab() {
             </div>
           </CardHeader>
           {aboutOpen && (
-            <CardContent className="px-4 pb-4 pt-2 space-y-4">
-              <div className="flex items-center gap-3 rounded-xl bg-slate-100/60 dark:bg-slate-900/20 px-4 py-3">
+            <CardContent className="px-4 pb-3 pt-1.5 space-y-2">
+              <div className="flex items-center gap-3 rounded-xl bg-slate-100/60 dark:bg-slate-900/20 px-4 py-2">
                 <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                   <Wallet className="h-5 w-5 text-primary" />
                 </div>
@@ -1053,7 +1209,7 @@ export default function SettingsTab() {
                 ].map(({ icon, label, value }) => (
                   <div
                     key={label}
-                    className="flex items-center justify-between py-2 border-b border-border/50 last:border-0"
+                    className="flex items-center justify-between py-1.5 border-b border-border/50 last:border-0"
                   >
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center">
@@ -1084,6 +1240,21 @@ export default function SettingsTab() {
         </div>
       </div>
 
+      {/* Create/Change PIN Dialog */}
+      <CreatePINDialog
+        open={showCreatePINDialog}
+        onOpenChange={(open) => {
+          setShowCreatePINDialog(open);
+          if (!open && pinDialogMode === "create" && !hasPin) {
+            setAlEnabled(false);
+          }
+        }}
+        mode={pinDialogMode}
+        onSuccess={() => {
+          if (pinDialogMode === "create") setAlEnabled(true);
+        }}
+      />
+
       {/* Category Dialog */}
       <Dialog open={showCategoryDialog} onOpenChange={setShowCategoryDialog}>
         <DialogContent className="max-w-sm mx-auto rounded-2xl">
@@ -1092,7 +1263,7 @@ export default function SettingsTab() {
               {editingCategory ? t("edit_category") : t("add_category")}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-2">
+          <div className="space-y-2.5 py-1.5">
             <div className="space-y-1.5">
               <Label htmlFor="cat-name">{t("category_name")}</Label>
               <Input
@@ -1190,6 +1361,110 @@ export default function SettingsTab() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Verify Identity Before Reset */}
+      <Dialog
+        open={showVerifyReset}
+        onOpenChange={(open) => {
+          setShowVerifyReset(open);
+          setVerifyResetPin("");
+          setVerifyResetError("");
+        }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display flex items-center gap-2">
+              <Lock className="h-5 w-5 text-destructive" />
+              Verify Identity
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              To protect your data, please verify your identity before resetting
+              all data.
+            </p>
+            {hasPin && (
+              <div className="space-y-2">
+                <Label htmlFor="verify-reset-pin">Enter your PIN</Label>
+                <div className="flex gap-2 justify-center">
+                  {[...Array(pinLength)].map((__, slotIdx) => (
+                    <div
+                      key={slotIdx.toString()}
+                      className={`w-11 h-12 rounded-lg border flex items-center justify-center text-xl font-bold transition-colors ${
+                        slotIdx < verifyResetPin.length
+                          ? "border-primary bg-primary/10 text-foreground"
+                          : "border-border bg-muted/30"
+                      }`}
+                    >
+                      {slotIdx < verifyResetPin.length ? "*" : ""}
+                    </div>
+                  ))}
+                </div>
+                <Input
+                  id="verify-reset-pin"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={pinLength}
+                  value={verifyResetPin}
+                  onChange={(e) => {
+                    setVerifyResetPin(
+                      e.target.value.replace(/\D/g, "").slice(0, pinLength),
+                    );
+                    setVerifyResetError("");
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleVerifyBeforeReset();
+                  }}
+                  placeholder={`Enter ${pinLength}-digit PIN`}
+                  className="text-center tracking-widest h-11"
+                  data-ocid="verify.reset.pin.input"
+                />
+                {verifyResetError && (
+                  <p className="text-sm text-destructive text-center">
+                    {verifyResetError}
+                  </p>
+                )}
+              </div>
+            )}
+            <div className="flex flex-col gap-2">
+              {hasPin && (
+                <Button
+                  onClick={handleVerifyBeforeReset}
+                  disabled={
+                    isVerifyingReset || verifyResetPin.length < pinLength
+                  }
+                  className="w-full"
+                  data-ocid="verify.reset.pin.button"
+                >
+                  {isVerifyingReset ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : null}
+                  Verify with PIN
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowVerifyReset(false);
+                  unlockWithII();
+                  setTimeout(() => setShowResetDialog(true), 1500);
+                }}
+                className="w-full gap-2"
+                data-ocid="verify.reset.ii.button"
+              >
+                <Fingerprint className="h-4 w-4" />
+                Unlock with Internet Identity
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowVerifyReset(false)}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Reset Confirmation */}
       <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>

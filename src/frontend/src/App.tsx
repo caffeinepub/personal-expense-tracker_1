@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import type { Expense, MonthlyIncome } from "./backend.d";
 import AppHeader from "./components/AppHeader";
 import ExpenseDialog from "./components/ExpenseDialog";
+import LockScreen from "./components/LockScreen";
 import { useActor } from "./hooks/useActor";
 import { useCardTheme } from "./hooks/useCardTheme";
 import {
@@ -100,12 +101,14 @@ export default function App() {
       if (editingExpense) {
         await updateExpense.mutateAsync(expense);
         toast.success(t("expense_updated"));
+        // Close dialog only when editing
+        setExpenseDialogOpen(false);
+        setEditingExpense(null);
       } else {
         await createExpense.mutateAsync(expense);
         toast.success(t("expense_added"));
+        // Stay open for next entry — dialog resets fields internally
       }
-      setExpenseDialogOpen(false);
-      setEditingExpense(null);
     } catch {
       toast.error(t("failed_save_expense"));
     }
@@ -115,7 +118,7 @@ export default function App() {
     try {
       await setMonthlyIncome.mutateAsync(income);
       toast.success(t("income_updated"));
-      setExpenseDialogOpen(false);
+      // Stay open for next entry — dialog resets amount internally
     } catch {
       toast.error(t("failed_update_income"));
     }
@@ -207,9 +210,9 @@ export default function App() {
 
         {/* Bottom navigation */}
         <nav
-          className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-card/95 backdrop-blur-lg border-t border-border z-40 safe-bottom"
+          className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] backdrop-blur-lg border-t border-border z-40 safe-bottom"
           style={{
-            backgroundColor: `color-mix(in oklch, ${theme.orb} 10%, transparent)`,
+            backgroundColor: `color-mix(in oklch, ${theme.orb} 12%, oklch(var(--card) / 0.95))`,
           }}
         >
           <div className="flex items-center justify-around px-2 py-1">
@@ -290,6 +293,7 @@ export default function App() {
       />
 
       <Toaster position="top-center" richColors closeButton />
+      <LockScreen />
     </div>
   );
 }

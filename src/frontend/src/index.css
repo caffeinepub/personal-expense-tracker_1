@@ -1,0 +1,174 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Cabinet Grotesk — display headings */
+@font-face {
+  font-family: "Cabinet Grotesk";
+  src: url("/assets/fonts/CabinetGrotesk-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Figtree — body text */
+@font-face {
+  font-family: "Figtree";
+  src: url("/assets/fonts/Figtree-Variable.woff2") format("woff2");
+  font-weight: 300 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    --radius: 0.75rem;
+
+    /* Emerald-toned financial app palette */
+    --background: 0.98 0.005 140;
+    --foreground: 0.18 0.025 160;
+    --card: 1 0 0;
+    --card-foreground: 0.18 0.025 160;
+    --popover: 1 0 0;
+    --popover-foreground: 0.18 0.025 160;
+    --primary: 0.42 0.13 160;
+    --primary-foreground: 0.98 0.005 140;
+    --secondary: 0.94 0.015 155;
+    --secondary-foreground: 0.3 0.06 160;
+    --muted: 0.94 0.012 150;
+    --muted-foreground: 0.52 0.03 160;
+    --accent: 0.9 0.04 155;
+    --accent-foreground: 0.25 0.07 160;
+    --destructive: 0.55 0.22 25;
+    --destructive-foreground: 0.98 0 0;
+    --border: 0.9 0.015 155;
+    --input: 0.88 0.02 155;
+    --ring: 0.42 0.13 160;
+
+    /* Chart colors */
+    --chart-1: 0.55 0.2 25;
+    --chart-2: 0.5 0.17 160;
+    --chart-3: 0.62 0.18 200;
+    --chart-4: 0.65 0.16 80;
+    --chart-5: 0.55 0.18 310;
+
+    /* Sidebar */
+    --sidebar: 0.96 0.01 155;
+    --sidebar-foreground: 0.18 0.025 160;
+    --sidebar-primary: 0.42 0.13 160;
+    --sidebar-primary-foreground: 0.98 0.005 140;
+    --sidebar-accent: 0.9 0.04 155;
+    --sidebar-accent-foreground: 0.25 0.07 160;
+    --sidebar-border: 0.9 0.015 155;
+    --sidebar-ring: 0.42 0.13 160;
+
+    /* App-specific tokens */
+    --expense-positive: 0.45 0.15 155;
+    --expense-negative: 0.52 0.21 25;
+    --expense-warning: 0.62 0.18 65;
+    --surface-elevated: 0.985 0.005 140;
+  }
+
+  .dark {
+    --background: 0.13 0.02 160;
+    --foreground: 0.93 0.01 140;
+    --card: 0.18 0.025 160;
+    --card-foreground: 0.93 0.01 140;
+    --popover: 0.22 0.03 160;
+    --popover-foreground: 0.93 0.01 140;
+    --primary: 0.65 0.16 155;
+    --primary-foreground: 0.12 0.02 160;
+    --secondary: 0.25 0.035 160;
+    --secondary-foreground: 0.85 0.015 145;
+    --muted: 0.23 0.03 160;
+    --muted-foreground: 0.6 0.025 160;
+    --accent: 0.28 0.04 160;
+    --accent-foreground: 0.9 0.015 145;
+    --destructive: 0.65 0.22 25;
+    --destructive-foreground: 0.98 0 0;
+    --border: 0.28 0.03 160;
+    --input: 0.28 0.03 160;
+    --ring: 0.65 0.16 155;
+
+    --chart-1: 0.7 0.18 25;
+    --chart-2: 0.65 0.16 155;
+    --chart-3: 0.68 0.17 200;
+    --chart-4: 0.72 0.15 80;
+    --chart-5: 0.65 0.17 310;
+
+    --sidebar: 0.16 0.02 160;
+    --sidebar-foreground: 0.93 0.01 140;
+    --sidebar-primary: 0.65 0.16 155;
+    --sidebar-primary-foreground: 0.12 0.02 160;
+    --sidebar-accent: 0.25 0.04 160;
+    --sidebar-accent-foreground: 0.9 0.015 145;
+    --sidebar-border: 0.28 0.03 160;
+    --sidebar-ring: 0.65 0.16 155;
+
+    --expense-positive: 0.68 0.17 155;
+    --expense-negative: 0.68 0.2 25;
+    --expense-warning: 0.72 0.17 70;
+    --surface-elevated: 0.2 0.025 160;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    color-scheme: light dark;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Figtree", ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Safe area insets for mobile */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: "Cabinet Grotesk", ui-sans-serif, system-ui, sans-serif;
+  }
+
+  .text-positive {
+    color: oklch(var(--expense-positive));
+  }
+
+  .text-negative {
+    color: oklch(var(--expense-negative));
+  }
+
+  .text-warning {
+    color: oklch(var(--expense-warning));
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Shimmer animation for progress bar highlight */
+@keyframes shimmer-slide {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer-slide 2.2s ease-in-out infinite;
+}

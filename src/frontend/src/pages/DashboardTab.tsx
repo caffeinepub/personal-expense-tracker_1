@@ -95,6 +95,10 @@ export default function DashboardTab({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerYear, setPickerYear] = useState(() => new Date().getFullYear());
   const [chartView, setChartView] = useState<"donut" | "bar">("donut");
+  const [chartViewIncome, setChartViewIncome] = useState<
+    "donut" | "horizontal"
+  >("donut");
+  const [chartTab, setChartTab] = useState<"expense" | "income">("expense");
   const { t } = useLanguage();
 
   const { data: expenses = [], isLoading: loadingExpenses } =
@@ -162,6 +166,28 @@ export default function DashboardTab({
         }) ?? []
     );
   }, [summary, categories]);
+
+  const chartDataIncome = useMemo(() => {
+    const incomeExpenses = expenses.filter((e) => (e as any).isIncome === true);
+    const map = new Map<
+      string,
+      { name: string; value: number; color: string }
+    >();
+    for (const e of incomeExpenses) {
+      const cat = getCategoryById(categories, e.categoryId);
+      const key = e.categoryId;
+      if (map.has(key)) {
+        map.get(key)!.value += e.amount;
+      } else {
+        map.set(key, {
+          name: cat?.name ?? "Other",
+          value: e.amount,
+          color: cat?.color ?? "#10b981",
+        });
+      }
+    }
+    return [...map.values()].sort((a, b) => b.value - a.value);
+  }, [expenses, categories]);
 
   return (
     <div className="space-y-5 pb-24">
@@ -406,7 +432,7 @@ export default function DashboardTab({
             </motion.div>
 
             {/* Category breakdown */}
-            {chartData.length > 0 && (
+            {(chartData.length > 0 || chartDataIncome.length > 0) && (
               <motion.div variants={itemVariants}>
                 <Card className="border-0 shadow-sm">
                   <CardHeader className="pb-0 pt-4 px-4">
@@ -426,130 +452,330 @@ export default function DashboardTab({
                   </CardHeader>
                   <Separator />
                   <CardContent className="px-4 pb-4 pt-4 space-y-5">
-                    {/* Donut Chart */}
-                    {chartView === "donut" && (
-                      <div className="relative">
-                        <button
-                          type="button"
-                          data-ocid="dashboard.chart_toggle.toggle"
-                          onClick={() =>
-                            setChartView((v) =>
-                              v === "donut" ? "bar" : "donut",
-                            )
-                          }
-                          className="absolute top-2 right-2 z-10 h-8 w-8 flex items-center justify-center rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
-                          aria-label={t("switch_to_bar_chart")}
-                        >
-                          <BarChart2 className="h-4 w-4" />
-                        </button>
-                        <div
-                          data-ocid="dashboard.donut_chart.canvas_target"
-                          style={{ height: 220 }}
-                        >
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie
-                                data={chartData}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={58}
-                                outerRadius={90}
-                                paddingAngle={2}
-                                dataKey="value"
-                              >
-                                {chartData.map((entry) => (
-                                  <Cell
-                                    key={`cell-${entry.name}`}
-                                    fill={entry.color}
+                    {/* Expense / Income tabs */}
+                    <div
+                      className="flex gap-1 p-1 rounded-lg bg-muted"
+                      data-ocid="dashboard.chart.tab"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setChartTab("expense")}
+                        className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                          chartTab === "expense"
+                            ? "bg-primary text-primary-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                        data-ocid="dashboard.expense.tab"
+                      >
+                        {t("expenses")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setChartTab("income")}
+                        className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                          chartTab === "income"
+                            ? "bg-primary text-primary-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                        data-ocid="dashboard.income.tab"
+                      >
+                        {t("income")}
+                      </button>
+                    </div>
+
+                    {/* Expense tab charts */}
+                    {chartTab === "expense" && (
+                      <>
+                        {/* Donut Chart */}
+                        {chartView === "donut" && (
+                          <div className="relative">
+                            <button
+                              type="button"
+                              data-ocid="dashboard.chart_toggle.toggle"
+                              onClick={() =>
+                                setChartView((v) =>
+                                  v === "donut" ? "bar" : "donut",
+                                )
+                              }
+                              className="absolute top-2 right-2 z-10 h-8 w-8 flex items-center justify-center rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
+                              aria-label={t("switch_to_bar_chart")}
+                            >
+                              <BarChart2 className="h-4 w-4" />
+                            </button>
+                            <div
+                              data-ocid="dashboard.donut_chart.canvas_target"
+                              style={{ height: 220 }}
+                            >
+                              <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                  <Pie
+                                    data={chartData}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={58}
+                                    outerRadius={90}
+                                    paddingAngle={2}
+                                    dataKey="value"
+                                  >
+                                    {chartData.map((entry) => (
+                                      <Cell
+                                        key={`cell-${entry.name}`}
+                                        fill={entry.color}
+                                      />
+                                    ))}
+                                  </Pie>
+                                  <Tooltip
+                                    formatter={(value: number) =>
+                                      formatCurrency(value, currency)
+                                    }
+                                    contentStyle={{
+                                      borderRadius: 8,
+                                      fontSize: 12,
+                                      border: "1px solid var(--border)",
+                                      background: "var(--card)",
+                                      color: "var(--foreground)",
+                                    }}
                                   />
-                                ))}
-                              </Pie>
-                              <Tooltip
-                                formatter={(value: number) =>
-                                  formatCurrency(value, currency)
-                                }
-                                contentStyle={{
-                                  borderRadius: 8,
-                                  fontSize: 12,
-                                  border: "1px solid var(--border)",
-                                  background: "var(--card)",
-                                  color: "var(--card-foreground)",
-                                }}
-                              />
-                            </PieChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </div>
+                                </PieChart>
+                              </ResponsiveContainer>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Vertical Bar Chart - Expense */}
+                        {chartView === "bar" && (
+                          <div className="relative">
+                            <button
+                              type="button"
+                              data-ocid="dashboard.chart_toggle.toggle"
+                              onClick={() =>
+                                setChartView((v) =>
+                                  v === "donut" ? "bar" : "donut",
+                                )
+                              }
+                              className="absolute top-2 right-2 z-10 h-8 w-8 flex items-center justify-center rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
+                              aria-label={t("switch_to_donut_chart")}
+                            >
+                              <PieChartIcon className="h-4 w-4" />
+                            </button>
+                            <div
+                              data-ocid="dashboard.bar_chart.canvas_target"
+                              style={{
+                                height: Math.max(chartData.length * 50, 200),
+                              }}
+                            >
+                              <ResponsiveContainer width="100%" height="100%">
+                                <BarChart
+                                  data={chartData}
+                                  margin={{
+                                    top: 8,
+                                    right: 8,
+                                    left: 0,
+                                    bottom: 40,
+                                  }}
+                                >
+                                  <XAxis
+                                    dataKey="name"
+                                    tick={{
+                                      fontSize: 10,
+                                      fill: "var(--foreground)",
+                                    }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                    angle={-35}
+                                    textAnchor="end"
+                                    interval={0}
+                                  />
+                                  <YAxis
+                                    tick={{
+                                      fontSize: 10,
+                                      fill: "var(--foreground)",
+                                    }}
+                                    tickFormatter={(v) =>
+                                      formatCurrency(v, currency)
+                                    }
+                                    axisLine={false}
+                                    tickLine={false}
+                                    width={60}
+                                  />
+                                  <Tooltip
+                                    formatter={(value: number) =>
+                                      formatCurrency(value, currency)
+                                    }
+                                    contentStyle={{
+                                      borderRadius: 8,
+                                      fontSize: 12,
+                                      border: "1px solid var(--border)",
+                                      background: "var(--card)",
+                                      color: "var(--foreground)",
+                                    }}
+                                  />
+                                  <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                                    {chartData.map((entry) => (
+                                      <Cell
+                                        key={`bar-${entry.name}`}
+                                        fill={entry.color}
+                                      />
+                                    ))}
+                                  </Bar>
+                                </BarChart>
+                              </ResponsiveContainer>
+                            </div>
+                          </div>
+                        )}
+                      </>
                     )}
 
-                    {/* Horizontal Bar Chart */}
-                    {chartView === "bar" && (
-                      <div className="relative">
-                        <button
-                          type="button"
-                          data-ocid="dashboard.chart_toggle.toggle"
-                          onClick={() =>
-                            setChartView((v) =>
-                              v === "donut" ? "bar" : "donut",
-                            )
-                          }
-                          className="absolute top-2 right-2 z-10 h-8 w-8 flex items-center justify-center rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
-                          aria-label={t("switch_to_donut_chart")}
-                        >
-                          <PieChartIcon className="h-4 w-4" />
-                        </button>
-                        <div
-                          data-ocid="dashboard.bar_chart.canvas_target"
-                          style={{
-                            height: Math.max(chartData.length * 44, 100),
-                          }}
-                        >
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart
-                              data={chartData}
-                              layout="vertical"
-                              margin={{ top: 0, right: 8, left: 0, bottom: 0 }}
-                            >
-                              <XAxis
-                                type="number"
-                                tick={{ fontSize: 10 }}
-                                tickFormatter={(v) =>
-                                  formatCurrency(v, currency)
-                                }
-                                axisLine={false}
-                                tickLine={false}
-                              />
-                              <YAxis
-                                type="category"
-                                dataKey="name"
-                                width={72}
-                                tick={{ fontSize: 11 }}
-                                axisLine={false}
-                                tickLine={false}
-                              />
-                              <Tooltip
-                                formatter={(value: number) =>
-                                  formatCurrency(value, currency)
-                                }
-                                contentStyle={{
-                                  borderRadius: 8,
-                                  fontSize: 12,
-                                  border: "1px solid var(--border)",
-                                  background: "var(--card)",
-                                  color: "var(--card-foreground)",
-                                }}
-                              />
-                              <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                                {chartData.map((entry) => (
-                                  <Cell
-                                    key={`bar-${entry.name}`}
-                                    fill={entry.color}
-                                  />
-                                ))}
-                              </Bar>
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
+                    {/* Income tab - Donut + Horizontal Bar Chart */}
+                    {chartTab === "income" && (
+                      <div data-ocid="dashboard.income_chart.canvas_target">
+                        {chartDataIncome.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center h-40 text-muted-foreground gap-2">
+                            <PieChartIcon className="h-8 w-8 opacity-30" />
+                            <p className="text-sm">{t("no_income_recorded")}</p>
+                          </div>
+                        ) : (
+                          <>
+                            {/* Donut */}
+                            {chartViewIncome === "donut" && (
+                              <div className="relative">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setChartViewIncome("horizontal")
+                                  }
+                                  className="absolute top-2 right-2 z-10 h-8 w-8 flex items-center justify-center rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
+                                  aria-label="Switch to bar chart"
+                                >
+                                  <BarChart2 className="h-4 w-4" />
+                                </button>
+                                <div style={{ height: 220 }}>
+                                  <ResponsiveContainer
+                                    width="100%"
+                                    height="100%"
+                                  >
+                                    <PieChart>
+                                      <Pie
+                                        data={chartDataIncome}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={58}
+                                        outerRadius={90}
+                                        paddingAngle={2}
+                                        dataKey="value"
+                                      >
+                                        {chartDataIncome.map((entry) => (
+                                          <Cell
+                                            key={`income-cell-${entry.name}`}
+                                            fill={entry.color}
+                                          />
+                                        ))}
+                                      </Pie>
+                                      <Tooltip
+                                        formatter={(value: number) =>
+                                          formatCurrency(value, currency)
+                                        }
+                                        contentStyle={{
+                                          borderRadius: 8,
+                                          fontSize: 12,
+                                          border: "1px solid var(--border)",
+                                          background: "var(--card)",
+                                          color: "var(--foreground)",
+                                        }}
+                                      />
+                                    </PieChart>
+                                  </ResponsiveContainer>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Horizontal Bar */}
+                            {chartViewIncome === "horizontal" && (
+                              <div className="relative">
+                                <button
+                                  type="button"
+                                  onClick={() => setChartViewIncome("donut")}
+                                  className="absolute top-2 right-2 z-10 h-8 w-8 flex items-center justify-center rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
+                                  aria-label="Switch to donut chart"
+                                >
+                                  <PieChartIcon className="h-4 w-4" />
+                                </button>
+                                <div
+                                  style={{
+                                    height: Math.max(
+                                      chartDataIncome.length * 44,
+                                      200,
+                                    ),
+                                  }}
+                                >
+                                  <ResponsiveContainer
+                                    width="100%"
+                                    height="100%"
+                                  >
+                                    <BarChart
+                                      data={chartDataIncome}
+                                      layout="vertical"
+                                      margin={{
+                                        top: 8,
+                                        right: 16,
+                                        left: 0,
+                                        bottom: 8,
+                                      }}
+                                    >
+                                      <XAxis
+                                        type="number"
+                                        tick={{
+                                          fontSize: 10,
+                                          fill: "var(--foreground)",
+                                        }}
+                                        tickFormatter={(v) =>
+                                          formatCurrency(v, currency)
+                                        }
+                                        axisLine={false}
+                                        tickLine={false}
+                                        width={60}
+                                      />
+                                      <YAxis
+                                        type="category"
+                                        dataKey="name"
+                                        tick={{
+                                          fontSize: 10,
+                                          fill: "var(--foreground)",
+                                        }}
+                                        axisLine={false}
+                                        tickLine={false}
+                                        width={80}
+                                      />
+                                      <Tooltip
+                                        formatter={(value: number) =>
+                                          formatCurrency(value, currency)
+                                        }
+                                        contentStyle={{
+                                          borderRadius: 8,
+                                          fontSize: 12,
+                                          border: "1px solid var(--border)",
+                                          background: "var(--card)",
+                                          color: "var(--foreground)",
+                                        }}
+                                      />
+                                      <Bar
+                                        dataKey="value"
+                                        radius={[0, 4, 4, 0]}
+                                      >
+                                        {chartDataIncome.map((entry) => (
+                                          <Cell
+                                            key={`income-hbar-${entry.name}`}
+                                            fill={entry.color}
+                                          />
+                                        ))}
+                                      </Bar>
+                                    </BarChart>
+                                  </ResponsiveContainer>
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
                       </div>
                     )}
 

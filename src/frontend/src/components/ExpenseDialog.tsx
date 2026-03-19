@@ -122,8 +122,11 @@ export default function ExpenseDialog({
     const parsedAmount = Number.parseFloat(amount);
 
     if (entryType === "income") {
-      const month = date.substring(0, 7);
-      await onSaveIncome({ month, amount: parsedAmount });
+      const incomeMonth = date.substring(0, 7);
+      await onSaveIncome({ month: incomeMonth, amount: parsedAmount });
+      // Reset amount for next income entry; keep date
+      setAmount("");
+      setErrors({});
       return;
     }
 
@@ -138,6 +141,14 @@ export default function ExpenseDialog({
       paymentMethod,
       createdAt,
     });
+
+    // If adding (not editing), reset transient fields for next entry
+    if (!expense) {
+      setAmount("");
+      setNote("");
+      setErrors({});
+      // Keep categoryId, paymentMethod, date so user can quickly add another
+    }
   }
 
   const getCurrencyPrefix = () => {
