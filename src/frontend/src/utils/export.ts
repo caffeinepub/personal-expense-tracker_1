@@ -1,16 +1,18 @@
 import type { Category, Expense } from "../backend.d";
-import { formatDate } from "./format";
+
+// ─── Export ──────────────────────────────────────────────────────────────────
 
 export function exportToCSV(expenses: Expense[], categories: Category[]): void {
   const catMap = new Map(categories.map((c) => [c.id, c.name]));
 
   const header = ["Date", "Category", "Amount", "Note", "Payment Method"];
   const rows = expenses.map((e) => [
-    formatDate(e.date),
-    catMap.get(e.categoryId) ?? e.categoryId,
+    // Use ISO date (YYYY-MM-DD) to avoid commas in formatted dates like "Nov 3, 2025"
+    e.date,
+    `"${(catMap.get(e.categoryId) ?? e.categoryId).replace(/"/g, '""')}"`,
     e.amount.toFixed(2),
     `"${(e.note ?? "").replace(/"/g, '""')}"`,
-    e.paymentMethod ?? "",
+    `"${(e.paymentMethod ?? "").replace(/"/g, '""')}"`,
   ]);
 
   const csv = [header, ...rows].map((r) => r.join(",")).join("\n");
@@ -28,7 +30,11 @@ export function exportToJSON(
   const data = {
     exportedAt: new Date().toISOString(),
     categories,
-    expenses,
+    expenses: expenses.map((e) => ({
+      ...e,
+      // Convert BigInt createdAt to number for JSON serialization
+      createdAt: Number(e.createdAt),
+    })),
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], {
     type: "application/json;charset=utf-8;",
@@ -48,4 +54,97 @@ function triggerDownload(blob: Blob, filename: string): void {
   link.click();
   document.body.removeChild(link);
   setTimeout(() => URL.revokeObjectURL(url), 100);
+}
+
+// ─── Import ───────────────────────────────────────────────────────────────────
+
+// Parse a JSON file exported by this app
+export function parseImportJSON(text: string): Partial<Expense>[] {
+  const data = JSON.parse(text);
+  const raw: unknown[] = Array.isArray(data)
+    ? data
+    : Array.isArray(data?.expenses)
+      ? data.expenses
+      : null;
+  if (!raw) throw new Error("Invalid JSON format");
+  return raw.map((item: any) => ({
+    ...item,
+    // Re-wrap createdAt as BigInt (might be number in exported JSON)
+    createdAt:
+      item.createdAt != null ? BigInt(item.createdAt) : BigInt(Date.now()),
+    amount: typeof item.amount === "number" ? item.amount : Number(item.amount),
+  }));
+}
+
+// Parse a CSV file exported by this app
+// Expected columns: Date, Category, Amount, Note, Payment Method
+export function parseImportCSV(text: string): Partial<Expense>[] {
+  const lines = text.trim().split("\n");
+  if (lines.length < 2) return [];
+
+  return lines
+    .slice(1)
+    .map((line) => {
+      // Split on commas that are NOT inside quotes
+      const cols = splitCSVLine(line);
+      const date = normalizeDate(cols[0]?.trim() ?? "");
+      const categoryName = cols[1]?.trim().replace(/^"|"$/g, "") ?? "";
+      const amount = Number.parseFloat(cols[2]?.trim() ?? "0");
+      const note = (cols[3]?.trim() ?? "")
+        .replace(/^"|"$/g, "")
+        .replace(/""/g, '"');
+      const paymentMethod = (cols[4]?.trim() ?? "").replace(/^"|"$/g, "");
+      return { date, note, amount, paymentMethod, categoryId: categoryName };
+    })
+    .filter((e) => typeof e.amount === "number" && e.amount > 0);
+}
+
+// Split a single CSV line respecting quoted fields
+function splitCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let current = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (ch === "," && !inQuotes) {
+      result.push(current);
+      current = "";
+    } else {
+      current += ch;
+    }
+  }
+  result.push(current);
+  return result;
+}
+
+// Normalize various date formats to YYYY-MM-DD
+function normalizeDate(raw: string): string {
+  if (!raw) return "";
+  // Already ISO: 2026-03-14
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  // DD.MM.YYYY or DD/MM/YYYY
+  const dmy = raw.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})$/);
+  if (dmy)
+    return `${dmy[3]}-${dmy[2].padStart(2, "0")}-${dmy[1].padStart(2, "0")}`;
+  // MM/DD/YYYY
+  const mdy = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (mdy)
+    return `${mdy[3]}-${mdy[1].padStart(2, "0")}-${mdy[2].padStart(2, "0")}`;
+  // Try native Date parse for formats like "Nov 3, 2025" or "Mar 14, 2026"
+  try {
+    const d = new Date(raw);
+    if (!Number.isNaN(d.getTime())) {
+      return d.toISOString().slice(0, 10);
+    }
+  } catch {
+    // ignore
+  }
+  return raw;
 }

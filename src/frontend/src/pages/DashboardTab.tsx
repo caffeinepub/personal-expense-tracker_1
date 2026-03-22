@@ -9,9 +9,10 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   BarChart2,
-  ChevronDown,
+  CalendarDays,
   ChevronLeft,
   ChevronRight,
+  Minus,
   MoreVertical,
   PieChart as PieChartIcon,
   TrendingDown,
@@ -19,7 +20,8 @@ import {
   Wallet,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useMemo, useState } from "react";
+import type React from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -99,11 +101,20 @@ export default function DashboardTab({
     "donut" | "horizontal"
   >("donut");
   const [chartTab, setChartTab] = useState<"expense" | "income">("expense");
+
+  // Reset income chart view when switching back to expense tab
+  useEffect(() => {
+    if (chartTab === "expense") {
+      setChartViewIncome("donut");
+    }
+  }, [chartTab]);
   const { t } = useLanguage();
 
   const { data: expenses = [], isLoading: loadingExpenses } =
     useExpensesByMonth(month);
   const { data: summary, isLoading: loadingSummary } = useMonthlySummary(month);
+  const prevMonthStr = _prevMonth(month);
+  const { data: prevSummary } = useMonthlySummary(prevMonthStr);
   const { data: categories = [] } = useCategories();
   const { data: settings } = useAppSettings();
   const currency = settings?.currency ?? "USD";
@@ -183,66 +194,9 @@ export default function DashboardTab({
             </p>
             <span className="text-xs text-muted-foreground/50">|</span>
 
-            {/* Tappable month picker trigger */}
-            <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  data-ocid="dashboard.month_picker.open_modal_button"
-                  className="flex items-center gap-1 font-display text-xl font-bold tracking-tight hover:text-primary transition-colors group"
-                >
-                  {formatMonthYear(month)}
-                  <ChevronDown className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors mt-0.5" />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent
-                className="w-72 p-3"
-                align="start"
-                data-ocid="dashboard.month_picker.popover"
-              >
-                {/* Year navigation */}
-                <div className="flex items-center justify-between mb-3">
-                  <button
-                    type="button"
-                    onClick={() => setPickerYear((y) => y - 1)}
-                    className="p-1.5 rounded-md hover:bg-muted transition-colors"
-                    aria-label="Previous year"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </button>
-                  <span className="font-semibold text-sm">{pickerYear}</span>
-                  <button
-                    type="button"
-                    onClick={() => setPickerYear((y) => y + 1)}
-                    className="p-1.5 rounded-md hover:bg-muted transition-colors"
-                    aria-label="Next year"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
-                {/* Month grid */}
-                <div className="grid grid-cols-3 gap-1.5">
-                  {MONTH_KEYS.map((key, idx) => {
-                    const isSelected =
-                      idx === selectedMonthIdx && pickerYear === selectedYear;
-                    return (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => selectMonth(idx)}
-                        className={`py-2 rounded-lg text-sm font-medium transition-colors ${
-                          isSelected
-                            ? "bg-primary text-primary-foreground"
-                            : "hover:bg-muted text-foreground"
-                        }`}
-                      >
-                        {t(key)}
-                      </button>
-                    );
-                  })}
-                </div>
-              </PopoverContent>
-            </Popover>
+            <span className="font-display text-xl font-bold tracking-tight">
+              {formatMonthYear(month)}
+            </span>
           </div>
           <p className="text-sm text-muted-foreground mt-0.5">
             {t("monthly_overview_desc")}
@@ -258,6 +212,86 @@ export default function DashboardTab({
             initial="hidden"
             animate="show"
           >
+            {/* ── Month Navigator Row ─────────────────────────── */}
+            <motion.div variants={itemVariants}>
+              <div className="flex items-center justify-between bg-card rounded-xl px-4 py-2.5 shadow-sm border border-border">
+                <button
+                  type="button"
+                  onClick={() => setMonth(_prevMonth(month))}
+                  className="p-1.5 rounded-md hover:bg-muted transition-colors"
+                  aria-label="Previous month"
+                  data-ocid="dashboard.month_nav.prev"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      data-ocid="dashboard.month_nav.open_modal_button"
+                      className="flex items-center gap-1.5 font-display text-base font-bold tracking-tight hover:text-primary transition-colors"
+                    >
+                      <CalendarDays className="h-4 w-4" />
+                      {formatMonthYear(month)}
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-72 p-3 z-50"
+                    align="center"
+                    data-ocid="dashboard.month_nav.popover"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <button
+                        type="button"
+                        onClick={() => setPickerYear((y) => y - 1)}
+                        className="p-1.5 rounded-md hover:bg-muted transition-colors"
+                        aria-label="Previous year"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+                      <span className="font-semibold text-sm">
+                        {pickerYear}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setPickerYear((y) => y + 1)}
+                        className="p-1.5 rounded-md hover:bg-muted transition-colors"
+                        aria-label="Next year"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {MONTH_KEYS.map((key, idx) => {
+                        const isSelected =
+                          idx === selectedMonthIdx &&
+                          pickerYear === selectedYear;
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => selectMonth(idx)}
+                            className={`py-2 rounded-lg text-sm font-medium transition-colors ${isSelected ? "bg-primary text-primary-foreground" : "hover:bg-muted text-foreground"}`}
+                          >
+                            {t(key)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                <button
+                  type="button"
+                  onClick={() => setMonth(_nextMonth(month))}
+                  className="p-1.5 rounded-md hover:bg-muted transition-colors"
+                  aria-label="Next month"
+                  data-ocid="dashboard.month_nav.next"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </motion.div>
+
             {/* ── Total Spent card ─────────────────────────────── */}
             <motion.div variants={itemVariants}>
               <Card
@@ -413,6 +447,59 @@ export default function DashboardTab({
                 </div>
               </div>
             </motion.div>
+
+            {/* ── Spending Insights ────────────────────────────── */}
+            {(() => {
+              const currentSpent = summary?.totalExpenses ?? 0;
+              const prevSpent = prevSummary?.totalExpenses ?? 0;
+              if (currentSpent === 0 && prevSpent === 0) return null;
+              let icon: React.ReactNode;
+              let message: string;
+              let colorClass: string;
+              let secondaryText: string;
+              if (prevSpent === 0 && currentSpent > 0) {
+                icon = <TrendingUp className="h-4 w-4 text-primary" />;
+                message = "First month tracked! Keep it up.";
+                colorClass = "text-primary";
+                secondaryText = `${formatCurrency(currentSpent, currency)} spent this month`;
+              } else {
+                const pctChange = Math.round(
+                  ((currentSpent - prevSpent) / prevSpent) * 100,
+                );
+                if (pctChange > 0) {
+                  icon = <TrendingUp className="h-4 w-4 text-destructive" />;
+                  message = `You spent ${pctChange}% more this month vs last month`;
+                  colorClass = "text-destructive";
+                } else if (pctChange < 0) {
+                  icon = <TrendingDown className="h-4 w-4 text-emerald-500" />;
+                  message = `You spent ${Math.abs(pctChange)}% less this month vs last month`;
+                  colorClass = "text-emerald-600 dark:text-emerald-400";
+                } else {
+                  icon = <Minus className="h-4 w-4 text-muted-foreground" />;
+                  message = "Same spending as last month";
+                  colorClass = "text-muted-foreground";
+                }
+                secondaryText = `${formatCurrency(currentSpent, currency)} this month vs ${formatCurrency(prevSpent, currency)} last month`;
+              }
+              return (
+                <motion.div
+                  variants={itemVariants}
+                  data-ocid="dashboard.spending_insights.card"
+                >
+                  <div className="rounded-xl border border-border bg-card shadow-sm px-4 py-3 flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      {icon}
+                      <p className={`text-sm font-semibold ${colorClass}`}>
+                        {message}
+                      </p>
+                    </div>
+                    <p className="text-xs text-muted-foreground pl-6">
+                      {secondaryText}
+                    </p>
+                  </div>
+                </motion.div>
+              );
+            })()}
 
             {/* Category breakdown */}
             {(chartData.length > 0 || chartDataIncome.length > 0) && (
@@ -624,10 +711,11 @@ export default function DashboardTab({
                               <div className="relative">
                                 <button
                                   type="button"
-                                  onClick={() =>
-                                    setChartViewIncome("horizontal")
-                                  }
-                                  className="absolute top-2 right-2 z-10 h-8 w-8 flex items-center justify-center rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setChartViewIncome("horizontal");
+                                  }}
+                                  className="absolute top-2 right-2 z-20 h-8 w-8 flex items-center justify-center rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
                                   aria-label="Switch to bar chart"
                                 >
                                   <BarChart2 className="h-4 w-4" />
@@ -677,8 +765,11 @@ export default function DashboardTab({
                               <div className="relative">
                                 <button
                                   type="button"
-                                  onClick={() => setChartViewIncome("donut")}
-                                  className="absolute top-2 right-2 z-10 h-8 w-8 flex items-center justify-center rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setChartViewIncome("donut");
+                                  }}
+                                  className="absolute top-2 right-2 z-20 h-8 w-8 flex items-center justify-center rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
                                   aria-label="Switch to donut chart"
                                 >
                                   <PieChartIcon className="h-4 w-4" />

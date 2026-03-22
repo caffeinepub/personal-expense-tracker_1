@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Delete, Fingerprint, Lock, ShieldAlert } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAutoLock } from "../contexts/AutoLockContext";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 
@@ -12,29 +12,97 @@ export default function LockScreen() {
   const [error, setError] = useState("");
   const [isChecking, setIsChecking] = useState(false);
 
+  // Refs to avoid stale closures in keyboard handler
+  const pinRef = useRef("");
+  const isCheckingRef = useRef(false);
+  const pinLengthRef = useRef(pinLength);
+  const unlockRef = useRef(unlock);
+
+  // Keep refs in sync with state
+  useEffect(() => {
+    pinRef.current = pin;
+  }, [pin]);
+  useEffect(() => {
+    isCheckingRef.current = isChecking;
+  }, [isChecking]);
+  useEffect(() => {
+    pinLengthRef.current = pinLength;
+  }, [pinLength]);
+  useEffect(() => {
+    unlockRef.current = unlock;
+  }, [unlock]);
+
   useEffect(() => {
     if (!isLocked) {
       setPin("");
+      pinRef.current = "";
       setError("");
     }
   }, [isLocked]);
 
-  async function handleUnlock(currentPin?: string) {
-    const pinToCheck = currentPin ?? pin;
-    if (pinToCheck.length < pinLength) {
+  async function performUnlock(pinToCheck: string) {
+    const len = pinLengthRef.current;
+    if (pinToCheck.length < len) {
       setError("Enter your PIN to unlock");
       return;
     }
     setIsChecking(true);
-    const ok = await unlock(pinToCheck);
+    isCheckingRef.current = true;
+    const ok = await unlockRef.current(pinToCheck);
     setIsChecking(false);
+    isCheckingRef.current = false;
     if (!ok) {
       setError("Incorrect PIN. Try again.");
       setPin("");
+      pinRef.current = "";
     } else {
       setPin("");
+      pinRef.current = "";
       setError("");
     }
+  }
+
+  // Keyboard support — stable listener, uses refs to avoid stale closures
+  // biome-ignore lint/correctness/useExhaustiveDependencies: performUnlock intentionally uses refs
+  useEffect(() => {
+    if (!isLocked) return;
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (isCheckingRef.current) return;
+
+      if (/^[0-9]$/.test(e.key)) {
+        e.preventDefault();
+        setError("");
+        setPin((prev) => {
+          const next = (prev + e.key).slice(0, pinLengthRef.current);
+          pinRef.current = next;
+          if (next.length === pinLengthRef.current) {
+            // Small delay so state update is committed before async unlock
+            setTimeout(() => performUnlock(next), 0);
+          }
+          return next;
+        });
+      } else if (e.key === "Backspace") {
+        e.preventDefault();
+        setError("");
+        setPin((prev) => {
+          const next = prev.slice(0, -1);
+          pinRef.current = next;
+          return next;
+        });
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        performUnlock(pinRef.current);
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLocked]);
+
+  async function handleUnlock(currentPin?: string) {
+    await performUnlock(currentPin ?? pinRef.current);
   }
 
   async function handleIIUnlock() {
@@ -52,14 +120,17 @@ export default function LockScreen() {
     setError("");
     const next = (pin + digit).slice(0, pinLength);
     setPin(next);
+    pinRef.current = next;
     if (next.length === pinLength) {
-      handleUnlock(next);
+      performUnlock(next);
     }
   }
 
   function handleBackspace() {
     if (isChecking) return;
-    setPin((p) => p.slice(0, -1));
+    const next = pin.slice(0, -1);
+    setPin(next);
+    pinRef.current = next;
     setError("");
   }
 
@@ -133,6 +204,9 @@ export default function LockScreen() {
                   <div className="text-center">
                     <p className="text-sm text-muted-foreground mb-4">
                       Enter your {pinLength}-digit PIN
+                      <span className="block text-xs text-muted-foreground/60 mt-0.5">
+                        Use keypad below or physical keyboard
+                      </span>
                     </p>
 
                     {/* PIN slots */}
@@ -140,13 +214,15 @@ export default function LockScreen() {
                       {[...Array(pinLength)].map((_, slotIdx) => (
                         <div
                           key={slotIdx.toString()}
-                          className={`w-11 h-12 rounded-lg border flex items-center justify-center text-xl font-bold transition-colors select-none ${
+                          className={`w-11 h-12 rounded-lg border flex items-center justify-center text-xl font-bold transition-all duration-150 select-none ${
                             slotIdx < pin.length
-                              ? "border-primary bg-primary/10 text-foreground"
+                              ? "border-primary bg-primary/10"
                               : "border-border bg-muted/30"
                           }`}
                         >
-                          {slotIdx < pin.length ? "●" : ""}
+                          {slotIdx < pin.length ? (
+                            <span className="w-3 h-3 rounded-full bg-foreground inline-block" />
+                          ) : null}
                         </div>
                       ))}
                     </div>

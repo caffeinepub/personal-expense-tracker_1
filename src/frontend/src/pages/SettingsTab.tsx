@@ -49,9 +49,10 @@ import {
   Smartphone,
   Timer,
   Trash2,
+  Upload,
   Wallet,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { Category } from "../backend.d";
 
@@ -62,6 +63,7 @@ import {
   useAppSettings,
   useCategories,
   useCreateCategory,
+  useCreateExpense,
   useDeleteCategory,
   useExportExpenses,
   useResetUserData,
@@ -70,7 +72,12 @@ import {
 } from "../hooks/useQueries";
 import { LANGUAGES, useLanguage } from "../i18n/LanguageContext";
 import { PRESET_COLORS } from "../utils/categories";
-import { exportToCSV, exportToJSON } from "../utils/export";
+import {
+  exportToCSV,
+  exportToJSON,
+  parseImportCSV,
+  parseImportJSON,
+} from "../utils/export";
 
 const CURRENCIES = [
   { code: "USD", symbol: "$", name: "US Dollar" },
@@ -159,6 +166,9 @@ export default function SettingsTab() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
   const [exportYear, setExportYear] = useState(() => new Date().getFullYear());
+  const [importLoading, setImportLoading] = useState(false);
+  const importFileRef = useRef<HTMLInputElement>(null);
+  const createExpense = useCreateExpense();
   const [dangerOpen, setDangerOpen] = useState(false);
   const [budgetOpen, setBudgetOpen] = useState(false);
   const [paymentMethodsOpen, setPaymentMethodsOpen] = useState(false);
@@ -292,6 +302,44 @@ export default function SettingsTab() {
       toast.error(t("failed_reset"));
     }
     setShowResetDialog(false);
+  }
+
+  async function handleImport(file: File) {
+    setImportLoading(true);
+    try {
+      const text = await file.text();
+      let expenses: any[] = [];
+      if (file.name.endsWith(".json")) {
+        expenses = parseImportJSON(text);
+      } else if (file.name.endsWith(".csv")) {
+        expenses = parseImportCSV(text);
+      } else {
+        toast.error("Please select a CSV or JSON file");
+        return;
+      }
+      let successCount = 0;
+      for (const e of expenses) {
+        try {
+          const newExpense = {
+            ...e,
+            id: crypto.randomUUID(),
+            createdAt: BigInt(Date.now()),
+            note: e.note ?? "",
+            paymentMethod: e.paymentMethod ?? "",
+            categoryId: e.categoryId ?? "",
+          };
+          await createExpense.mutateAsync(newExpense);
+          successCount++;
+        } catch {
+          /* skip individual failures */
+        }
+      }
+      toast.success(`Imported ${successCount} of ${expenses.length} records`);
+    } catch {
+      toast.error("Import failed: invalid file format");
+    } finally {
+      setImportLoading(false);
+    }
   }
 
   async function handleExportCSV() {
@@ -1006,6 +1054,43 @@ export default function SettingsTab() {
                 )}
                 {t("export_json")}
               </Button>
+              {/* Import section */}
+              <div className="mt-3 pt-3 border-t border-border/50">
+                <p className="text-sm font-semibold mb-1">Import Data</p>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Restore from a previously exported CSV or JSON file.
+                </p>
+                <input
+                  ref={importFileRef}
+                  type="file"
+                  accept=".csv,.json"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleImport(file);
+                    e.target.value = "";
+                  }}
+                />
+                <Button
+                  variant="outline"
+                  className="w-full gap-2 h-11"
+                  onClick={() => importFileRef.current?.click()}
+                  disabled={importLoading}
+                  data-ocid="settings.import_data.button"
+                >
+                  {importLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Importing...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4" />
+                      Import CSV / JSON
+                    </>
+                  )}
+                </Button>
+              </div>
             </CardContent>
           )}
         </Card>

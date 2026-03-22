@@ -53,6 +53,8 @@ export default function ExpenseDialog({
   const [categoryId, setCategoryId] = useState("");
   const [date, setDate] = useState(todayISO());
   const [note, setNote] = useState("");
+  const [recurring, setRecurring] = useState(false);
+  const [recurringFrequency, setRecurringFrequency] = useState("Monthly");
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [paymentMethods] = useState<string[]>(() => {
@@ -90,6 +92,8 @@ export default function ExpenseDialog({
         }
         setNote("");
         setPaymentMethod("Cash");
+        setRecurring(false);
+        setRecurringFrequency("Monthly");
       }
       setErrors({});
     }
@@ -140,7 +144,15 @@ export default function ExpenseDialog({
       note: note.trim(),
       paymentMethod,
       createdAt,
-    });
+      recurring: !expense
+        ? recurring
+        : (expense as Expense & { recurring?: boolean }).recurring,
+      recurringFrequency:
+        !expense && recurring
+          ? recurringFrequency
+          : (expense as Expense & { recurringFrequency?: string })
+              .recurringFrequency,
+    } as Expense & { recurring?: boolean; recurringFrequency?: string });
 
     // If adding (not editing), reset transient fields for next entry
     if (!expense) {
@@ -418,6 +430,55 @@ export default function ExpenseDialog({
                 onChange={(e) => setNote(e.target.value)}
                 className="h-11"
               />
+            </div>
+          )}
+
+          {/* Recurring — new expenses only, not income, not editing */}
+          {!isIncome && !isEditing && (
+            <div className="space-y-2">
+              <button
+                type="button"
+                data-ocid="expense.recurring.toggle"
+                onClick={() => setRecurring((r) => !r)}
+                className="flex items-center gap-2 w-full py-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <span
+                  className={`flex items-center justify-center w-4 h-4 rounded border transition-colors ${recurring ? "bg-primary border-primary" : "border-border bg-background"}`}
+                >
+                  {recurring && (
+                    <svg
+                      viewBox="0 0 10 10"
+                      className="w-2.5 h-2.5 text-primary-foreground"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      aria-hidden="true"
+                      role="presentation"
+                    >
+                      <polyline points="2,5 4.5,7.5 8,3" />
+                    </svg>
+                  )}
+                </span>
+                <span>Recurring expense</span>
+              </button>
+              {recurring && (
+                <div
+                  className="flex gap-1.5"
+                  data-ocid="expense.recurring.panel"
+                >
+                  {["Daily", "Weekly", "Monthly", "Yearly"].map((freq) => (
+                    <button
+                      key={freq}
+                      type="button"
+                      data-ocid="expense.recurring.button"
+                      onClick={() => setRecurringFrequency(freq)}
+                      className={`flex-1 py-1.5 rounded-full text-xs font-medium border transition-colors ${recurringFrequency === freq ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-border hover:bg-muted/80"}`}
+                    >
+                      {freq}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

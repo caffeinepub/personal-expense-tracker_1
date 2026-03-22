@@ -390,6 +390,21 @@ export default function ExpensesTab({
                                   {expense.note}
                                 </p>
                               )}
+                              {(
+                                expense as typeof expense & {
+                                  recurring?: boolean;
+                                  recurringFrequency?: string;
+                                }
+                              ).recurring && (
+                                <span className="inline-flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-primary/10 text-primary mt-0.5">
+                                  ↻{" "}
+                                  {(
+                                    expense as typeof expense & {
+                                      recurringFrequency?: string;
+                                    }
+                                  ).recurringFrequency ?? "Monthly"}
+                                </span>
+                              )}
                             </div>
 
                             <div className="flex items-center gap-2">

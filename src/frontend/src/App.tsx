@@ -15,6 +15,7 @@ import {
   useCategories,
   useCreateCategory,
   useCreateExpense,
+  useExpenses,
   useSetAppSettings,
   useSetMonthlyIncome,
   useUpdateExpense,
@@ -60,6 +61,80 @@ export default function App() {
   const updateExpense = useUpdateExpense();
   const setMonthlyIncome = useSetMonthlyIncome();
   const setAppSettings = useSetAppSettings();
+  const { data: allExpenses = [] } = useExpenses();
+
+  // Auto-generate missing recurring occurrences
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally runs when expenses load
+  useEffect(() => {
+    if (!actor || actorLoading || allExpenses.length === 0) return;
+
+    type RecurringExpense = Expense & {
+      recurring?: boolean;
+      recurringFrequency?: string;
+    };
+
+    const recurringExpenses = (allExpenses as RecurringExpense[]).filter(
+      (e) => e.recurring,
+    );
+    if (recurringExpenses.length === 0) return;
+
+    const existingKeys = new Set(
+      (allExpenses as RecurringExpense[]).map((e) =>
+        [e.categoryId, e.amount, e.paymentMethod, e.date].join("|"),
+      ),
+    );
+
+    const today = new Date();
+    const toMonthStr = (d: Date) => d.toISOString().substring(0, 7);
+    const currentMonthStr = toMonthStr(today);
+
+    const generate = async () => {
+      for (const src of recurringExpenses) {
+        try {
+          const freq = src.recurringFrequency ?? "Monthly";
+          const srcDate = new Date(src.date);
+          let cursor = new Date(srcDate);
+
+          if (freq === "Daily") cursor.setDate(cursor.getDate() + 1);
+          else if (freq === "Weekly") cursor.setDate(cursor.getDate() + 7);
+          else if (freq === "Monthly") cursor.setMonth(cursor.getMonth() + 1);
+          else if (freq === "Yearly")
+            cursor.setFullYear(cursor.getFullYear() + 1);
+
+          while (toMonthStr(cursor) <= currentMonthStr) {
+            const dateStr = cursor.toISOString().substring(0, 10);
+            const key = [
+              src.categoryId,
+              src.amount,
+              src.paymentMethod,
+              dateStr,
+            ].join("|");
+            if (!existingKeys.has(key)) {
+              existingKeys.add(key);
+              const newExpense: RecurringExpense = {
+                ...src,
+                id: crypto.randomUUID(),
+                date: dateStr,
+                createdAt: BigInt(Date.now()),
+                recurring: true,
+                recurringFrequency: freq,
+              };
+              await actor.createExpense(newExpense as Expense).catch(() => {});
+            }
+            if (freq === "Daily") cursor.setDate(cursor.getDate() + 1);
+            else if (freq === "Weekly") cursor.setDate(cursor.getDate() + 7);
+            else if (freq === "Monthly") cursor.setMonth(cursor.getMonth() + 1);
+            else if (freq === "Yearly")
+              cursor.setFullYear(cursor.getFullYear() + 1);
+          }
+        } catch {
+          // Safe: do not let one failure affect others
+        }
+      }
+    };
+
+    generate();
+  }, [actor, actorLoading, allExpenses.length]);
 
   const currency = settings?.currency ?? "USD";
 
@@ -101,13 +176,11 @@ export default function App() {
       if (editingExpense) {
         await updateExpense.mutateAsync(expense);
         toast.success(t("expense_updated"));
-        // Close dialog only when editing
         setExpenseDialogOpen(false);
         setEditingExpense(null);
       } else {
         await createExpense.mutateAsync(expense);
         toast.success(t("expense_added"));
-        // Stay open for next entry — dialog resets fields internally
       }
     } catch {
       toast.error(t("failed_save_expense"));
@@ -118,7 +191,6 @@ export default function App() {
     try {
       await setMonthlyIncome.mutateAsync(income);
       toast.success(t("income_updated"));
-      // Stay open for next entry — dialog resets amount internally
     } catch {
       toast.error(t("failed_update_income"));
     }
@@ -136,13 +208,36 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    // Responsive outer shell: full-screen on mobile, centered app-card on tablet/desktop
+    <div
+      className="min-h-screen bg-background flex flex-col items-center
+        md:bg-muted/20 md:justify-center md:p-6
+        lg:p-8"
+    >
+      {/* Desktop background decoration */}
       <div
-        className="w-full max-w-[480px] mx-auto flex flex-col flex-1 relative"
+        className="hidden md:block fixed inset-0 -z-10 pointer-events-none"
+        style={{
+          background: `radial-gradient(ellipse 80% 60% at 50% -10%, ${theme.orb}22 0%, transparent 70%)`,
+        }}
+      />
+
+      {/* App card — full screen on mobile, framed card on tablet/desktop */}
+      <div
+        className="
+          w-full max-w-[480px] flex flex-col relative
+          bg-background
+          min-h-screen
+          md:min-h-0 md:max-h-[92vh] md:rounded-3xl md:shadow-2xl md:overflow-hidden md:border md:border-border/50
+          lg:max-w-[520px]
+        "
         style={{ "--theme-tint": theme.orb } as React.CSSProperties}
       >
         <AppHeader />
-        <main className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 pb-16">
+        <main
+          className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 pb-16
+            md:pb-20"
+        >
           <AnimatePresence mode="wait">
             {activeTab === "dashboard" && (
               <motion.div
@@ -208,9 +303,13 @@ export default function App() {
           </AnimatePresence>
         </main>
 
-        {/* Bottom navigation */}
+        {/* Bottom navigation — sticky to app card on md+, fixed to viewport on mobile */}
         <nav
-          className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] backdrop-blur-lg border-t border-border z-40 safe-bottom"
+          className="
+            fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px]
+            backdrop-blur-lg border-t border-border z-40 safe-bottom
+            lg:max-w-[520px]
+          "
           style={{
             backgroundColor: `color-mix(in oklch, ${theme.orb} 12%, oklch(var(--card) / 0.95))`,
           }}
