@@ -8,6 +8,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -21,12 +27,14 @@ import { format, parseISO } from "date-fns";
 import {
   CalendarIcon,
   MoreVertical,
+  Pencil,
   Plus,
   ShoppingCart,
+  Trash2,
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import type { Expense } from "../backend.d";
 import {
@@ -34,7 +42,7 @@ import {
   useCategories,
   useCreateExpense,
 } from "../hooks/useQueries";
-import { useShoppingList } from "../hooks/useShoppingList";
+import { type ShoppingItem, useShoppingList } from "../hooks/useShoppingList";
 import { useLanguage } from "../i18n/LanguageContext";
 
 function formatCurrency(amount: number, currency: string): string {
@@ -46,9 +54,36 @@ function formatCurrency(amount: number, currency: string): string {
   }).format(amount);
 }
 
+function groupItemsByDate(
+  items: ShoppingItem[],
+): { dateKey: string; label: string; items: ShoppingItem[] }[] {
+  const groups: Record<string, ShoppingItem[]> = {};
+
+  for (const item of items) {
+    const key = item.date ?? "__nodate__";
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(item);
+  }
+
+  const sorted = Object.entries(groups).sort(([a], [b]) => {
+    if (a === "__nodate__") return 1;
+    if (b === "__nodate__") return -1;
+    return b.localeCompare(a);
+  });
+
+  return sorted.map(([key, groupItems]) => ({
+    dateKey: key,
+    label:
+      key === "__nodate__"
+        ? "No Date"
+        : format(parseISO(key), "EEEE, MMM d, yyyy"),
+    items: groupItems,
+  }));
+}
+
 export default function ShoppingListTab() {
   const { t } = useLanguage();
-  const { items, addItem, toggleBought, deleteItem, clearBought } =
+  const { items, addItem, toggleBought, deleteItem, clearBought, updateItem } =
     useShoppingList();
   const { data: categories = [] } = useCategories();
   const { data: settings } = useAppSettings();
@@ -64,6 +99,16 @@ export default function ShoppingListTab() {
   const [newDate, setNewDate] = useState(() =>
     new Date().toISOString().substring(0, 10),
   );
+  const dateInputRef = useRef<HTMLInputElement>(null);
+
+  // Edit item dialog
+  const [editItem, setEditItem] = useState<ShoppingItem | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editCategory, setEditCategory] = useState("");
+  const [editPrice, setEditPrice] = useState("");
+  const [editDate, setEditDate] = useState("");
+  const [editNameError, setEditNameError] = useState(false);
+  const editDateInputRef = useRef<HTMLInputElement>(null);
 
   // Log as expense dialog
   const [logDialogItem, setLogDialogItem] = useState<string | null>(null);
@@ -73,6 +118,8 @@ export default function ShoppingListTab() {
   const estimatedTotal = items
     .filter((i) => !i.bought)
     .reduce((sum, i) => sum + (i.estimatedPrice ?? 0), 0);
+
+  const grouped = groupItemsByDate(items);
 
   function openAddDialog() {
     setNewName("");
@@ -102,11 +149,38 @@ export default function ShoppingListTab() {
     toast.success(t("add_item"));
   }
 
+  function openEditDialog(item: ShoppingItem) {
+    setEditItem(item);
+    setEditName(item.name);
+    setEditCategory(item.category);
+    setEditPrice(
+      item.estimatedPrice !== undefined ? String(item.estimatedPrice) : "",
+    );
+    setEditDate(item.date ?? new Date().toISOString().substring(0, 10));
+    setEditNameError(false);
+  }
+
+  function handleSaveEdit() {
+    if (!editItem) return;
+    if (!editName.trim()) {
+      setEditNameError(true);
+      return;
+    }
+    const price = editPrice ? Number.parseFloat(editPrice) : undefined;
+    updateItem(editItem.id, {
+      name: editName.trim(),
+      category: editCategory,
+      estimatedPrice: price && !Number.isNaN(price) ? price : undefined,
+      date: editDate || undefined,
+    });
+    setEditItem(null);
+    toast.success("Item updated");
+  }
+
   function handleToggle(id: string) {
     const item = items.find((i) => i.id === id);
     if (!item) return;
     if (!item.bought) {
-      // marking as bought — ask to log
       toggleBought(id);
       toast.success(t("item_bought"));
       const price = item.estimatedPrice;
@@ -146,10 +220,6 @@ export default function ShoppingListTab() {
     }
     setLogDialogItem(null);
   }
-
-  const _getCategoryName = (catId: string) => {
-    return categories.find((c) => c.id === catId)?.name ?? catId;
-  };
 
   return (
     <div className="px-4 pt-4 pb-24">
@@ -203,8 +273,8 @@ export default function ShoppingListTab() {
         </span>
       </div>
 
-      {/* Item list */}
-      <div className="space-y-2" data-ocid="shopping.list">
+      {/* Item list grouped by date */}
+      <div data-ocid="shopping.list">
         <AnimatePresence initial={false}>
           {items.length === 0 ? (
             <motion.div
@@ -221,49 +291,106 @@ export default function ShoppingListTab() {
               </p>
             </motion.div>
           ) : (
-            items.map((item, idx) => (
-              <motion.div
-                key={item.id}
-                layout
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, x: -20, height: 0 }}
-                transition={{ duration: 0.2 }}
-                data-ocid={`shopping.item.${idx + 1}`}
-                className="flex items-center gap-3 rounded-xl p-3 bg-card border border-border/50 hover:border-border transition-colors"
-              >
-                <Checkbox
-                  id={`item-${item.id}`}
-                  data-ocid={`shopping.checkbox.${idx + 1}`}
-                  checked={item.bought}
-                  onCheckedChange={() => handleToggle(item.id)}
-                  className="flex-shrink-0"
-                />
-                <span
-                  className={`flex-1 min-w-0 truncate text-sm font-medium transition-all ${
-                    item.bought
-                      ? "line-through text-muted-foreground"
-                      : "text-foreground"
-                  }`}
+            grouped.map((group) => {
+              // compute a running global index offset for deterministic ocid
+              return (
+                <motion.div
+                  key={group.dateKey}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="mb-4"
                 >
-                  {item.name}
-                </span>
-                {item.estimatedPrice !== undefined && (
-                  <span className="text-xs text-muted-foreground flex-shrink-0">
-                    {formatCurrency(item.estimatedPrice, currency)}
-                  </span>
-                )}
-                <button
-                  type="button"
-                  data-ocid={`shopping.delete_button.${idx + 1}`}
-                  onClick={() => deleteItem(item.id)}
-                  className="flex-shrink-0 p-1 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                  aria-label="Delete item"
-                >
-                  <MoreVertical className="h-4 w-4" />
-                </button>
-              </motion.div>
-            ))
+                  {/* Date group header */}
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs font-semibold text-muted-foreground">
+                      {group.label}
+                    </span>
+                    <Badge
+                      variant="secondary"
+                      className="text-[10px] px-1.5 py-0 h-4"
+                    >
+                      {group.items.length}
+                    </Badge>
+                    <div className="flex-1 h-px bg-border/50" />
+                  </div>
+
+                  {/* Items in group */}
+                  <div className="space-y-2">
+                    {group.items.map((item) => {
+                      const globalIdx = items.indexOf(item);
+                      return (
+                        <motion.div
+                          key={item.id}
+                          layout
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, x: -20, height: 0 }}
+                          transition={{ duration: 0.2 }}
+                          data-ocid={`shopping.item.${globalIdx + 1}`}
+                          className="flex items-center gap-3 rounded-xl p-3 bg-card border border-border/50 hover:border-border transition-colors"
+                        >
+                          <Checkbox
+                            id={`item-${item.id}`}
+                            data-ocid={`shopping.checkbox.${globalIdx + 1}`}
+                            checked={item.bought}
+                            onCheckedChange={() => handleToggle(item.id)}
+                            className="flex-shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <span
+                              className={`block truncate text-sm font-medium transition-all ${
+                                item.bought
+                                  ? "line-through text-muted-foreground"
+                                  : "text-foreground"
+                              }`}
+                            >
+                              {item.name}
+                            </span>
+                            {item.category && (
+                              <span className="block text-xs text-muted-foreground">
+                                {item.category}
+                              </span>
+                            )}
+                          </div>
+                          {item.estimatedPrice !== undefined && (
+                            <span className="text-xs text-muted-foreground flex-shrink-0">
+                              {formatCurrency(item.estimatedPrice, currency)}
+                            </span>
+                          )}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                type="button"
+                                data-ocid={`shopping.delete_button.${globalIdx + 1}`}
+                                className="flex-shrink-0 p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                                aria-label="Options"
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => openEditDialog(item)}
+                              >
+                                <Pencil className="h-4 w-4 mr-2" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => deleteItem(item.id)}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              );
+            })
           )}
         </AnimatePresence>
       </div>
@@ -294,7 +421,6 @@ export default function ShoppingListTab() {
           </DialogHeader>
 
           <div className="space-y-4 py-2">
-            {/* Item name */}
             <div className="space-y-1.5">
               <Label htmlFor="item-name">
                 {t("item_name")} <span className="text-destructive">*</span>
@@ -322,7 +448,6 @@ export default function ShoppingListTab() {
               )}
             </div>
 
-            {/* Category + Date row */}
             <div className="flex gap-2">
               <div className="space-y-1.5 flex-1">
                 <Label>{t("category")}</Label>
@@ -341,25 +466,35 @@ export default function ShoppingListTab() {
               </div>
               <div className="space-y-1.5 flex-1">
                 <Label>{t("date")}</Label>
-                <div className="relative h-11">
-                  <div className="flex items-center h-11 rounded-md border border-input bg-background px-3 text-sm cursor-pointer select-none">
-                    <CalendarIcon className="h-4 w-4 text-muted-foreground mr-2 flex-shrink-0" />
-                    <span className="flex-1 truncate">
-                      {newDate ? format(parseISO(newDate), "dd.MM.yyyy") : ""}
-                    </span>
-                  </div>
-                  <input
-                    type="date"
-                    value={newDate}
-                    onChange={(e) => setNewDate(e.target.value)}
-                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                    style={{ WebkitAppearance: "none" }}
-                  />
-                </div>
+                <button
+                  type="button"
+                  className="flex items-center w-full h-11 rounded-md border border-input bg-background px-3 text-sm cursor-pointer select-none"
+                  onClick={() => {
+                    if (dateInputRef.current) {
+                      try {
+                        dateInputRef.current.showPicker();
+                      } catch {
+                        dateInputRef.current.click();
+                      }
+                    }
+                  }}
+                >
+                  <CalendarIcon className="h-4 w-4 text-muted-foreground mr-2 flex-shrink-0" />
+                  <span className="flex-1 truncate text-left">
+                    {newDate ? format(parseISO(newDate), "dd.MM.yyyy") : ""}
+                  </span>
+                </button>
+                <input
+                  ref={dateInputRef}
+                  type="date"
+                  value={newDate}
+                  onChange={(e) => setNewDate(e.target.value)}
+                  className="sr-only"
+                  tabIndex={-1}
+                />
               </div>
             </div>
 
-            {/* Estimated price */}
             <div className="space-y-1.5">
               <Label htmlFor="est-price">
                 {t("estimated_price")}{" "}
@@ -403,6 +538,141 @@ export default function ShoppingListTab() {
             >
               <Plus className="h-4 w-4 mr-1" />
               {t("add_item")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Item Dialog */}
+      <Dialog
+        open={!!editItem}
+        onOpenChange={(open) => !open && setEditItem(null)}
+      >
+        <DialogContent className="sm:max-w-sm" data-ocid="shopping.dialog">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="h-4 w-4 text-primary" />
+              Edit Item
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-item-name">
+                {t("item_name")} <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="edit-item-name"
+                data-ocid="shopping.input"
+                value={editName}
+                onChange={(e) => {
+                  setEditName(e.target.value);
+                  if (editNameError) setEditNameError(false);
+                }}
+                placeholder={t("item_name")}
+                className={editNameError ? "border-destructive" : ""}
+                onKeyDown={(e) => e.key === "Enter" && handleSaveEdit()}
+                autoFocus
+              />
+              {editNameError && (
+                <p
+                  className="text-xs text-destructive"
+                  data-ocid="shopping.error_state"
+                >
+                  {t("item_name")} is required
+                </p>
+              )}
+            </div>
+
+            <div className="flex gap-2">
+              <div className="space-y-1.5 flex-1">
+                <Label>{t("category")}</Label>
+                <Select value={editCategory} onValueChange={setEditCategory}>
+                  <SelectTrigger data-ocid="shopping.select" className="h-11">
+                    <SelectValue placeholder={t("select_category")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5 flex-1">
+                <Label>{t("date")}</Label>
+                <button
+                  type="button"
+                  className="flex items-center w-full h-11 rounded-md border border-input bg-background px-3 text-sm cursor-pointer select-none"
+                  onClick={() => {
+                    if (editDateInputRef.current) {
+                      try {
+                        editDateInputRef.current.showPicker();
+                      } catch {
+                        editDateInputRef.current.click();
+                      }
+                    }
+                  }}
+                >
+                  <CalendarIcon className="h-4 w-4 text-muted-foreground mr-2 flex-shrink-0" />
+                  <span className="flex-1 truncate text-left">
+                    {editDate ? format(parseISO(editDate), "dd.MM.yyyy") : ""}
+                  </span>
+                </button>
+                <input
+                  ref={editDateInputRef}
+                  type="date"
+                  value={editDate}
+                  onChange={(e) => setEditDate(e.target.value)}
+                  className="sr-only"
+                  tabIndex={-1}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-est-price">
+                {t("estimated_price")}{" "}
+                <span className="text-muted-foreground text-xs">
+                  ({t("optional") ?? "optional"})
+                </span>
+              </Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                  {currency}
+                </span>
+                <Input
+                  id="edit-est-price"
+                  data-ocid="shopping.input"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={editPrice}
+                  onChange={(e) => setEditPrice(e.target.value)}
+                  placeholder="0.00"
+                  className="pl-12"
+                  onKeyDown={(e) => e.key === "Enter" && handleSaveEdit()}
+                />
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              data-ocid="shopping.cancel_button"
+              onClick={() => setEditItem(null)}
+              className="bg-muted/60"
+            >
+              {t("cancel")}
+            </Button>
+            <Button
+              data-ocid="shopping.save_button"
+              onClick={handleSaveEdit}
+              className="bg-primary text-primary-foreground"
+            >
+              Save Changes
             </Button>
           </DialogFooter>
         </DialogContent>

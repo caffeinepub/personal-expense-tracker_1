@@ -22,6 +22,10 @@ interface ShoppingListStore {
   toggleBought: (id: string) => void;
   deleteItem: (id: string) => void;
   clearBought: () => void;
+  updateItem: (
+    id: string,
+    updates: Partial<Omit<ShoppingItem, "id" | "createdAt">>,
+  ) => void;
 }
 
 export const useShoppingList = create<ShoppingListStore>()(
@@ -56,6 +60,12 @@ export const useShoppingList = create<ShoppingListStore>()(
       clearBought: () =>
         set((state) => ({
           items: state.items.filter((item) => !item.bought),
+        })),
+      updateItem: (id, updates) =>
+        set((state) => ({
+          items: state.items.map((item) =>
+            item.id === id ? { ...item, ...updates } : item,
+          ),
         })),
     }),
     {
