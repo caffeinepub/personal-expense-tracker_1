@@ -17,7 +17,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, ShoppingCart, Trash2, X } from "lucide-react";
+import { format, parseISO } from "date-fns";
+import {
+  CalendarIcon,
+  MoreVertical,
+  Plus,
+  ShoppingCart,
+  X,
+} from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -54,6 +61,9 @@ export default function ShoppingListTab() {
   const [newCategory, setNewCategory] = useState("");
   const [newPrice, setNewPrice] = useState("");
   const [nameError, setNameError] = useState(false);
+  const [newDate, setNewDate] = useState(() =>
+    new Date().toISOString().substring(0, 10),
+  );
 
   // Log as expense dialog
   const [logDialogItem, setLogDialogItem] = useState<string | null>(null);
@@ -68,6 +78,7 @@ export default function ShoppingListTab() {
     setNewName("");
     setNewCategory(categories[0]?.id ?? "");
     setNewPrice("");
+    setNewDate(new Date().toISOString().substring(0, 10));
     setNameError(false);
     setAddOpen(true);
   }
@@ -82,6 +93,7 @@ export default function ShoppingListTab() {
       newName.trim(),
       newCategory,
       price && !Number.isNaN(price) ? price : undefined,
+      newDate || undefined,
     );
     setNewName("");
     setNewPrice("");
@@ -135,7 +147,7 @@ export default function ShoppingListTab() {
     setLogDialogItem(null);
   }
 
-  const getCategoryName = (catId: string) => {
+  const _getCategoryName = (catId: string) => {
     return categories.find((c) => c.id === catId)?.name ?? catId;
   };
 
@@ -227,40 +239,28 @@ export default function ShoppingListTab() {
                   onCheckedChange={() => handleToggle(item.id)}
                   className="flex-shrink-0"
                 />
-                <div className="flex-1 min-w-0">
-                  <div
-                    className={`text-sm font-medium truncate transition-all ${
-                      item.bought
-                        ? "line-through text-muted-foreground"
-                        : "text-foreground"
-                    }`}
-                  >
-                    {item.name}
-                  </div>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    {item.category && (
-                      <Badge
-                        variant="secondary"
-                        className="text-[10px] px-1.5 py-0 h-4 font-normal"
-                      >
-                        {getCategoryName(item.category)}
-                      </Badge>
-                    )}
-                    {item.estimatedPrice !== undefined && (
-                      <span className="text-xs text-muted-foreground">
-                        {formatCurrency(item.estimatedPrice, currency)}
-                      </span>
-                    )}
-                  </div>
-                </div>
+                <span
+                  className={`flex-1 min-w-0 truncate text-sm font-medium transition-all ${
+                    item.bought
+                      ? "line-through text-muted-foreground"
+                      : "text-foreground"
+                  }`}
+                >
+                  {item.name}
+                </span>
+                {item.estimatedPrice !== undefined && (
+                  <span className="text-xs text-muted-foreground flex-shrink-0">
+                    {formatCurrency(item.estimatedPrice, currency)}
+                  </span>
+                )}
                 <button
                   type="button"
                   data-ocid={`shopping.delete_button.${idx + 1}`}
                   onClick={() => deleteItem(item.id)}
-                  className="flex-shrink-0 p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                  className="flex-shrink-0 p-1 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                   aria-label="Delete item"
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
+                  <MoreVertical className="h-4 w-4" />
                 </button>
               </motion.div>
             ))
@@ -322,21 +322,41 @@ export default function ShoppingListTab() {
               )}
             </div>
 
-            {/* Category */}
-            <div className="space-y-1.5">
-              <Label>{t("category")}</Label>
-              <Select value={newCategory} onValueChange={setNewCategory}>
-                <SelectTrigger data-ocid="shopping.select" className="h-11">
-                  <SelectValue placeholder={t("select_category")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            {/* Category + Date row */}
+            <div className="flex gap-2">
+              <div className="space-y-1.5 flex-1">
+                <Label>{t("category")}</Label>
+                <Select value={newCategory} onValueChange={setNewCategory}>
+                  <SelectTrigger data-ocid="shopping.select" className="h-11">
+                    <SelectValue placeholder={t("select_category")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5 flex-1">
+                <Label>{t("date")}</Label>
+                <div className="relative h-11">
+                  <div className="flex items-center h-11 rounded-md border border-input bg-background px-3 text-sm cursor-pointer select-none">
+                    <CalendarIcon className="h-4 w-4 text-muted-foreground mr-2 flex-shrink-0" />
+                    <span className="flex-1 truncate">
+                      {newDate ? format(parseISO(newDate), "dd.MM.yyyy") : ""}
+                    </span>
+                  </div>
+                  <input
+                    type="date"
+                    value={newDate}
+                    onChange={(e) => setNewDate(e.target.value)}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                    style={{ WebkitAppearance: "none" }}
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Estimated price */}

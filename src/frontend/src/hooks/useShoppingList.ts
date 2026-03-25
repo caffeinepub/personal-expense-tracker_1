@@ -8,11 +8,17 @@ export interface ShoppingItem {
   estimatedPrice?: number;
   bought: boolean;
   createdAt: number;
+  date?: string;
 }
 
 interface ShoppingListStore {
   items: ShoppingItem[];
-  addItem: (name: string, category: string, estimatedPrice?: number) => void;
+  addItem: (
+    name: string,
+    category: string,
+    estimatedPrice?: number,
+    date?: string,
+  ) => void;
   toggleBought: (id: string) => void;
   deleteItem: (id: string) => void;
   clearBought: () => void;
@@ -22,7 +28,7 @@ export const useShoppingList = create<ShoppingListStore>()(
   persist(
     (set) => ({
       items: [],
-      addItem: (name, category, estimatedPrice) =>
+      addItem: (name, category, estimatedPrice, date) =>
         set((state) => ({
           items: [
             ...state.items,
@@ -33,6 +39,7 @@ export const useShoppingList = create<ShoppingListStore>()(
               estimatedPrice,
               bought: false,
               createdAt: Date.now(),
+              date,
             },
           ],
         })),

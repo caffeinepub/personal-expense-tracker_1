@@ -141,8 +141,7 @@ const DATE_FORMATS = [
 const APP_VERSION = "1.0.0";
 
 export default function SettingsTab() {
-  const { identity, login, isInitializing, isLoggingIn } =
-    useInternetIdentity();
+  const { identity, login, isLoggingIn } = useInternetIdentity();
   const { data: settings } = useAppSettings();
   const { data: categories = [] } = useCategories();
   const setSettings = useSetAppSettings();
@@ -419,22 +418,6 @@ export default function SettingsTab() {
           <ChevronDown className="h-4 w-4" />
         )}
       </Button>
-    );
-  }
-
-  if (isInitializing) {
-    return (
-      <div className="space-y-5 pb-24" data-ocid="settings.loading_state">
-        <div className="px-4 space-y-5">
-          <div>
-            <Skeleton className="h-3 w-24 mb-2" />
-            <Skeleton className="h-8 w-32" />
-          </div>
-          <Skeleton className="h-24 w-full rounded-xl" />
-          <Skeleton className="h-40 w-full rounded-xl" />
-          <Skeleton className="h-24 w-full rounded-xl" />
-        </div>
-      </div>
     );
   }
 
