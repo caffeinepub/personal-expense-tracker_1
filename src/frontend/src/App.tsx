@@ -1,5 +1,12 @@
 import { Toaster } from "@/components/ui/sonner";
-import { BarChart3, LayoutDashboard, List, Plus, Settings } from "lucide-react";
+import {
+  BarChart3,
+  LayoutDashboard,
+  List,
+  Plus,
+  Settings,
+  ShoppingCart,
+} from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import type React from "react";
 import { useEffect, useState } from "react";
@@ -25,23 +32,32 @@ import DashboardTab from "./pages/DashboardTab";
 import ExpensesTab from "./pages/ExpensesTab";
 import ReportsTab from "./pages/ReportsTab";
 import SettingsTab from "./pages/SettingsTab";
+import ShoppingListTab from "./pages/ShoppingListTab";
 import { DEFAULT_CATEGORIES } from "./utils/categories";
 import { currentMonth } from "./utils/format";
 
-type Tab = "dashboard" | "expenses" | "reports" | "settings";
+type Tab = "dashboard" | "expenses" | "reports" | "shopping" | "settings";
 
-const TAB_IDS: Tab[] = ["dashboard", "expenses", "reports", "settings"];
-const TAB_ICONS = [LayoutDashboard, List, BarChart3, Settings];
+const TAB_IDS: Tab[] = [
+  "dashboard",
+  "expenses",
+  "reports",
+  "shopping",
+  "settings",
+];
+const TAB_ICONS = [LayoutDashboard, List, BarChart3, ShoppingCart, Settings];
 const TAB_OCIDS = [
   "dashboard.tab",
   "expenses.tab",
   "reports.tab",
+  "shopping.tab",
   "settings.tab",
 ];
 const TAB_KEYS = [
   "tab_dashboard",
   "tab_expenses",
   "tab_reports",
+  "tab_shopping",
   "tab_settings",
 ];
 
@@ -289,6 +305,17 @@ export default function App() {
                 />
               </motion.div>
             )}
+            {activeTab === "shopping" && (
+              <motion.div
+                key="shopping"
+                variants={tabVariants}
+                initial="hidden"
+                animate="show"
+                exit="exit"
+              >
+                <ShoppingListTab />
+              </motion.div>
+            )}
             {activeTab === "settings" && (
               <motion.div
                 key="settings"
@@ -359,20 +386,22 @@ export default function App() {
           </div>
         </nav>
 
-        {/* FAB */}
-        <div className="fixed bottom-[4.5rem] left-1/2 -translate-x-1/2 z-50">
-          <motion.button
-            type="button"
-            data-ocid="fab.button"
-            onClick={openAddExpense}
-            className="w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:shadow-xl active:scale-95 transition-shadow"
-            whileHover={{ scale: 1.08 }}
-            whileTap={{ scale: 0.92 }}
-            aria-label={t("add_expense")}
-          >
-            <Plus className="h-6 w-6" strokeWidth={2.5} />
-          </motion.button>
-        </div>
+        {/* FAB — hidden on shopping tab (has its own FAB) */}
+        {activeTab !== "shopping" && (
+          <div className="fixed bottom-[4.5rem] left-1/2 -translate-x-1/2 z-50">
+            <motion.button
+              type="button"
+              data-ocid="fab.button"
+              onClick={openAddExpense}
+              className="w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:shadow-xl active:scale-95 transition-shadow"
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.92 }}
+              aria-label={t("add_expense")}
+            >
+              <Plus className="h-6 w-6" strokeWidth={2.5} />
+            </motion.button>
+          </div>
+        )}
       </div>
 
       {/* Expense / Income Dialog */}

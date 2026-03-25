@@ -222,6 +222,18 @@ export const translations: Record<Language, Record<string, string>> = {
       "Use a hardware security key or authenticator app across all your devices.",
 
     // Footer
+    // Shopping list
+    tab_shopping: "Shopping",
+    shopping_list: "Shopping List",
+    shopping_list_desc: "Plan your shopping and track estimated costs",
+    add_item: "Add Item",
+    item_name: "Item Name",
+    estimated_price: "Estimated Price",
+    estimated_total: "Estimated Total",
+    log_as_expense: "Log as expense?",
+    clear_bought: "Clear Bought",
+    no_items_yet: "No items yet. Tap + to add your first item.",
+    item_bought: "Item marked as bought",
     built_with: "Built with love using caffeine.ai",
   },
 
@@ -402,6 +414,19 @@ export const translations: Record<Language, Record<string, string>> = {
     auth_cross_device: "Auf all deinen Geräten",
     auth_cross_device_desc:
       "Verwende einen Hardware-Sicherheitsschlüssel oder Authenticator-App.",
+    // Shopping list
+    tab_shopping: "Einkauf",
+    shopping_list: "Einkaufsliste",
+    shopping_list_desc: "Plane deinen Einkauf und verfolge geschätzte Kosten",
+    add_item: "Artikel hinzufügen",
+    item_name: "Artikelname",
+    estimated_price: "Geschätzter Preis",
+    estimated_total: "Geschätzte Gesamtsumme",
+    log_as_expense: "Als Ausgabe erfassen?",
+    clear_bought: "Gekaufte löschen",
+    no_items_yet:
+      "Noch keine Artikel. Tippe auf + um deinen ersten Artikel hinzuzufügen.",
+    item_bought: "Artikel als gekauft markiert",
     built_with: "Mit Liebe erstellt mit caffeine.ai",
   },
 
@@ -582,6 +607,18 @@ export const translations: Record<Language, Record<string, string>> = {
     auth_cross_device: "Funciona en todos tus dispositivos",
     auth_cross_device_desc:
       "Usa una llave de seguridad de hardware o una app de autenticación.",
+    // Shopping list
+    tab_shopping: "Compras",
+    shopping_list: "Lista de Compras",
+    shopping_list_desc: "Planifica tus compras y controla los costos estimados",
+    add_item: "Agregar Artículo",
+    item_name: "Nombre del Artículo",
+    estimated_price: "Precio Estimado",
+    estimated_total: "Total Estimado",
+    log_as_expense: "¿Registrar como gasto?",
+    clear_bought: "Limpiar Comprados",
+    no_items_yet: "Aún no hay artículos. Toca + para agregar el primero.",
+    item_bought: "Artículo marcado como comprado",
     built_with: "Hecho con amor usando caffeine.ai",
   },
 
@@ -763,6 +800,19 @@ export const translations: Record<Language, Record<string, string>> = {
     auth_cross_device: "Fonctionne sur tous vos appareils",
     auth_cross_device_desc:
       "Utilisez une clé de sécurité matérielle ou une application d'authentification.",
+    // Shopping list
+    tab_shopping: "Courses",
+    shopping_list: "Liste de Courses",
+    shopping_list_desc: "Planifiez vos achats et suivez les coûts estimés",
+    add_item: "Ajouter un Article",
+    item_name: "Nom de l'Article",
+    estimated_price: "Prix Estimé",
+    estimated_total: "Total Estimé",
+    log_as_expense: "Enregistrer comme dépense ?",
+    clear_bought: "Effacer les Achetés",
+    no_items_yet:
+      "Aucun article. Appuyez sur + pour ajouter votre premier article.",
+    item_bought: "Article marqué comme acheté",
     built_with: "Créé avec amour via caffeine.ai",
   },
 
@@ -941,6 +991,19 @@ export const translations: Record<Language, Record<string, string>> = {
     auth_cross_device: "Работает на всех устройствах",
     auth_cross_device_desc:
       "Используйте аппаратный ключ безопасности или приложение-аутентификатор.",
+    // Shopping list
+    tab_shopping: "Покупки",
+    shopping_list: "Список покупок",
+    shopping_list_desc:
+      "Планируйте покупки и отслеживайте ориентировочные расходы",
+    add_item: "Добавить товар",
+    item_name: "Название товара",
+    estimated_price: "Ориентировочная цена",
+    estimated_total: "Ориентировочная сумма",
+    log_as_expense: "Записать как расход?",
+    clear_bought: "Удалить купленные",
+    no_items_yet: "Пока нет товаров. Нажмите + чтобы добавить первый.",
+    item_bought: "Товар отмечен как купленный",
     built_with: "Создано с любовью на caffeine.ai",
   },
 
@@ -1115,6 +1178,18 @@ export const translations: Record<Language, Record<string, string>> = {
     auth_privacy_desc: "无需电子邮件、无跟踪、无需第三方账户。",
     auth_cross_device: "跨设备使用",
     auth_cross_device_desc: "使用硬件安全密钥或身份验证器应用。",
+    // Shopping list
+    tab_shopping: "购物",
+    shopping_list: "购物清单",
+    shopping_list_desc: "规划您的购物并跟踪预估费用",
+    add_item: "添加商品",
+    item_name: "商品名称",
+    estimated_price: "预估价格",
+    estimated_total: "预估总计",
+    log_as_expense: "记录为支出？",
+    clear_bought: "清除已购",
+    no_items_yet: "暂无商品，点击 + 添加第一个。",
+    item_bought: "商品已标记为已购",
     built_with: "用爱打造，基于 caffeine.ai",
   },
 
@@ -1294,6 +1369,18 @@ export const translations: Record<Language, Record<string, string>> = {
     auth_cross_device: "Funziona su tutti i dispositivi",
     auth_cross_device_desc:
       "Usa una chiave di sicurezza hardware o un'app di autenticazione.",
+    // Shopping list
+    tab_shopping: "Spesa",
+    shopping_list: "Lista della Spesa",
+    shopping_list_desc: "Pianifica la tua spesa e monitora i costi stimati",
+    add_item: "Aggiungi Articolo",
+    item_name: "Nome Articolo",
+    estimated_price: "Prezzo Stimato",
+    estimated_total: "Totale Stimato",
+    log_as_expense: "Registrare come spesa?",
+    clear_bought: "Cancella Acquistati",
+    no_items_yet: "Nessun articolo. Tocca + per aggiungere il primo.",
+    item_bought: "Articolo contrassegnato come acquistato",
     built_with: "Creato con amore usando caffeine.ai",
   },
 
@@ -1468,6 +1555,18 @@ export const translations: Record<Language, Record<string, string>> = {
     auth_privacy_desc: "이메일, 추적 없음, 제3자 계정 불필요.",
     auth_cross_device: "모든 기기에서 사용 가능",
     auth_cross_device_desc: "하드웨어 보안 키 또는 인증 앱을 사용하세요.",
+    // Shopping list
+    tab_shopping: "쇼핑",
+    shopping_list: "쇼핑 목록",
+    shopping_list_desc: "쇼핑을 계획하고 예상 비용을 추적하세요",
+    add_item: "항목 추가",
+    item_name: "항목 이름",
+    estimated_price: "예상 가격",
+    estimated_total: "예상 합계",
+    log_as_expense: "지출로 기록하시겠습니까?",
+    clear_bought: "구입한 항목 지우기",
+    no_items_yet: "항목이 없습니다. +를 눌러 첫 번째 항목을 추가하세요.",
+    item_bought: "항목이 구입된 것으로 표시되었습니다",
     built_with: "caffeine.ai로 만든 작품",
   },
 };

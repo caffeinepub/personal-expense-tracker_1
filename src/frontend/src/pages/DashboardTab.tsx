@@ -35,6 +35,7 @@ import {
 } from "recharts";
 import type { Expense } from "../backend.d";
 
+import BillReminders from "../components/BillReminders";
 import ThemePickerDialog from "../components/ThemePickerDialog";
 import type { CardThemeId } from "../hooks/useCardTheme";
 import {
@@ -500,6 +501,9 @@ export default function DashboardTab({
                 </motion.div>
               );
             })()}
+
+            {/* Bill Reminders */}
+            <BillReminders />
 
             {/* Category breakdown */}
             {(chartData.length > 0 || chartDataIncome.length > 0) && (

@@ -40,7 +40,9 @@ import {
   Pencil,
   Receipt,
   Search,
+  SlidersHorizontal,
   Trash2,
+  X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useState } from "react";
@@ -96,6 +98,10 @@ export default function ExpensesTab({
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [paymentFilter, setPaymentFilter] = useState("all");
+  const [minAmount, setMinAmount] = useState("");
+  const [maxAmount, setMaxAmount] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerYear, setPickerYear] = useState(() => new Date().getFullYear());
   const { t } = useLanguage();
@@ -104,9 +110,24 @@ export default function ExpensesTab({
   const { data: categories = [] } = useCategories();
   const { data: settings } = useAppSettings();
   const currency = settings?.currency ?? "USD";
+
+  const paymentMethods = useMemo(() => {
+    const methods = [
+      ...new Set(expenses.map((e) => e.paymentMethod).filter(Boolean)),
+    ];
+    return methods;
+  }, [expenses]);
+
+  const activeAdvancedFilterCount = [
+    paymentFilter !== "all",
+    minAmount !== "",
+    maxAmount !== "",
+  ].filter(Boolean).length;
   const deleteExpense = useDeleteExpense();
 
   const filtered = useMemo(() => {
+    const minAmt = minAmount !== "" ? Number.parseFloat(minAmount) : null;
+    const maxAmt = maxAmount !== "" ? Number.parseFloat(maxAmount) : null;
     return expenses
       .filter(
         (e) => categoryFilter === "all" || e.categoryId === categoryFilter,
@@ -119,12 +140,25 @@ export default function ExpensesTab({
             ?.name.toLowerCase()
             .includes(searchQuery.toLowerCase()),
       )
+      .filter(
+        (e) => paymentFilter === "all" || e.paymentMethod === paymentFilter,
+      )
+      .filter((e) => minAmt === null || Number(e.amount) >= minAmt)
+      .filter((e) => maxAmt === null || Number(e.amount) <= maxAmt)
       .sort(
         (a, b) =>
           new Date(b.date).getTime() - new Date(a.date).getTime() ||
           Number(b.createdAt) - Number(a.createdAt),
       );
-  }, [expenses, categoryFilter, searchQuery, categories]);
+  }, [
+    expenses,
+    categoryFilter,
+    searchQuery,
+    categories,
+    paymentFilter,
+    minAmount,
+    maxAmount,
+  ]);
 
   const grouped = useMemo(() => groupByDate(filtered), [filtered]);
   const sortedDates = Object.keys(grouped).sort(
@@ -266,39 +300,150 @@ export default function ExpensesTab({
         </div>
 
         {/* Filters */}
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              data-ocid="expenses.search_input"
-              placeholder={t("search_expenses")}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 h-9 text-sm"
-            />
-          </div>
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger
-              data-ocid="expenses.category.select"
-              className="h-9 w-32 text-sm"
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                data-ocid="expenses.search_input"
+                placeholder={t("search_expenses")}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8 h-9 text-sm"
+              />
+            </div>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger
+                data-ocid="expenses.category.select"
+                className="h-9 w-32 text-sm"
+              >
+                <SelectValue placeholder={t("all_categories")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("all_categories")}</SelectItem>
+                {categories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: cat.color }}
+                      />
+                      {cat.name}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <button
+              type="button"
+              onClick={() => setShowAdvancedFilters((v) => !v)}
+              data-ocid="expenses.filter.toggle"
+              className={`relative flex items-center gap-1.5 h-9 px-3 rounded-lg border text-sm font-medium transition-colors flex-shrink-0 ${
+                showAdvancedFilters || activeAdvancedFilterCount > 0
+                  ? "bg-primary/10 border-primary/30 text-primary"
+                  : "bg-muted/50 border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+              }`}
+              aria-label="Toggle advanced filters"
             >
-              <SelectValue placeholder={t("all_categories")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("all_categories")}</SelectItem>
-              {categories.map((cat) => (
-                <SelectItem key={cat.id} value={cat.id}>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="w-2 h-2 rounded-full"
-                      style={{ backgroundColor: cat.color }}
-                    />
-                    {cat.name}
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Filters</span>
+              {activeAdvancedFilterCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
+                  {activeAdvancedFilterCount}
+                </span>
+              )}
+            </button>
+          </div>
+
+          {/* Advanced filter panel */}
+          <AnimatePresence>
+            {showAdvancedFilters && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                style={{ overflow: "hidden" }}
+                data-ocid="expenses.filter.panel"
+              >
+                <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                      Advanced Filters
+                    </p>
+                    {activeAdvancedFilterCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPaymentFilter("all");
+                          setMinAmount("");
+                          setMaxAmount("");
+                        }}
+                        className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
+                        data-ocid="expenses.filter.clear_button"
+                      >
+                        <X className="h-3 w-3" />
+                        Clear filters
+                      </button>
+                    )}
                   </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+
+                  {/* Payment method filter */}
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Payment Method
+                    </p>
+                    <Select
+                      value={paymentFilter}
+                      onValueChange={setPaymentFilter}
+                    >
+                      <SelectTrigger
+                        data-ocid="expenses.payment_filter.select"
+                        className="h-8 text-sm bg-background"
+                      >
+                        <SelectValue placeholder="All methods" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All methods</SelectItem>
+                        {paymentMethods.map((method) => (
+                          <SelectItem key={method} value={method}>
+                            {method}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Amount range */}
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Amount Range
+                    </p>
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        placeholder="Min"
+                        value={minAmount}
+                        onChange={(e) => setMinAmount(e.target.value)}
+                        className="h-8 text-sm bg-background"
+                        data-ocid="expenses.min_amount.input"
+                        min="0"
+                      />
+                      <Input
+                        type="number"
+                        placeholder="Max"
+                        value={maxAmount}
+                        onChange={(e) => setMaxAmount(e.target.value)}
+                        className="h-8 text-sm bg-background"
+                        data-ocid="expenses.max_amount.input"
+                        min="0"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Monthly summary pill */}
