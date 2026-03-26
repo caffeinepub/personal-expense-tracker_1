@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Calendar,
   Check,
@@ -156,8 +157,11 @@ export default function SettingsTab() {
   const [currency, setCurrency] = useState(settings?.currency ?? "USD");
 
   // All sections default closed
-  const [currencyOpen, setCurrencyOpen] = useState(false);
-  const [categoriesOpen, setCategoriesOpen] = useState(false);
+  const [regionalOpen, setRegionalOpen] = useState(false);
+  const [financialOpen, setFinancialOpen] = useState(false);
+  const [financialTab, setFinancialTab] = useState("category");
+  const [securityOpen, setSecurityOpen] = useState(false);
+  const [securityTab, setSecurityTab] = useState("autolock");
   const [exportOpen, setExportOpen] = useState(false);
   const [exportMode, setExportMode] = useState<"month" | "year">("month");
   const [exportMonth, setExportMonth] = useState(() => {
@@ -168,13 +172,7 @@ export default function SettingsTab() {
   const [importLoading, setImportLoading] = useState(false);
   const importFileRef = useRef<HTMLInputElement>(null);
   const createExpense = useCreateExpense();
-  const [dangerOpen, setDangerOpen] = useState(false);
-  const [budgetOpen, setBudgetOpen] = useState(false);
-  const [paymentMethodsOpen, setPaymentMethodsOpen] = useState(false);
-  const [formatsOpen, setFormatsOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
-  const [languageOpen, setLanguageOpen] = useState(false);
-  const [autoLockOpen, setAutoLockOpen] = useState(false);
   const [showCreatePINDialog, setShowCreatePINDialog] = useState(false);
   const [pinDialogMode, setPinDialogMode] = useState<"create" | "change">(
     "create",
@@ -540,385 +538,364 @@ export default function SettingsTab() {
           </p>
         </div>
 
-        {/* Language */}
-        <Card className="bg-blue-50/60 dark:bg-blue-950/20 border-blue-100/80 dark:border-blue-900/30 shadow-sm">
-          <CardHeader className="pb-0 pt-2.5 px-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Globe className="h-4 w-4 text-blue-500" />
-                <CardTitle className="font-display text-base font-semibold">
-                  {t("language")}
-                </CardTitle>
-              </div>
-              <SectionToggle
-                open={languageOpen}
-                onToggle={() => setLanguageOpen((p) => !p)}
-                label="language"
-              />
-            </div>
-          </CardHeader>
-          {languageOpen && (
-            <CardContent className="px-0 pb-2 pt-0">
-              <p className="px-4 pt-2 pb-2 text-sm text-muted-foreground">
-                {t("language_desc")}
-              </p>
-              <ul className="divide-y divide-blue-100/60 dark:divide-blue-900/20">
-                {LANGUAGES.map((lang) => (
-                  <li key={lang.code}>
-                    <button
-                      type="button"
-                      data-ocid={`settings.language.${lang.code}.toggle`}
-                      onClick={() => setLanguage(lang.code)}
-                      className="w-full flex items-center justify-between px-4 py-1.5 hover:bg-blue-100/40 dark:hover:bg-blue-900/20 transition-colors"
-                    >
-                      <span className="text-sm font-medium">{lang.label}</span>
-                      {language === lang.code && (
-                        <Check className="h-4 w-4 text-blue-500" />
-                      )}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          )}
-        </Card>
-
-        {/* Currency */}
-        <Card className="bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-100/80 dark:border-emerald-900/30 shadow-sm">
-          <CardHeader className="pb-0 pt-2.5 px-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="font-display text-base font-semibold">
-                {t("currency")}
-              </CardTitle>
-              <SectionToggle
-                open={currencyOpen}
-                onToggle={() => setCurrencyOpen((p) => !p)}
-                label="currency"
-              />
-            </div>
-          </CardHeader>
-          {currencyOpen && (
-            <CardContent className="px-4 pb-4 pt-2">
-              <Select value={currency} onValueChange={handleSaveCurrency}>
-                <SelectTrigger
-                  data-ocid="settings.currency.select"
-                  className="h-11"
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {CURRENCIES.map((c) => (
-                    <SelectItem key={c.code} value={c.code}>
-                      <span className="font-medium">{c.symbol}</span>
-                      <span className="ml-2 text-muted-foreground">
-                        {c.name} ({c.code})
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </CardContent>
-          )}
-        </Card>
-
-        {/* Categories */}
-        <Card className="bg-violet-50/60 dark:bg-violet-950/20 border-violet-100/80 dark:border-violet-900/30 shadow-sm">
-          <CardHeader className="pb-0 pt-2.5 px-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="font-display text-base font-semibold">
-                {t("categories")}
-              </CardTitle>
-              <div className="flex items-center gap-1">
-                {categoriesOpen && (
-                  <Button
-                    size="sm"
-                    className="h-8 gap-1.5 text-xs"
-                    onClick={openAddCategory}
-                    data-ocid="settings.add_category.button"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    {t("add")}
-                  </Button>
-                )}
-                <SectionToggle
-                  open={categoriesOpen}
-                  onToggle={() => setCategoriesOpen((p) => !p)}
-                  label="categories"
-                />
-              </div>
-            </div>
-          </CardHeader>
-          {categoriesOpen && (
-            <CardContent className="px-0 pb-2 pt-0">
-              {categories.length === 0 ? (
-                <p className="text-muted-foreground text-sm text-center py-5 px-4">
-                  {t("no_categories_yet")}
-                </p>
-              ) : (
-                <ul className="divide-y divide-violet-100/60 dark:divide-violet-900/20">
-                  {categories.map((cat, i) => (
-                    <li
-                      key={cat.id}
-                      className="flex items-center gap-3 px-4 py-1.5"
-                      data-ocid={`category.item.${i + 1}`}
-                    >
-                      <div
-                        className="w-5 h-5 rounded-full flex-shrink-0 ring-2 ring-offset-2 ring-border"
-                        style={{ backgroundColor: cat.color }}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm">{cat.name}</p>
-                        {cat.budget > 0 && (
-                          <p className="text-xs text-muted-foreground">
-                            {t("budget_colon_short", {
-                              amount: String(cat.budget),
-                            })}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={() => openEditCategory(cat)}
-                          data-ocid={`category.edit_button.${i + 1}`}
-                          aria-label={`${t("edit")} ${cat.name}`}
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-destructive hover:text-destructive"
-                          onClick={() => setDeleteCategoryId(cat.id)}
-                          data-ocid={`category.delete_button.${i + 1}`}
-                          aria-label={`${t("delete")} ${cat.name}`}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          )}
-        </Card>
-
-        {/* Budget Settings */}
-        <Card className="bg-amber-50/60 dark:bg-amber-950/20 border-amber-100/80 dark:border-amber-900/30 shadow-sm">
-          <CardHeader className="pb-0 pt-2.5 px-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Wallet className="h-4 w-4 text-amber-500" />
-                <CardTitle className="font-display text-base font-semibold">
-                  {t("budget_settings")}
-                </CardTitle>
-              </div>
-              <SectionToggle
-                open={budgetOpen}
-                onToggle={() => setBudgetOpen((p) => !p)}
-                label="budget settings"
-              />
-            </div>
-          </CardHeader>
-          {budgetOpen && (
-            <CardContent className="px-4 pb-3 pt-1.5 space-y-2">
-              <p className="text-sm text-muted-foreground">
-                {t("budget_settings_desc")}
-              </p>
-              {categories.length === 0 ? (
-                <p className="text-sm text-muted-foreground italic">
-                  {t("no_categories_configured")}
-                </p>
-              ) : (
-                <ul className="space-y-1.5">
-                  {categories.map((cat) => (
-                    <li
-                      key={cat.id}
-                      className="flex items-center justify-between rounded-xl bg-amber-100/40 dark:bg-amber-900/10 px-3 py-1.5"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: cat.color }}
-                        />
-                        <span className="text-sm font-medium">{cat.name}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {cat.budget > 0 ? (
-                          <span className="text-xs text-muted-foreground font-mono">
-                            {cat.budget}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground/50">
-                            —
-                          </span>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={() => openEditCategory(cat)}
-                          aria-label={`${t("edit")} ${cat.name} budget`}
-                        >
-                          <Pencil className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          )}
-        </Card>
-
-        {/* Payment Methods */}
+        {/* Regional Settings */}
         <Card className="bg-teal-50/60 dark:bg-teal-950/20 border-teal-100/80 dark:border-teal-900/30 shadow-sm">
           <CardHeader className="pb-0 pt-2.5 px-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <CreditCard className="h-4 w-4 text-teal-500" />
+                <Globe className="h-4 w-4 text-teal-500" />
                 <CardTitle className="font-display text-base font-semibold">
-                  {t("payment_methods")}
+                  Regional Settings
                 </CardTitle>
               </div>
               <SectionToggle
-                open={paymentMethodsOpen}
-                onToggle={() => setPaymentMethodsOpen((p) => !p)}
-                label="payment methods"
+                open={regionalOpen}
+                onToggle={() => setRegionalOpen((p) => !p)}
+                label="regional settings"
               />
             </div>
+            <p className="text-xs text-muted-foreground mt-1 pb-1">
+              Configure your preferred language and regional formatting options
+              for the application.
+            </p>
           </CardHeader>
-          {paymentMethodsOpen && (
-            <CardContent className="px-4 pb-3 pt-1.5 space-y-2">
-              <ul className="space-y-1">
-                {paymentMethods.map((method, i) => (
-                  <li
-                    key={method}
-                    className="flex items-center justify-between rounded-xl bg-teal-100/40 dark:bg-teal-900/10 px-3 py-1.5"
-                    data-ocid={`payment.item.${i + 1}`}
-                  >
-                    <span className="text-sm font-medium">{method}</span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 text-destructive hover:text-destructive"
-                      onClick={() => removePaymentMethod(method)}
-                      data-ocid={`payment.delete_button.${i + 1}`}
-                      aria-label={`Remove ${method}`}
+          {regionalOpen && (
+            <CardContent className="px-4 pb-4 pt-2">
+              <Tabs defaultValue="language">
+                <TabsList className="w-full mb-4">
+                  <TabsTrigger value="language" className="flex-1 text-xs">
+                    {t("language")}
+                  </TabsTrigger>
+                  <TabsTrigger value="currency" className="flex-1 text-xs">
+                    {t("currency")}
+                  </TabsTrigger>
+                  <TabsTrigger value="number-date" className="flex-1 text-xs">
+                    {t("number_date_format")}
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="language" className="mt-0">
+                  <p className="pb-2 text-sm text-muted-foreground">
+                    {t("language_desc")}
+                  </p>
+                  <ul className="divide-y divide-teal-100/60 dark:divide-teal-900/20">
+                    {LANGUAGES.map((lang) => (
+                      <li key={lang.code}>
+                        <button
+                          type="button"
+                          data-ocid={`settings.language.${lang.code}.toggle`}
+                          onClick={() => setLanguage(lang.code)}
+                          className="w-full flex items-center justify-between px-2 py-1.5 hover:bg-teal-100/40 dark:hover:bg-teal-900/20 transition-colors rounded"
+                        >
+                          <span className="text-sm font-medium">
+                            {lang.label}
+                          </span>
+                          {language === lang.code && (
+                            <Check className="h-4 w-4 text-teal-500" />
+                          )}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </TabsContent>
+
+                <TabsContent value="currency" className="mt-0">
+                  <Select value={currency} onValueChange={handleSaveCurrency}>
+                    <SelectTrigger
+                      data-ocid="settings.currency.select"
+                      className="h-11"
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-              <div className="flex gap-2 pt-1">
-                <Input
-                  placeholder={t("new_payment_method_placeholder")}
-                  value={newPaymentMethod}
-                  onChange={(e) => setNewPaymentMethod(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && addPaymentMethod()}
-                  className="h-10"
-                  data-ocid="settings.payment_method.input"
-                />
-                <Button
-                  size="sm"
-                  className="h-10 px-3 gap-1"
-                  onClick={addPaymentMethod}
-                  data-ocid="settings.payment_method.button"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  {t("add")}
-                </Button>
-              </div>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CURRENCIES.map((c) => (
+                        <SelectItem key={c.code} value={c.code}>
+                          <span className="font-medium">{c.symbol}</span>
+                          <span className="ml-2 text-muted-foreground">
+                            {c.name} ({c.code})
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </TabsContent>
+
+                <TabsContent value="number-date" className="mt-0 space-y-5">
+                  {/* Number format */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-1.5">
+                      <Hash className="h-3.5 w-3.5 text-muted-foreground" />
+                      <Label className="text-sm font-medium">
+                        {t("number_format")}
+                      </Label>
+                    </div>
+                    <div className="space-y-1.5">
+                      {NUMBER_FORMATS.map((fmt) => (
+                        <button
+                          key={fmt.id}
+                          type="button"
+                          onClick={() => handleNumberFormatChange(fmt.id)}
+                          className={`w-full flex items-center justify-between rounded-xl px-3 py-2 text-left transition-colors border ${
+                            numberFormat === fmt.id
+                              ? "border-teal-400/60 bg-teal-100/40 dark:bg-teal-900/20"
+                              : "border-teal-100/60 dark:border-teal-900/20 bg-teal-50/40 dark:bg-teal-950/10 hover:bg-teal-100/40"
+                          }`}
+                          data-ocid={`settings.number_format.${fmt.id.toLowerCase().replace("-", "_")}.toggle`}
+                        >
+                          <span className="text-sm font-mono font-semibold">
+                            {fmt.label}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {fmt.description}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Date format */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-1.5">
+                      <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                      <Label className="text-sm font-medium">
+                        {t("date_format")}
+                      </Label>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {DATE_FORMATS.map((fmt) => (
+                        <button
+                          key={fmt.id}
+                          type="button"
+                          onClick={() => handleDateFormatChange(fmt.id)}
+                          className={`flex flex-col items-start rounded-xl px-3 py-2 text-left transition-colors border ${
+                            dateFormat === fmt.id
+                              ? "border-teal-400/60 bg-teal-100/40 dark:bg-teal-900/20"
+                              : "border-teal-100/60 dark:border-teal-900/20 bg-teal-50/40 dark:bg-teal-950/10 hover:bg-teal-100/40"
+                          }`}
+                          data-ocid={`settings.date_format.${fmt.id.toLowerCase().replace(/\//g, "_").replace(/\./g, "_")}.toggle`}
+                        >
+                          <span className="text-xs font-mono font-semibold">
+                            {fmt.label}
+                          </span>
+                          <span className="text-xs text-muted-foreground mt-0.5">
+                            {fmt.example}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           )}
         </Card>
 
-        {/* Number & Date Format */}
-        <Card className="bg-rose-50/60 dark:bg-rose-950/20 border-rose-100/80 dark:border-rose-900/30 shadow-sm">
-          <CardHeader className="pb-0 pt-2.5 px-4">
+        {/* Financial Settings */}
+        <Card className="bg-amber-50/60 dark:bg-amber-950/20 border-amber-100/80 dark:border-amber-900/30 shadow-sm">
+          <CardHeader
+            className="pb-0 pt-2.5 px-4 cursor-pointer select-none"
+            onClick={() => setFinancialOpen((p) => !p)}
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Hash className="h-4 w-4 text-rose-500" />
+                <Wallet className="h-4 w-4 text-amber-500" />
                 <CardTitle className="font-display text-base font-semibold">
-                  {t("number_date_format")}
+                  Financial Settings
                 </CardTitle>
               </div>
               <SectionToggle
-                open={formatsOpen}
-                onToggle={() => setFormatsOpen((p) => !p)}
-                label="formats"
+                open={financialOpen}
+                onToggle={() => setFinancialOpen((p) => !p)}
+                label="financial settings"
               />
             </div>
+            <p className="text-xs text-muted-foreground mt-0.5 pb-1">
+              Manage your categories, budgets, and payment methods.
+            </p>
           </CardHeader>
-          {formatsOpen && (
-            <CardContent className="px-4 pb-4 pt-2 space-y-5">
-              {/* Number format */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-1.5">
-                  <Hash className="h-3.5 w-3.5 text-muted-foreground" />
-                  <Label className="text-sm font-medium">
-                    {t("number_format")}
-                  </Label>
-                </div>
-                <div className="space-y-1.5">
-                  {NUMBER_FORMATS.map((fmt) => (
-                    <button
-                      key={fmt.id}
-                      type="button"
-                      onClick={() => handleNumberFormatChange(fmt.id)}
-                      className={`w-full flex items-center justify-between rounded-xl px-3 py-2 text-left transition-colors border ${
-                        numberFormat === fmt.id
-                          ? "border-rose-400/60 bg-rose-100/40 dark:bg-rose-900/20"
-                          : "border-rose-100/60 dark:border-rose-900/20 bg-rose-50/40 dark:bg-rose-950/10 hover:bg-rose-100/40"
-                      }`}
-                      data-ocid={`settings.number_format.${fmt.id.toLowerCase().replace("-", "_")}.toggle`}
+          {financialOpen && (
+            <CardContent className="px-4 pb-3 pt-1.5">
+              <Tabs value={financialTab} onValueChange={setFinancialTab}>
+                <TabsList className="w-full grid grid-cols-3 h-9 mb-3">
+                  <TabsTrigger
+                    value="category"
+                    className="text-xs"
+                    data-ocid="settings.financial.category.tab"
+                  >
+                    {t("categories")}
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="budget"
+                    className="text-xs"
+                    data-ocid="settings.financial.budget.tab"
+                  >
+                    {t("budget_settings")}
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="payment"
+                    className="text-xs"
+                    data-ocid="settings.financial.payment.tab"
+                  >
+                    {t("payment_methods")}
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="category" className="mt-0">
+                  <div className="flex justify-end mb-2">
+                    <Button
+                      size="sm"
+                      className="h-8 gap-1.5 text-xs"
+                      onClick={openAddCategory}
+                      data-ocid="settings.add_category.button"
                     >
-                      <span className="text-sm font-mono font-semibold">
-                        {fmt.label}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {fmt.description}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Date format */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-1.5">
-                  <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                  <Label className="text-sm font-medium">
-                    {t("date_format")}
-                  </Label>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {DATE_FORMATS.map((fmt) => (
-                    <button
-                      key={fmt.id}
-                      type="button"
-                      onClick={() => handleDateFormatChange(fmt.id)}
-                      className={`flex flex-col items-start rounded-xl px-3 py-2 text-left transition-colors border ${
-                        dateFormat === fmt.id
-                          ? "border-rose-400/60 bg-rose-100/40 dark:bg-rose-900/20"
-                          : "border-rose-100/60 dark:border-rose-900/20 bg-rose-50/40 dark:bg-rose-950/10 hover:bg-rose-100/40"
-                      }`}
-                      data-ocid={`settings.date_format.${fmt.id.toLowerCase().replace(/\//g, "_").replace(/\./g, "_")}.toggle`}
+                      <Plus className="h-3.5 w-3.5" />
+                      {t("add")}
+                    </Button>
+                  </div>
+                  {categories.length === 0 ? (
+                    <p className="text-muted-foreground text-sm text-center py-5 px-4">
+                      {t("no_categories_yet")}
+                    </p>
+                  ) : (
+                    <ul className="divide-y divide-amber-100/60 dark:divide-amber-900/20">
+                      {categories.map((cat, i) => (
+                        <li
+                          key={cat.id}
+                          className="flex items-center gap-3 px-1 py-1.5"
+                          data-ocid={`category.item.${i + 1}`}
+                        >
+                          <div
+                            className="w-5 h-5 rounded-full flex-shrink-0 ring-2 ring-offset-2 ring-border"
+                            style={{ backgroundColor: cat.color }}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm">{cat.name}</p>
+                            {cat.budget > 0 && (
+                              <p className="text-xs text-muted-foreground">
+                                {t("budget_colon_short", {
+                                  amount: String(cat.budget),
+                                })}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => openEditCategory(cat)}
+                              data-ocid={`category.edit_button.${i + 1}`}
+                              aria-label={`${t("edit")} ${cat.name}`}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-destructive hover:text-destructive"
+                              onClick={() => setDeleteCategoryId(cat.id)}
+                              data-ocid={`category.delete_button.${i + 1}`}
+                              aria-label={`${t("delete")} ${cat.name}`}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </TabsContent>
+                <TabsContent value="budget" className="mt-0">
+                  <p className="text-sm text-muted-foreground mb-2">
+                    {t("budget_settings_desc")}
+                  </p>
+                  {categories.length === 0 ? (
+                    <p className="text-sm text-muted-foreground italic">
+                      {t("no_categories_configured")}
+                    </p>
+                  ) : (
+                    <ul className="space-y-1.5">
+                      {categories.map((cat) => (
+                        <li
+                          key={cat.id}
+                          className="flex items-center justify-between rounded-xl bg-amber-100/40 dark:bg-amber-900/10 px-3 py-1.5"
+                        >
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: cat.color }}
+                            />
+                            <span className="text-sm font-medium">
+                              {cat.name}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {cat.budget > 0 ? (
+                              <span className="text-xs text-muted-foreground font-mono">
+                                {cat.budget}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground/50">
+                                —
+                              </span>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => openEditCategory(cat)}
+                              aria-label={`${t("edit")} ${cat.name} budget`}
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </TabsContent>
+                <TabsContent value="payment" className="mt-0 space-y-2">
+                  <ul className="space-y-1">
+                    {paymentMethods.map((method, i) => (
+                      <li
+                        key={method}
+                        className="flex items-center justify-between rounded-xl bg-amber-100/40 dark:bg-amber-900/10 px-3 py-1.5"
+                        data-ocid={`payment.item.${i + 1}`}
+                      >
+                        <span className="text-sm font-medium">{method}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-destructive hover:text-destructive"
+                          onClick={() => removePaymentMethod(method)}
+                          data-ocid={`payment.delete_button.${i + 1}`}
+                          aria-label={`Remove ${method}`}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="flex gap-2 pt-1">
+                    <Input
+                      placeholder={t("new_payment_method_placeholder")}
+                      value={newPaymentMethod}
+                      onChange={(e) => setNewPaymentMethod(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && addPaymentMethod()}
+                      className="h-10"
+                      data-ocid="settings.payment_method.input"
+                    />
+                    <Button
+                      size="sm"
+                      className="h-10 px-3 gap-1"
+                      onClick={addPaymentMethod}
+                      data-ocid="settings.payment_method.button"
                     >
-                      <span className="text-xs font-mono font-semibold">
-                        {fmt.label}
-                      </span>
-                      <span className="text-xs text-muted-foreground mt-0.5">
-                        {fmt.example}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+                      <Plus className="h-3.5 w-3.5" />
+                      {t("add")}
+                    </Button>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           )}
         </Card>
@@ -1078,145 +1055,153 @@ export default function SettingsTab() {
           )}
         </Card>
 
-        {/* Auto-Lock */}
+        {/* Security & Privacy Settings */}
         <Card className="bg-indigo-50/60 dark:bg-indigo-950/20 border-indigo-100/80 dark:border-indigo-900/30 shadow-sm">
-          <CardHeader className="pb-0 pt-2.5 px-4">
+          <CardHeader
+            className="pb-0 pt-2.5 px-4 cursor-pointer select-none"
+            onClick={() => setSecurityOpen((p) => !p)}
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Timer className="h-4 w-4 text-indigo-500" />
+                <ShieldCheck className="h-4 w-4 text-indigo-500" />
                 <CardTitle className="font-display text-base font-semibold">
-                  Auto-Lock
+                  Security &amp; Privacy Settings
                 </CardTitle>
               </div>
               <SectionToggle
-                open={autoLockOpen}
-                onToggle={() => setAutoLockOpen((p) => !p)}
-                label="auto-lock"
+                open={securityOpen}
+                onToggle={() => setSecurityOpen((p) => !p)}
+                label="security privacy settings"
               />
             </div>
+            <p className="text-xs text-muted-foreground mt-0.5 pb-1">
+              Manage your Security &amp; Privacy Settings.
+            </p>
           </CardHeader>
-          {autoLockOpen && (
-            <CardContent className="px-4 pb-3 pt-2 space-y-2">
-              {/* Enable toggle */}
-              <div className="flex items-center justify-between py-1.5">
-                <div>
-                  <p className="text-sm font-medium">Auto-Lock</p>
-                  <p className="text-xs text-muted-foreground">
-                    Automatically lock session after inactivity
-                  </p>
-                </div>
-                <Switch
-                  checked={alEnabled}
-                  onCheckedChange={(val) => {
-                    if (val && !hasPin) {
-                      setPinDialogMode("create");
-                      setShowCreatePINDialog(true);
-                    } else {
-                      setAlEnabled(val);
-                    }
-                  }}
-                  data-ocid="settings.autolock.switch"
-                />
-              </div>
-              {/* Lock After */}
-              {alEnabled && (
-                <div className="flex items-center justify-between py-1.5">
-                  <div>
-                    <p className="text-sm font-medium">Lock After</p>
+          {securityOpen && (
+            <CardContent className="px-4 pb-3 pt-1.5">
+              <Tabs value={securityTab} onValueChange={setSecurityTab}>
+                <TabsList className="w-full grid grid-cols-2 h-9 mb-3">
+                  <TabsTrigger
+                    value="autolock"
+                    className="text-xs"
+                    data-ocid="settings.security.autolock.tab"
+                  >
+                    Auto-Lock
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="dangerzone"
+                    className="text-xs"
+                    data-ocid="settings.security.dangerzone.tab"
+                  >
+                    {t("danger_zone")}
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="autolock" className="mt-0 space-y-2">
+                  {/* Enable toggle */}
+                  <div className="flex items-center justify-between py-1.5">
+                    <div>
+                      <p className="text-sm font-medium">Auto-Lock</p>
+                      <p className="text-xs text-muted-foreground">
+                        Automatically lock session after inactivity
+                      </p>
+                    </div>
+                    <Switch
+                      checked={alEnabled}
+                      onCheckedChange={(val) => {
+                        if (val && !hasPin) {
+                          setPinDialogMode("create");
+                          setShowCreatePINDialog(true);
+                        } else {
+                          setAlEnabled(val);
+                        }
+                      }}
+                      data-ocid="settings.autolock.switch"
+                    />
+                  </div>
+                  {/* Lock After */}
+                  {alEnabled && (
+                    <div className="flex items-center justify-between py-1.5">
+                      <div>
+                        <p className="text-sm font-medium">Lock After</p>
+                        <p className="text-xs text-muted-foreground">
+                          Session locks after this period
+                        </p>
+                      </div>
+                      <Select
+                        value={String(lockAfterMinutes)}
+                        onValueChange={(v) => setLockAfterMinutes(Number(v))}
+                      >
+                        <SelectTrigger
+                          className="w-28 h-9"
+                          data-ocid="settings.autolock.select"
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="0">Never</SelectItem>
+                          <SelectItem value="1">1 min</SelectItem>
+                          <SelectItem value="5">5 min</SelectItem>
+                          <SelectItem value="10">10 min</SelectItem>
+                          <SelectItem value="15">15 min</SelectItem>
+                          <SelectItem value="30">30 min</SelectItem>
+                          <SelectItem value="60">1 hour</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  {/* Change PIN */}
+                  <div className="flex items-center justify-between py-1.5">
+                    <div>
+                      <p className="text-sm font-medium">Change PIN</p>
+                      <p className="text-xs text-muted-foreground">
+                        {hasPin ? "Update your unlock PIN" : "No PIN set yet"}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5 h-8"
+                      onClick={() => {
+                        setPinDialogMode(hasPin ? "change" : "create");
+                        setShowCreatePINDialog(true);
+                      }}
+                      data-ocid="settings.pin.button"
+                    >
+                      <KeyRound className="h-3.5 w-3.5" />
+                      {hasPin ? "Change" : "Set PIN"}
+                    </Button>
+                  </div>
+                  {/* Session Security info */}
+                  <div className="rounded-lg bg-indigo-100/40 dark:bg-indigo-900/20 px-3 py-2.5 flex items-start gap-2">
+                    <ShieldCheck className="h-4 w-4 text-indigo-500 mt-0.5 flex-shrink-0" />
                     <p className="text-xs text-muted-foreground">
-                      Session locks after this period
+                      {alEnabled
+                        ? `Auto-Lock: Enabled · Locks after ${lockAfterMinutes === 0 ? "Never" : lockAfterMinutes >= 60 ? "1 hour" : `${lockAfterMinutes} min`} · ${hasPin ? "PIN configured" : "No PIN set"}`
+                        : "Auto-Lock: Disabled · Session will not lock automatically"}
                     </p>
                   </div>
-                  <Select
-                    value={String(lockAfterMinutes)}
-                    onValueChange={(v) => setLockAfterMinutes(Number(v))}
+                </TabsContent>
+                <TabsContent value="dangerzone" className="mt-0">
+                  <Button
+                    variant="destructive"
+                    className="w-full gap-2 h-11"
+                    onClick={() => {
+                      if (hasPin) {
+                        setVerifyResetPin("");
+                        setVerifyResetError("");
+                        setShowVerifyReset(true);
+                      } else {
+                        setShowResetDialog(true);
+                      }
+                    }}
+                    data-ocid="settings.reset.button"
                   >
-                    <SelectTrigger
-                      className="w-28 h-9"
-                      data-ocid="settings.autolock.select"
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="0">Never</SelectItem>
-                      <SelectItem value="1">1 min</SelectItem>
-                      <SelectItem value="5">5 min</SelectItem>
-                      <SelectItem value="10">10 min</SelectItem>
-                      <SelectItem value="15">15 min</SelectItem>
-                      <SelectItem value="30">30 min</SelectItem>
-                      <SelectItem value="60">1 hour</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              {/* Change PIN */}
-              <div className="flex items-center justify-between py-1.5">
-                <div>
-                  <p className="text-sm font-medium">Change PIN</p>
-                  <p className="text-xs text-muted-foreground">
-                    {hasPin ? "Update your unlock PIN" : "No PIN set yet"}
-                  </p>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5 h-8"
-                  onClick={() => {
-                    setPinDialogMode(hasPin ? "change" : "create");
-                    setShowCreatePINDialog(true);
-                  }}
-                  data-ocid="settings.pin.button"
-                >
-                  <KeyRound className="h-3.5 w-3.5" />
-                  {hasPin ? "Change" : "Set PIN"}
-                </Button>
-              </div>
-              {/* Session Security info */}
-              <div className="rounded-lg bg-indigo-100/40 dark:bg-indigo-900/20 px-3 py-2.5 flex items-start gap-2">
-                <ShieldCheck className="h-4 w-4 text-indigo-500 mt-0.5 flex-shrink-0" />
-                <p className="text-xs text-muted-foreground">
-                  {alEnabled
-                    ? `Auto-Lock: Enabled · Locks after ${lockAfterMinutes === 0 ? "Never" : lockAfterMinutes >= 60 ? "1 hour" : `${lockAfterMinutes} min`} · ${hasPin ? "PIN configured" : "No PIN set"}`
-                    : "Auto-Lock: Disabled · Session will not lock automatically"}
-                </p>
-              </div>
-            </CardContent>
-          )}
-        </Card>
-
-        {/* Danger Zone */}
-        <Card className="bg-red-50/60 dark:bg-red-950/20 border border-destructive/20 shadow-sm">
-          <CardHeader className="pb-0 pt-2.5 px-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="font-display text-base font-semibold text-destructive">
-                {t("danger_zone")}
-              </CardTitle>
-              <SectionToggle
-                open={dangerOpen}
-                onToggle={() => setDangerOpen((p) => !p)}
-                label="danger zone"
-              />
-            </div>
-          </CardHeader>
-          {dangerOpen && (
-            <CardContent className="px-4 pb-4 pt-2">
-              <Button
-                variant="destructive"
-                className="w-full gap-2 h-11"
-                onClick={() => {
-                  if (hasPin) {
-                    setVerifyResetPin("");
-                    setVerifyResetError("");
-                    setShowVerifyReset(true);
-                  } else {
-                    setShowResetDialog(true);
-                  }
-                }}
-                data-ocid="settings.reset.button"
-              >
-                <RotateCcw className="h-4 w-4" />
-                {t("reset_all_data")}
-              </Button>
+                    <RotateCcw className="h-4 w-4" />
+                    {t("reset_all_data")}
+                  </Button>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           )}
         </Card>
