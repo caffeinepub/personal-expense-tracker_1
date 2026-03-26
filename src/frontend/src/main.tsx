@@ -1,12 +1,13 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-// DO NOT REMOVE: LanguageProvider and AutoLockProvider must stay here permanently
-// These providers are required for translations and session security to work throughout the app.
 import ReactDOM from "react-dom/client";
 import App from "./App";
-import { AutoLockProvider } from "./contexts/AutoLockContext";
 import { InternetIdentityProvider } from "./hooks/useInternetIdentity";
-import { LanguageProvider } from "./i18n/LanguageContext";
 import "./index.css";
+import { AutoLockProvider } from "./contexts/AutoLockContext";
+// ⚠️ CRITICAL: LanguageProvider and AutoLockProvider MUST remain here in main.tsx.
+// DO NOT remove these providers. They are intentionally placed here (not in App.tsx)
+// to prevent translation keys from returning raw strings and to prevent app crash on load.
+import { LanguageProvider } from "./i18n/LanguageContext";
 
 BigInt.prototype.toJSON = function () {
   return this.toString();
@@ -23,9 +24,9 @@ const queryClient = new QueryClient();
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <QueryClientProvider client={queryClient}>
     <InternetIdentityProvider>
-      {/* DO NOT REMOVE: LanguageProvider must wrap everything for translations to work */}
+      {/* ⚠️ DO NOT REMOVE LanguageProvider — translations break without it */}
       <LanguageProvider>
-        {/* DO NOT REMOVE: AutoLockProvider must be inside LanguageProvider */}
+        {/* ⚠️ DO NOT REMOVE AutoLockProvider — app crashes without it */}
         <AutoLockProvider>
           <App />
         </AutoLockProvider>

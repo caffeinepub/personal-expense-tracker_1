@@ -33,7 +33,6 @@ import {
   Calendar,
   Check,
   ChevronDown,
-  ChevronUp,
   CreditCard,
   Download,
   Fingerprint,
@@ -397,25 +396,14 @@ export default function SettingsTab() {
 
   const isSavingCategory = createCategory.isPending || updateCategory.isPending;
 
-  function SectionToggle({
-    open,
-    onToggle,
-    label,
-  }: { open: boolean; onToggle: () => void; label: string }) {
+  function SectionToggle({ open, label }: { open: boolean; label: string }) {
     return (
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-7 w-7"
-        onClick={onToggle}
+      <div
+        className={`h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground transition-transform duration-300 ${open ? "rotate-180" : "rotate-0"}`}
         aria-label={open ? `Collapse ${label}` : `Expand ${label}`}
       >
-        {open ? (
-          <ChevronUp className="h-4 w-4" />
-        ) : (
-          <ChevronDown className="h-4 w-4" />
-        )}
-      </Button>
+        <ChevronDown className="h-4 w-4" />
+      </div>
     );
   }
 
@@ -540,7 +528,10 @@ export default function SettingsTab() {
 
         {/* Regional Settings */}
         <Card className="bg-teal-50/60 dark:bg-teal-950/20 border-teal-100/80 dark:border-teal-900/30 shadow-sm">
-          <CardHeader className="pb-0 pt-2.5 px-4">
+          <CardHeader
+            className="pb-0 pt-2.5 px-4 cursor-pointer select-none"
+            onClick={() => setRegionalOpen((p) => !p)}
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Globe className="h-4 w-4 text-teal-500" />
@@ -548,146 +539,146 @@ export default function SettingsTab() {
                   Regional Settings
                 </CardTitle>
               </div>
-              <SectionToggle
-                open={regionalOpen}
-                onToggle={() => setRegionalOpen((p) => !p)}
-                label="regional settings"
-              />
+              <SectionToggle open={regionalOpen} label="regional settings" />
             </div>
             <p className="text-xs text-muted-foreground mt-1 pb-1">
               Configure your preferred language and regional formatting options
               for the application.
             </p>
           </CardHeader>
-          {regionalOpen && (
-            <CardContent className="px-4 pb-4 pt-2">
-              <Tabs defaultValue="language">
-                <TabsList className="w-full mb-4">
-                  <TabsTrigger value="language" className="flex-1 text-xs">
-                    {t("language")}
-                  </TabsTrigger>
-                  <TabsTrigger value="currency" className="flex-1 text-xs">
-                    {t("currency")}
-                  </TabsTrigger>
-                  <TabsTrigger value="number-date" className="flex-1 text-xs">
-                    {t("number_date_format")}
-                  </TabsTrigger>
-                </TabsList>
+          <div
+            className={`grid transition-all duration-300 ease-in-out ${regionalOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+          >
+            <div className="overflow-hidden">
+              <CardContent className="px-4 pb-4 pt-2">
+                <Tabs defaultValue="language">
+                  <TabsList className="w-full mb-4">
+                    <TabsTrigger value="language" className="flex-1 text-xs">
+                      {t("language")}
+                    </TabsTrigger>
+                    <TabsTrigger value="currency" className="flex-1 text-xs">
+                      {t("currency")}
+                    </TabsTrigger>
+                    <TabsTrigger value="number-date" className="flex-1 text-xs">
+                      {t("number_date_format")}
+                    </TabsTrigger>
+                  </TabsList>
 
-                <TabsContent value="language" className="mt-0">
-                  <p className="pb-2 text-sm text-muted-foreground">
-                    {t("language_desc")}
-                  </p>
-                  <ul className="divide-y divide-teal-100/60 dark:divide-teal-900/20">
-                    {LANGUAGES.map((lang) => (
-                      <li key={lang.code}>
-                        <button
-                          type="button"
-                          data-ocid={`settings.language.${lang.code}.toggle`}
-                          onClick={() => setLanguage(lang.code)}
-                          className="w-full flex items-center justify-between px-2 py-1.5 hover:bg-teal-100/40 dark:hover:bg-teal-900/20 transition-colors rounded"
-                        >
-                          <span className="text-sm font-medium">
-                            {lang.label}
-                          </span>
-                          {language === lang.code && (
-                            <Check className="h-4 w-4 text-teal-500" />
-                          )}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </TabsContent>
-
-                <TabsContent value="currency" className="mt-0">
-                  <Select value={currency} onValueChange={handleSaveCurrency}>
-                    <SelectTrigger
-                      data-ocid="settings.currency.select"
-                      className="h-11"
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CURRENCIES.map((c) => (
-                        <SelectItem key={c.code} value={c.code}>
-                          <span className="font-medium">{c.symbol}</span>
-                          <span className="ml-2 text-muted-foreground">
-                            {c.name} ({c.code})
-                          </span>
-                        </SelectItem>
+                  <TabsContent value="language" className="mt-0">
+                    <p className="pb-2 text-sm text-muted-foreground">
+                      {t("language_desc")}
+                    </p>
+                    <ul className="divide-y divide-teal-100/60 dark:divide-teal-900/20">
+                      {LANGUAGES.map((lang) => (
+                        <li key={lang.code}>
+                          <button
+                            type="button"
+                            data-ocid={`settings.language.${lang.code}.toggle`}
+                            onClick={() => setLanguage(lang.code)}
+                            className="w-full flex items-center justify-between px-2 py-1.5 hover:bg-teal-100/40 dark:hover:bg-teal-900/20 transition-colors rounded"
+                          >
+                            <span className="text-sm font-medium">
+                              {lang.label}
+                            </span>
+                            {language === lang.code && (
+                              <Check className="h-4 w-4 text-teal-500" />
+                            )}
+                          </button>
+                        </li>
                       ))}
-                    </SelectContent>
-                  </Select>
-                </TabsContent>
+                    </ul>
+                  </TabsContent>
 
-                <TabsContent value="number-date" className="mt-0 space-y-5">
-                  {/* Number format */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-1.5">
-                      <Hash className="h-3.5 w-3.5 text-muted-foreground" />
-                      <Label className="text-sm font-medium">
-                        {t("number_format")}
-                      </Label>
-                    </div>
-                    <div className="space-y-1.5">
-                      {NUMBER_FORMATS.map((fmt) => (
-                        <button
-                          key={fmt.id}
-                          type="button"
-                          onClick={() => handleNumberFormatChange(fmt.id)}
-                          className={`w-full flex items-center justify-between rounded-xl px-3 py-2 text-left transition-colors border ${
-                            numberFormat === fmt.id
-                              ? "border-teal-400/60 bg-teal-100/40 dark:bg-teal-900/20"
-                              : "border-teal-100/60 dark:border-teal-900/20 bg-teal-50/40 dark:bg-teal-950/10 hover:bg-teal-100/40"
-                          }`}
-                          data-ocid={`settings.number_format.${fmt.id.toLowerCase().replace("-", "_")}.toggle`}
-                        >
-                          <span className="text-sm font-mono font-semibold">
-                            {fmt.label}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {fmt.description}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  <TabsContent value="currency" className="mt-0">
+                    <Select value={currency} onValueChange={handleSaveCurrency}>
+                      <SelectTrigger
+                        data-ocid="settings.currency.select"
+                        className="h-11"
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CURRENCIES.map((c) => (
+                          <SelectItem key={c.code} value={c.code}>
+                            <span className="font-medium">{c.symbol}</span>
+                            <span className="ml-2 text-muted-foreground">
+                              {c.name} ({c.code})
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </TabsContent>
 
-                  {/* Date format */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-1.5">
-                      <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                      <Label className="text-sm font-medium">
-                        {t("date_format")}
-                      </Label>
+                  <TabsContent value="number-date" className="mt-0 space-y-5">
+                    {/* Number format */}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-1.5">
+                        <Hash className="h-3.5 w-3.5 text-muted-foreground" />
+                        <Label className="text-sm font-medium">
+                          {t("number_format")}
+                        </Label>
+                      </div>
+                      <div className="space-y-1.5">
+                        {NUMBER_FORMATS.map((fmt) => (
+                          <button
+                            key={fmt.id}
+                            type="button"
+                            onClick={() => handleNumberFormatChange(fmt.id)}
+                            className={`w-full flex items-center justify-between rounded-xl px-3 py-2 text-left transition-colors border ${
+                              numberFormat === fmt.id
+                                ? "border-teal-400/60 bg-teal-100/40 dark:bg-teal-900/20"
+                                : "border-teal-100/60 dark:border-teal-900/20 bg-teal-50/40 dark:bg-teal-950/10 hover:bg-teal-100/40"
+                            }`}
+                            data-ocid={`settings.number_format.${fmt.id.toLowerCase().replace("-", "_")}.toggle`}
+                          >
+                            <span className="text-sm font-mono font-semibold">
+                              {fmt.label}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {fmt.description}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      {DATE_FORMATS.map((fmt) => (
-                        <button
-                          key={fmt.id}
-                          type="button"
-                          onClick={() => handleDateFormatChange(fmt.id)}
-                          className={`flex flex-col items-start rounded-xl px-3 py-2 text-left transition-colors border ${
-                            dateFormat === fmt.id
-                              ? "border-teal-400/60 bg-teal-100/40 dark:bg-teal-900/20"
-                              : "border-teal-100/60 dark:border-teal-900/20 bg-teal-50/40 dark:bg-teal-950/10 hover:bg-teal-100/40"
-                          }`}
-                          data-ocid={`settings.date_format.${fmt.id.toLowerCase().replace(/\//g, "_").replace(/\./g, "_")}.toggle`}
-                        >
-                          <span className="text-xs font-mono font-semibold">
-                            {fmt.label}
-                          </span>
-                          <span className="text-xs text-muted-foreground mt-0.5">
-                            {fmt.example}
-                          </span>
-                        </button>
-                      ))}
+
+                    {/* Date format */}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                        <Label className="text-sm font-medium">
+                          {t("date_format")}
+                        </Label>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {DATE_FORMATS.map((fmt) => (
+                          <button
+                            key={fmt.id}
+                            type="button"
+                            onClick={() => handleDateFormatChange(fmt.id)}
+                            className={`flex flex-col items-start rounded-xl px-3 py-2 text-left transition-colors border ${
+                              dateFormat === fmt.id
+                                ? "border-teal-400/60 bg-teal-100/40 dark:bg-teal-900/20"
+                                : "border-teal-100/60 dark:border-teal-900/20 bg-teal-50/40 dark:bg-teal-950/10 hover:bg-teal-100/40"
+                            }`}
+                            data-ocid={`settings.date_format.${fmt.id.toLowerCase().replace(/\//g, "_").replace(/\./g, "_")}.toggle`}
+                          >
+                            <span className="text-xs font-mono font-semibold">
+                              {fmt.label}
+                            </span>
+                            <span className="text-xs text-muted-foreground mt-0.5">
+                              {fmt.example}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          )}
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </div>
+          </div>
         </Card>
 
         {/* Financial Settings */}
@@ -703,356 +694,364 @@ export default function SettingsTab() {
                   Financial Settings
                 </CardTitle>
               </div>
-              <SectionToggle
-                open={financialOpen}
-                onToggle={() => setFinancialOpen((p) => !p)}
-                label="financial settings"
-              />
+              <SectionToggle open={financialOpen} label="financial settings" />
             </div>
             <p className="text-xs text-muted-foreground mt-0.5 pb-1">
               Manage your categories, budgets, and payment methods.
             </p>
           </CardHeader>
-          {financialOpen && (
-            <CardContent className="px-4 pb-3 pt-1.5">
-              <Tabs value={financialTab} onValueChange={setFinancialTab}>
-                <TabsList className="w-full grid grid-cols-3 h-9 mb-3">
-                  <TabsTrigger
-                    value="category"
-                    className="text-xs"
-                    data-ocid="settings.financial.category.tab"
-                  >
-                    {t("categories")}
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="budget"
-                    className="text-xs"
-                    data-ocid="settings.financial.budget.tab"
-                  >
-                    {t("budget_settings")}
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="payment"
-                    className="text-xs"
-                    data-ocid="settings.financial.payment.tab"
-                  >
-                    {t("payment_methods")}
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="category" className="mt-0">
-                  <div className="flex justify-end mb-2">
-                    <Button
-                      size="sm"
-                      className="h-8 gap-1.5 text-xs"
-                      onClick={openAddCategory}
-                      data-ocid="settings.add_category.button"
+          <div
+            className={`grid transition-all duration-300 ease-in-out ${financialOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+          >
+            <div className="overflow-hidden">
+              <CardContent className="px-4 pb-3 pt-1.5">
+                <Tabs value={financialTab} onValueChange={setFinancialTab}>
+                  <TabsList className="w-full grid grid-cols-3 h-9 mb-3">
+                    <TabsTrigger
+                      value="category"
+                      className="text-xs"
+                      data-ocid="settings.financial.category.tab"
                     >
-                      <Plus className="h-3.5 w-3.5" />
-                      {t("add")}
-                    </Button>
-                  </div>
-                  {categories.length === 0 ? (
-                    <p className="text-muted-foreground text-sm text-center py-5 px-4">
-                      {t("no_categories_yet")}
-                    </p>
-                  ) : (
-                    <ul className="divide-y divide-amber-100/60 dark:divide-amber-900/20">
-                      {categories.map((cat, i) => (
-                        <li
-                          key={cat.id}
-                          className="flex items-center gap-3 px-1 py-1.5"
-                          data-ocid={`category.item.${i + 1}`}
-                        >
-                          <div
-                            className="w-5 h-5 rounded-full flex-shrink-0 ring-2 ring-offset-2 ring-border"
-                            style={{ backgroundColor: cat.color }}
-                          />
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm">{cat.name}</p>
-                            {cat.budget > 0 && (
-                              <p className="text-xs text-muted-foreground">
-                                {t("budget_colon_short", {
-                                  amount: String(cat.budget),
-                                })}
-                              </p>
-                            )}
-                          </div>
-                          <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => openEditCategory(cat)}
-                              data-ocid={`category.edit_button.${i + 1}`}
-                              aria-label={`${t("edit")} ${cat.name}`}
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-destructive hover:text-destructive"
-                              onClick={() => setDeleteCategoryId(cat.id)}
-                              data-ocid={`category.delete_button.${i + 1}`}
-                              aria-label={`${t("delete")} ${cat.name}`}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </TabsContent>
-                <TabsContent value="budget" className="mt-0">
-                  <p className="text-sm text-muted-foreground mb-2">
-                    {t("budget_settings_desc")}
-                  </p>
-                  {categories.length === 0 ? (
-                    <p className="text-sm text-muted-foreground italic">
-                      {t("no_categories_configured")}
-                    </p>
-                  ) : (
-                    <ul className="space-y-1.5">
-                      {categories.map((cat) => (
-                        <li
-                          key={cat.id}
-                          className="flex items-center justify-between rounded-xl bg-amber-100/40 dark:bg-amber-900/10 px-3 py-1.5"
-                        >
-                          <div className="flex items-center gap-2">
+                      {t("categories")}
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="budget"
+                      className="text-xs"
+                      data-ocid="settings.financial.budget.tab"
+                    >
+                      {t("budget_settings")}
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="payment"
+                      className="text-xs"
+                      data-ocid="settings.financial.payment.tab"
+                    >
+                      {t("payment_methods")}
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="category" className="mt-0">
+                    <div className="flex justify-end mb-2">
+                      <Button
+                        size="sm"
+                        className="h-8 gap-1.5 text-xs"
+                        onClick={openAddCategory}
+                        data-ocid="settings.add_category.button"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        {t("add")}
+                      </Button>
+                    </div>
+                    {categories.length === 0 ? (
+                      <p className="text-muted-foreground text-sm text-center py-5 px-4">
+                        {t("no_categories_yet")}
+                      </p>
+                    ) : (
+                      <ul className="divide-y divide-amber-100/60 dark:divide-amber-900/20">
+                        {categories.map((cat, i) => (
+                          <li
+                            key={cat.id}
+                            className="flex items-center gap-3 px-1 py-1.5"
+                            data-ocid={`category.item.${i + 1}`}
+                          >
                             <div
-                              className="w-3 h-3 rounded-full"
+                              className="w-5 h-5 rounded-full flex-shrink-0 ring-2 ring-offset-2 ring-border"
                               style={{ backgroundColor: cat.color }}
                             />
-                            <span className="text-sm font-medium">
-                              {cat.name}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {cat.budget > 0 ? (
-                              <span className="text-xs text-muted-foreground font-mono">
-                                {cat.budget}
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm">{cat.name}</p>
+                              {cat.budget > 0 && (
+                                <p className="text-xs text-muted-foreground">
+                                  {t("budget_colon_short", {
+                                    amount: String(cat.budget),
+                                  })}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => openEditCategory(cat)}
+                                data-ocid={`category.edit_button.${i + 1}`}
+                                aria-label={`${t("edit")} ${cat.name}`}
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-destructive hover:text-destructive"
+                                onClick={() => setDeleteCategoryId(cat.id)}
+                                data-ocid={`category.delete_button.${i + 1}`}
+                                aria-label={`${t("delete")} ${cat.name}`}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </TabsContent>
+                  <TabsContent value="budget" className="mt-0">
+                    <p className="text-sm text-muted-foreground mb-2">
+                      {t("budget_settings_desc")}
+                    </p>
+                    {categories.length === 0 ? (
+                      <p className="text-sm text-muted-foreground italic">
+                        {t("no_categories_configured")}
+                      </p>
+                    ) : (
+                      <ul className="space-y-1.5">
+                        {categories.map((cat) => (
+                          <li
+                            key={cat.id}
+                            className="flex items-center justify-between rounded-xl bg-amber-100/40 dark:bg-amber-900/10 px-3 py-1.5"
+                          >
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="w-3 h-3 rounded-full"
+                                style={{ backgroundColor: cat.color }}
+                              />
+                              <span className="text-sm font-medium">
+                                {cat.name}
                               </span>
-                            ) : (
-                              <span className="text-xs text-muted-foreground/50">
-                                —
-                              </span>
-                            )}
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => openEditCategory(cat)}
-                              aria-label={`${t("edit")} ${cat.name} budget`}
-                            >
-                              <Pencil className="h-3 w-3" />
-                            </Button>
-                          </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {cat.budget > 0 ? (
+                                <span className="text-xs text-muted-foreground font-mono">
+                                  {cat.budget}
+                                </span>
+                              ) : (
+                                <span className="text-xs text-muted-foreground/50">
+                                  —
+                                </span>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => openEditCategory(cat)}
+                                aria-label={`${t("edit")} ${cat.name} budget`}
+                              >
+                                <Pencil className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </TabsContent>
+                  <TabsContent value="payment" className="mt-0 space-y-2">
+                    <ul className="space-y-1">
+                      {paymentMethods.map((method, i) => (
+                        <li
+                          key={method}
+                          className="flex items-center justify-between rounded-xl bg-amber-100/40 dark:bg-amber-900/10 px-3 py-1.5"
+                          data-ocid={`payment.item.${i + 1}`}
+                        >
+                          <span className="text-sm font-medium">{method}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-destructive hover:text-destructive"
+                            onClick={() => removePaymentMethod(method)}
+                            data-ocid={`payment.delete_button.${i + 1}`}
+                            aria-label={`Remove ${method}`}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
                         </li>
                       ))}
                     </ul>
-                  )}
-                </TabsContent>
-                <TabsContent value="payment" className="mt-0 space-y-2">
-                  <ul className="space-y-1">
-                    {paymentMethods.map((method, i) => (
-                      <li
-                        key={method}
-                        className="flex items-center justify-between rounded-xl bg-amber-100/40 dark:bg-amber-900/10 px-3 py-1.5"
-                        data-ocid={`payment.item.${i + 1}`}
+                    <div className="flex gap-2 pt-1">
+                      <Input
+                        placeholder={t("new_payment_method_placeholder")}
+                        value={newPaymentMethod}
+                        onChange={(e) => setNewPaymentMethod(e.target.value)}
+                        onKeyDown={(e) =>
+                          e.key === "Enter" && addPaymentMethod()
+                        }
+                        className="h-10"
+                        data-ocid="settings.payment_method.input"
+                      />
+                      <Button
+                        size="sm"
+                        className="h-10 px-3 gap-1"
+                        onClick={addPaymentMethod}
+                        data-ocid="settings.payment_method.button"
                       >
-                        <span className="text-sm font-medium">{method}</span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-destructive hover:text-destructive"
-                          onClick={() => removePaymentMethod(method)}
-                          data-ocid={`payment.delete_button.${i + 1}`}
-                          aria-label={`Remove ${method}`}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="flex gap-2 pt-1">
-                    <Input
-                      placeholder={t("new_payment_method_placeholder")}
-                      value={newPaymentMethod}
-                      onChange={(e) => setNewPaymentMethod(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && addPaymentMethod()}
-                      className="h-10"
-                      data-ocid="settings.payment_method.input"
-                    />
-                    <Button
-                      size="sm"
-                      className="h-10 px-3 gap-1"
-                      onClick={addPaymentMethod}
-                      data-ocid="settings.payment_method.button"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                      {t("add")}
-                    </Button>
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          )}
+                        <Plus className="h-3.5 w-3.5" />
+                        {t("add")}
+                      </Button>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </div>
+          </div>
         </Card>
 
         {/* Export */}
         <Card className="bg-sky-50/60 dark:bg-sky-950/20 border-sky-100/80 dark:border-sky-900/30 shadow-sm">
-          <CardHeader className="pb-0 pt-2.5 px-4">
+          <CardHeader
+            className="pb-0 pt-2.5 px-4 cursor-pointer select-none"
+            onClick={() => setExportOpen((p) => !p)}
+          >
             <div className="flex items-center justify-between">
               <CardTitle className="font-display text-base font-semibold">
                 {t("export_data")}
               </CardTitle>
-              <SectionToggle
-                open={exportOpen}
-                onToggle={() => setExportOpen((p) => !p)}
-                label="export data"
-              />
+              <SectionToggle open={exportOpen} label="export data" />
             </div>
+            <p className="text-xs text-muted-foreground mt-1 pb-1">
+              Select a date range and export or import your expense data.
+            </p>
           </CardHeader>
-          {exportOpen && (
-            <CardContent className="px-4 pb-3 pt-1.5 space-y-2">
-              {/* Range mode toggle */}
-              <div className="flex gap-1.5 p-1 bg-muted rounded-lg">
-                <button
-                  type="button"
-                  data-ocid="settings.export_mode_month.toggle"
-                  onClick={() => setExportMode("month")}
-                  className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition-colors ${
-                    exportMode === "month"
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {t("month")}
-                </button>
-                <button
-                  type="button"
-                  data-ocid="settings.export_mode_year.toggle"
-                  onClick={() => setExportMode("year")}
-                  className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition-colors ${
-                    exportMode === "year"
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {t("year")}
-                </button>
-              </div>
+          <div
+            className={`grid transition-all duration-300 ease-in-out ${exportOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+          >
+            <div className="overflow-hidden">
+              <CardContent className="px-4 pb-3 pt-1.5 space-y-2">
+                {/* Range mode toggle */}
+                <div className="flex gap-1.5 p-1 bg-muted rounded-lg">
+                  <button
+                    type="button"
+                    data-ocid="settings.export_mode_month.toggle"
+                    onClick={() => setExportMode("month")}
+                    className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+                      exportMode === "month"
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {t("month")}
+                  </button>
+                  <button
+                    type="button"
+                    data-ocid="settings.export_mode_year.toggle"
+                    onClick={() => setExportMode("year")}
+                    className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+                      exportMode === "year"
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {t("year")}
+                  </button>
+                </div>
 
-              {/* Range selector */}
-              {exportMode === "month" ? (
-                <select
-                  data-ocid="settings.export_month.select"
-                  value={exportMonth}
-                  onChange={(e) => setExportMonth(e.target.value)}
-                  className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                >
-                  {Array.from({ length: 24 }, (_, i) => {
-                    const d = new Date();
-                    d.setDate(1);
-                    d.setMonth(d.getMonth() - i);
-                    const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-                    const label = d.toLocaleDateString("en-US", {
-                      month: "long",
-                      year: "numeric",
-                    });
-                    return (
-                      <option key={val} value={val}>
-                        {label}
-                      </option>
-                    );
-                  })}
-                </select>
-              ) : (
-                <select
-                  data-ocid="settings.export_year.select"
-                  value={exportYear}
-                  onChange={(e) => setExportYear(Number(e.target.value))}
-                  className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                >
-                  {Array.from({ length: 5 }, (_, i) => {
-                    const y = new Date().getFullYear() - i;
-                    return (
-                      <option key={y} value={y}>
-                        {y}
-                      </option>
-                    );
-                  })}
-                </select>
-              )}
+                {/* Range selector */}
+                {exportMode === "month" ? (
+                  <select
+                    data-ocid="settings.export_month.select"
+                    value={exportMonth}
+                    onChange={(e) => setExportMonth(e.target.value)}
+                    className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  >
+                    {Array.from({ length: 24 }, (_, i) => {
+                      const d = new Date();
+                      d.setDate(1);
+                      d.setMonth(d.getMonth() - i);
+                      const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+                      const label = d.toLocaleDateString("en-US", {
+                        month: "long",
+                        year: "numeric",
+                      });
+                      return (
+                        <option key={val} value={val}>
+                          {label}
+                        </option>
+                      );
+                    })}
+                  </select>
+                ) : (
+                  <select
+                    data-ocid="settings.export_year.select"
+                    value={exportYear}
+                    onChange={(e) => setExportYear(Number(e.target.value))}
+                    className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  >
+                    {Array.from({ length: 5 }, (_, i) => {
+                      const y = new Date().getFullYear() - i;
+                      return (
+                        <option key={y} value={y}>
+                          {y}
+                        </option>
+                      );
+                    })}
+                  </select>
+                )}
 
-              <Button
-                variant="outline"
-                className="w-full gap-2 h-11"
-                onClick={handleExportCSV}
-                disabled={exportForCSV.isPending}
-                data-ocid="settings.export_csv.button"
-              >
-                {exportForCSV.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Download className="h-4 w-4" />
-                )}
-                {t("export_csv")}
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full gap-2 h-11"
-                onClick={handleExportJSON}
-                disabled={exportForJSON.isPending}
-                data-ocid="settings.export_json.button"
-              >
-                {exportForJSON.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Download className="h-4 w-4" />
-                )}
-                {t("export_json")}
-              </Button>
-              {/* Import section */}
-              <div className="mt-3 pt-3 border-t border-border/50">
-                <p className="text-sm font-semibold mb-1">Import Data</p>
-                <p className="text-xs text-muted-foreground mb-2">
-                  Restore from a previously exported CSV or JSON file.
-                </p>
-                <input
-                  ref={importFileRef}
-                  type="file"
-                  accept=".csv,.json"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleImport(file);
-                    e.target.value = "";
-                  }}
-                />
                 <Button
                   variant="outline"
                   className="w-full gap-2 h-11"
-                  onClick={() => importFileRef.current?.click()}
-                  disabled={importLoading}
-                  data-ocid="settings.import_data.button"
+                  onClick={handleExportCSV}
+                  disabled={exportForCSV.isPending}
+                  data-ocid="settings.export_csv.button"
                 >
-                  {importLoading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Importing...
-                    </>
+                  {exportForCSV.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <>
-                      <Upload className="h-4 w-4" />
-                      Import CSV / JSON
-                    </>
+                    <Download className="h-4 w-4" />
                   )}
+                  {t("export_csv")}
                 </Button>
-              </div>
-            </CardContent>
-          )}
+                <Button
+                  variant="outline"
+                  className="w-full gap-2 h-11"
+                  onClick={handleExportJSON}
+                  disabled={exportForJSON.isPending}
+                  data-ocid="settings.export_json.button"
+                >
+                  {exportForJSON.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4" />
+                  )}
+                  {t("export_json")}
+                </Button>
+                {/* Import section */}
+                <div className="mt-3 pt-3 border-t border-border/50">
+                  <p className="text-sm font-semibold mb-1">Import Data</p>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Restore from a previously exported CSV or JSON file.
+                  </p>
+                  <input
+                    ref={importFileRef}
+                    type="file"
+                    accept=".csv,.json"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleImport(file);
+                      e.target.value = "";
+                    }}
+                  />
+                  <Button
+                    variant="outline"
+                    className="w-full gap-2 h-11"
+                    onClick={() => importFileRef.current?.click()}
+                    disabled={importLoading}
+                    data-ocid="settings.import_data.button"
+                  >
+                    {importLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Importing...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="h-4 w-4" />
+                        Import CSV / JSON
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </div>
+          </div>
         </Card>
 
         {/* Security & Privacy Settings */}
@@ -1070,7 +1069,6 @@ export default function SettingsTab() {
               </div>
               <SectionToggle
                 open={securityOpen}
-                onToggle={() => setSecurityOpen((p) => !p)}
                 label="security privacy settings"
               />
             </div>
@@ -1078,137 +1076,144 @@ export default function SettingsTab() {
               Manage your Security &amp; Privacy Settings.
             </p>
           </CardHeader>
-          {securityOpen && (
-            <CardContent className="px-4 pb-3 pt-1.5">
-              <Tabs value={securityTab} onValueChange={setSecurityTab}>
-                <TabsList className="w-full grid grid-cols-2 h-9 mb-3">
-                  <TabsTrigger
-                    value="autolock"
-                    className="text-xs"
-                    data-ocid="settings.security.autolock.tab"
-                  >
-                    Auto-Lock
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="dangerzone"
-                    className="text-xs"
-                    data-ocid="settings.security.dangerzone.tab"
-                  >
-                    {t("danger_zone")}
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="autolock" className="mt-0 space-y-2">
-                  {/* Enable toggle */}
-                  <div className="flex items-center justify-between py-1.5">
-                    <div>
-                      <p className="text-sm font-medium">Auto-Lock</p>
-                      <p className="text-xs text-muted-foreground">
-                        Automatically lock session after inactivity
-                      </p>
-                    </div>
-                    <Switch
-                      checked={alEnabled}
-                      onCheckedChange={(val) => {
-                        if (val && !hasPin) {
-                          setPinDialogMode("create");
-                          setShowCreatePINDialog(true);
-                        } else {
-                          setAlEnabled(val);
-                        }
-                      }}
-                      data-ocid="settings.autolock.switch"
-                    />
-                  </div>
-                  {/* Lock After */}
-                  {alEnabled && (
+          <div
+            className={`grid transition-all duration-300 ease-in-out ${securityOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+          >
+            <div className="overflow-hidden">
+              <CardContent className="px-4 pb-3 pt-1.5">
+                <Tabs value={securityTab} onValueChange={setSecurityTab}>
+                  <TabsList className="w-full grid grid-cols-2 h-9 mb-3">
+                    <TabsTrigger
+                      value="autolock"
+                      className="text-xs"
+                      data-ocid="settings.security.autolock.tab"
+                    >
+                      Auto-Lock
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="dangerzone"
+                      className="text-xs"
+                      data-ocid="settings.security.dangerzone.tab"
+                    >
+                      {t("danger_zone")}
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="autolock" className="mt-0 space-y-2">
+                    {/* Enable toggle */}
                     <div className="flex items-center justify-between py-1.5">
                       <div>
-                        <p className="text-sm font-medium">Lock After</p>
+                        <p className="text-sm font-medium">Auto-Lock</p>
                         <p className="text-xs text-muted-foreground">
-                          Session locks after this period
+                          Automatically lock session after inactivity
                         </p>
                       </div>
-                      <Select
-                        value={String(lockAfterMinutes)}
-                        onValueChange={(v) => setLockAfterMinutes(Number(v))}
-                      >
-                        <SelectTrigger
-                          className="w-28 h-9"
-                          data-ocid="settings.autolock.select"
-                        >
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="0">Never</SelectItem>
-                          <SelectItem value="1">1 min</SelectItem>
-                          <SelectItem value="5">5 min</SelectItem>
-                          <SelectItem value="10">10 min</SelectItem>
-                          <SelectItem value="15">15 min</SelectItem>
-                          <SelectItem value="30">30 min</SelectItem>
-                          <SelectItem value="60">1 hour</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Switch
+                        checked={alEnabled}
+                        onCheckedChange={(val) => {
+                          if (val && !hasPin) {
+                            setPinDialogMode("create");
+                            setShowCreatePINDialog(true);
+                          } else {
+                            setAlEnabled(val);
+                          }
+                        }}
+                        data-ocid="settings.autolock.switch"
+                      />
                     </div>
-                  )}
-                  {/* Change PIN */}
-                  <div className="flex items-center justify-between py-1.5">
-                    <div>
-                      <p className="text-sm font-medium">Change PIN</p>
+                    {/* Lock After */}
+                    {alEnabled && (
+                      <div className="flex items-center justify-between py-1.5">
+                        <div>
+                          <p className="text-sm font-medium">Lock After</p>
+                          <p className="text-xs text-muted-foreground">
+                            Session locks after this period
+                          </p>
+                        </div>
+                        <Select
+                          value={String(lockAfterMinutes)}
+                          onValueChange={(v) => setLockAfterMinutes(Number(v))}
+                        >
+                          <SelectTrigger
+                            className="w-28 h-9"
+                            data-ocid="settings.autolock.select"
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0">Never</SelectItem>
+                            <SelectItem value="1">1 min</SelectItem>
+                            <SelectItem value="5">5 min</SelectItem>
+                            <SelectItem value="10">10 min</SelectItem>
+                            <SelectItem value="15">15 min</SelectItem>
+                            <SelectItem value="30">30 min</SelectItem>
+                            <SelectItem value="60">1 hour</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    {/* Change PIN */}
+                    <div className="flex items-center justify-between py-1.5">
+                      <div>
+                        <p className="text-sm font-medium">Change PIN</p>
+                        <p className="text-xs text-muted-foreground">
+                          {hasPin ? "Update your unlock PIN" : "No PIN set yet"}
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5 h-8"
+                        onClick={() => {
+                          setPinDialogMode(hasPin ? "change" : "create");
+                          setShowCreatePINDialog(true);
+                        }}
+                        data-ocid="settings.pin.button"
+                      >
+                        <KeyRound className="h-3.5 w-3.5" />
+                        {hasPin ? "Change" : "Set PIN"}
+                      </Button>
+                    </div>
+                    {/* Session Security info */}
+                    <div className="rounded-lg bg-indigo-100/40 dark:bg-indigo-900/20 px-3 py-2.5 flex items-start gap-2">
+                      <ShieldCheck className="h-4 w-4 text-indigo-500 mt-0.5 flex-shrink-0" />
                       <p className="text-xs text-muted-foreground">
-                        {hasPin ? "Update your unlock PIN" : "No PIN set yet"}
+                        {alEnabled
+                          ? `Auto-Lock: Enabled · Locks after ${lockAfterMinutes === 0 ? "Never" : lockAfterMinutes >= 60 ? "1 hour" : `${lockAfterMinutes} min`} · ${hasPin ? "PIN configured" : "No PIN set"}`
+                          : "Auto-Lock: Disabled · Session will not lock automatically"}
                       </p>
                     </div>
+                  </TabsContent>
+                  <TabsContent value="dangerzone" className="mt-0">
                     <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-1.5 h-8"
+                      variant="destructive"
+                      className="w-full gap-2 h-11"
                       onClick={() => {
-                        setPinDialogMode(hasPin ? "change" : "create");
-                        setShowCreatePINDialog(true);
+                        if (hasPin) {
+                          setVerifyResetPin("");
+                          setVerifyResetError("");
+                          setShowVerifyReset(true);
+                        } else {
+                          setShowResetDialog(true);
+                        }
                       }}
-                      data-ocid="settings.pin.button"
+                      data-ocid="settings.reset.button"
                     >
-                      <KeyRound className="h-3.5 w-3.5" />
-                      {hasPin ? "Change" : "Set PIN"}
+                      <RotateCcw className="h-4 w-4" />
+                      {t("reset_all_data")}
                     </Button>
-                  </div>
-                  {/* Session Security info */}
-                  <div className="rounded-lg bg-indigo-100/40 dark:bg-indigo-900/20 px-3 py-2.5 flex items-start gap-2">
-                    <ShieldCheck className="h-4 w-4 text-indigo-500 mt-0.5 flex-shrink-0" />
-                    <p className="text-xs text-muted-foreground">
-                      {alEnabled
-                        ? `Auto-Lock: Enabled · Locks after ${lockAfterMinutes === 0 ? "Never" : lockAfterMinutes >= 60 ? "1 hour" : `${lockAfterMinutes} min`} · ${hasPin ? "PIN configured" : "No PIN set"}`
-                        : "Auto-Lock: Disabled · Session will not lock automatically"}
-                    </p>
-                  </div>
-                </TabsContent>
-                <TabsContent value="dangerzone" className="mt-0">
-                  <Button
-                    variant="destructive"
-                    className="w-full gap-2 h-11"
-                    onClick={() => {
-                      if (hasPin) {
-                        setVerifyResetPin("");
-                        setVerifyResetError("");
-                        setShowVerifyReset(true);
-                      } else {
-                        setShowResetDialog(true);
-                      }
-                    }}
-                    data-ocid="settings.reset.button"
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                    {t("reset_all_data")}
-                  </Button>
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          )}
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </div>
+          </div>
         </Card>
 
         {/* About */}
         <Card className="bg-slate-50/60 dark:bg-slate-950/20 border-slate-100/80 dark:border-slate-900/30 shadow-sm">
-          <CardHeader className="pb-0 pt-2.5 px-4">
+          <CardHeader
+            className="pb-0 pt-2.5 px-4 cursor-pointer select-none"
+            onClick={() => setAboutOpen((p) => !p)}
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Info className="h-4 w-4 text-slate-500" />
@@ -1216,73 +1221,78 @@ export default function SettingsTab() {
                   {t("about")}
                 </CardTitle>
               </div>
-              <SectionToggle
-                open={aboutOpen}
-                onToggle={() => setAboutOpen((p) => !p)}
-                label="about"
-              />
+              <SectionToggle open={aboutOpen} label="about" />
             </div>
+            <p className="text-xs text-muted-foreground mt-1 pb-1">
+              App information and version details.
+            </p>
           </CardHeader>
-          {aboutOpen && (
-            <CardContent className="px-4 pb-3 pt-1.5 space-y-2">
-              <div className="flex items-center gap-3 rounded-xl bg-slate-100/60 dark:bg-slate-900/20 px-4 py-2">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Wallet className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="font-semibold text-sm">{t("app_title")}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {t("app_subtitle")}
-                  </p>
-                </div>
-                <div className="ml-auto">
-                  <span className="text-xs bg-primary/10 text-primary font-mono px-2 py-1 rounded-full">
-                    v{APP_VERSION}
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                {[
-                  {
-                    icon: <ShieldCheck className="h-3.5 w-3.5 text-primary" />,
-                    label: "Authentication",
-                    value: "Internet Identity",
-                  },
-                  {
-                    icon: <Lock className="h-3.5 w-3.5 text-primary" />,
-                    label: "Storage",
-                    value: "Private \u00b7 On-chain",
-                  },
-                  {
-                    icon: <Smartphone className="h-3.5 w-3.5 text-primary" />,
-                    label: "Platform",
-                    value: "Internet Computer (ICP)",
-                  },
-                ].map(({ icon, label, value }) => (
-                  <div
-                    key={label}
-                    className="flex items-center justify-between py-1.5 border-b border-border/50 last:border-0"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center">
-                        {icon}
-                      </div>
-                      <span className="text-sm text-muted-foreground">
-                        {label}
-                      </span>
-                    </div>
-                    <span className="text-sm font-medium">{value}</span>
+          <div
+            className={`grid transition-all duration-300 ease-in-out ${aboutOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+          >
+            <div className="overflow-hidden">
+              <CardContent className="px-4 pb-3 pt-1.5 space-y-2">
+                <div className="flex items-center gap-3 rounded-xl bg-slate-100/60 dark:bg-slate-900/20 px-4 py-2">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Wallet className="h-5 w-5 text-primary" />
                   </div>
-                ))}
-              </div>
+                  <div>
+                    <p className="font-semibold text-sm">{t("app_title")}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("app_subtitle")}
+                    </p>
+                  </div>
+                  <div className="ml-auto">
+                    <span className="text-xs bg-primary/10 text-primary font-mono px-2 py-1 rounded-full">
+                      v{APP_VERSION}
+                    </span>
+                  </div>
+                </div>
 
-              <p className="text-xs text-muted-foreground text-center pt-1">
-                Your data is private and stored only in your personal canister
-                on the Internet Computer.
-              </p>
-            </CardContent>
-          )}
+                <div className="space-y-2">
+                  {[
+                    {
+                      icon: (
+                        <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+                      ),
+                      label: "Authentication",
+                      value: "Internet Identity",
+                    },
+                    {
+                      icon: <Lock className="h-3.5 w-3.5 text-primary" />,
+                      label: "Storage",
+                      value: "Private \u00b7 On-chain",
+                    },
+                    {
+                      icon: <Smartphone className="h-3.5 w-3.5 text-primary" />,
+                      label: "Platform",
+                      value: "Internet Computer (ICP)",
+                    },
+                  ].map(({ icon, label, value }) => (
+                    <div
+                      key={label}
+                      className="flex items-center justify-between py-1.5 border-b border-border/50 last:border-0"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center">
+                          {icon}
+                        </div>
+                        <span className="text-sm text-muted-foreground">
+                          {label}
+                        </span>
+                      </div>
+                      <span className="text-sm font-medium">{value}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <p className="text-xs text-muted-foreground text-center pt-1">
+                  Your data is private and stored only in your personal canister
+                  on the Internet Computer.
+                </p>
+              </CardContent>
+            </div>
+          </div>
         </Card>
 
         {/* Footer */}
