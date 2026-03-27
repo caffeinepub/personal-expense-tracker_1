@@ -7,7 +7,9 @@ import { useInternetIdentity } from "../hooks/useInternetIdentity";
 
 export default function LockScreen() {
   const { isLocked, unlock, unlockWithII, hasPin, pinLength } = useAutoLock();
-  const { login, isLoggingIn } = useInternetIdentity();
+  const { login, isLoggingIn, isLoginSuccess, isLoginError } =
+    useInternetIdentity();
+  const [iiPending, setIiPending] = useState(false);
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [isChecking, setIsChecking] = useState(false);
@@ -105,14 +107,24 @@ export default function LockScreen() {
     await performUnlock(currentPin ?? pinRef.current);
   }
 
-  async function handleIIUnlock() {
-    setError("");
-    try {
-      await login();
+  useEffect(() => {
+    if (iiPending && isLoginSuccess) {
+      setIiPending(false);
       unlockWithII();
-    } catch {
+    }
+  }, [isLoginSuccess, iiPending, unlockWithII]);
+
+  useEffect(() => {
+    if (iiPending && isLoginError) {
+      setIiPending(false);
       setError("Authentication failed. Try again.");
     }
+  }, [isLoginError, iiPending]);
+
+  function handleIIUnlock() {
+    setError("");
+    setIiPending(true);
+    login();
   }
 
   function handleDigit(digit: string) {
@@ -298,11 +310,11 @@ export default function LockScreen() {
                 variant="outline"
                 className="w-full h-11 gap-2"
                 onClick={handleIIUnlock}
-                disabled={isLoggingIn}
+                disabled={iiPending || isLoggingIn}
                 data-ocid="lock.secondary_button"
               >
                 <Fingerprint className="w-4 h-4" />
-                {isLoggingIn
+                {iiPending || isLoggingIn
                   ? "Authenticating..."
                   : "Unlock with Internet Identity"}
               </Button>

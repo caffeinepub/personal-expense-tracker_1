@@ -141,7 +141,8 @@ const DATE_FORMATS = [
 const APP_VERSION = "1.0.0";
 
 export default function SettingsTab() {
-  const { identity, login, isLoggingIn } = useInternetIdentity();
+  const { identity, login, isLoggingIn, isLoginSuccess, isLoginError } =
+    useInternetIdentity();
   const { data: settings } = useAppSettings();
   const { data: categories = [] } = useCategories();
   const setSettings = useSetAppSettings();
@@ -184,11 +185,11 @@ export default function SettingsTab() {
     setEnabled: setAlEnabled,
     setLockAfterMinutes,
     unlock,
-    unlockWithII,
   } = useAutoLock();
 
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [showVerifyReset, setShowVerifyReset] = useState(false);
+  const [iiResetPending, setIiResetPending] = useState(false);
   const [verifyResetPin, setVerifyResetPin] = useState("");
   const [verifyResetError, setVerifyResetError] = useState("");
   const [isVerifyingReset, setIsVerifyingReset] = useState(false);
@@ -220,6 +221,20 @@ export default function SettingsTab() {
   useEffect(() => {
     if (settings?.currency) setCurrency(settings.currency);
   }, [settings?.currency]);
+
+  useEffect(() => {
+    if (iiResetPending && isLoginSuccess) {
+      setIiResetPending(false);
+      setShowVerifyReset(false);
+      setShowResetDialog(true);
+    }
+  }, [isLoginSuccess, iiResetPending]);
+
+  useEffect(() => {
+    if (iiResetPending && isLoginError) {
+      setIiResetPending(false);
+    }
+  }, [isLoginError, iiResetPending]);
 
   async function handleSaveCurrency(val: string) {
     setCurrency(val);
@@ -1509,15 +1524,17 @@ export default function SettingsTab() {
               <Button
                 variant="outline"
                 onClick={() => {
-                  setShowVerifyReset(false);
-                  unlockWithII();
-                  setTimeout(() => setShowResetDialog(true), 1500);
+                  setIiResetPending(true);
+                  login();
                 }}
+                disabled={iiResetPending || isLoggingIn}
                 className="w-full gap-2"
                 data-ocid="verify.reset.ii.button"
               >
                 <Fingerprint className="h-4 w-4" />
-                Unlock with Internet Identity
+                {iiResetPending || isLoggingIn
+                  ? "Authenticating..."
+                  : "Unlock with Internet Identity"}
               </Button>
             </div>
           </div>

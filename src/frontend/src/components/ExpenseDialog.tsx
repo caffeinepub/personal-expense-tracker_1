@@ -163,7 +163,6 @@ export default function ExpenseDialog({
       setShowSuggestions(false);
       return;
     }
-    const lower = value.toLowerCase();
     const seen = new Set<string>();
     const results: Suggestion[] = [];
     // Sort expenses newest first
@@ -180,8 +179,6 @@ export default function ExpenseDialog({
     });
     for (const exp of sorted) {
       if (!exp.note) continue;
-      const noteText = exp.note.toLowerCase();
-      if (!noteText.includes(lower)) continue;
       const key = exp.note.toLowerCase();
       if (seen.has(key)) continue;
       seen.add(key);
@@ -194,7 +191,7 @@ export default function ExpenseDialog({
           (exp as Expense & { paymentMethod?: string }).paymentMethod ?? "Cash",
         categoryName: cat?.name ?? "Unknown",
       });
-      if (results.length >= 5) break;
+      if (results.length >= 8) break;
     }
     setSuggestions(results);
     setShowSuggestions(results.length > 0);
@@ -472,7 +469,7 @@ export default function ExpenseDialog({
                             className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0"
                             style={{ backgroundColor: cat.color }}
                           />
-                          <span className="truncate max-w-[80px]">
+                          <span className="whitespace-normal break-words">
                             {cat.name}
                           </span>
                         </div>
