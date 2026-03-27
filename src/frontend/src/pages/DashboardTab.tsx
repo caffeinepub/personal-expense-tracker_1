@@ -84,6 +84,12 @@ interface DashboardTabProps {
   };
   themeId: CardThemeId;
   setThemeId: (id: CardThemeId) => void;
+  onQuickAddBill?: (data: {
+    amount: string;
+    categoryId: string;
+    paymentMethod: string;
+    note: string;
+  }) => void;
 }
 
 export default function DashboardTab({
@@ -94,6 +100,7 @@ export default function DashboardTab({
   theme,
   themeId,
   setThemeId,
+  onQuickAddBill,
 }: DashboardTabProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerYear, setPickerYear] = useState(() => new Date().getFullYear());
@@ -503,7 +510,7 @@ export default function DashboardTab({
             })()}
 
             {/* Bill Reminders */}
-            <BillReminders />
+            <BillReminders onQuickAdd={onQuickAddBill} />
 
             {/* Category breakdown */}
             {(chartData.length > 0 || chartDataIncome.length > 0) && (

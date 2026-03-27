@@ -65,6 +65,12 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>("dashboard");
   const [expenseDialogOpen, setExpenseDialogOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [prefillData, setPrefillData] = useState<{
+    amount?: string;
+    categoryId?: string;
+    paymentMethod?: string;
+    note?: string;
+  } | null>(null);
   const [month, setMonth] = useState(currentMonth);
   const { theme, themeId, setThemeId } = useCardTheme();
   const { t } = useLanguage();
@@ -182,6 +188,17 @@ export default function App() {
     setExpenseDialogOpen(true);
   }
 
+  function handleQuickAddBill(data: {
+    amount: string;
+    categoryId: string;
+    paymentMethod: string;
+    note: string;
+  }) {
+    setPrefillData(data);
+    setEditingExpense(null);
+    setExpenseDialogOpen(true);
+  }
+
   function openEditExpense(expense: Expense) {
     setEditingExpense(expense);
     setExpenseDialogOpen(true);
@@ -271,6 +288,7 @@ export default function App() {
                   theme={theme}
                   themeId={themeId}
                   setThemeId={setThemeId}
+                  onQuickAddBill={handleQuickAddBill}
                 />
               </motion.div>
             )}
@@ -409,7 +427,10 @@ export default function App() {
         open={expenseDialogOpen}
         onOpenChange={(open) => {
           setExpenseDialogOpen(open);
-          if (!open) setEditingExpense(null);
+          if (!open) {
+            setEditingExpense(null);
+            setPrefillData(null);
+          }
         }}
         expense={editingExpense}
         categories={categories}
@@ -418,6 +439,8 @@ export default function App() {
         onSave={handleSaveExpense}
         onSaveIncome={handleSaveIncome}
         isSaving={isSaving}
+        allExpenses={allExpenses}
+        prefill={prefillData ?? undefined}
       />
 
       <Toaster position="top-center" richColors closeButton />

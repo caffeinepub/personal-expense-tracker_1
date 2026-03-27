@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { Bell, X } from "lucide-react";
+import { Bell, Plus, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useState } from "react";
 import {
@@ -20,6 +20,15 @@ type RecurringExpense = {
   recurring: boolean;
   recurringFrequency: string;
 };
+
+interface BillRemindersProps {
+  onQuickAdd?: (data: {
+    amount: string;
+    categoryId: string;
+    paymentMethod: string;
+    note: string;
+  }) => void;
+}
 
 function getNextOccurrence(lastDate: string, frequency: string): Date {
   const base = new Date(lastDate);
@@ -64,7 +73,7 @@ function daysColor(days: number): string {
   return "bg-blue-500/15 text-blue-600 dark:text-blue-400";
 }
 
-export default function BillReminders() {
+export default function BillReminders({ onQuickAdd }: BillRemindersProps) {
   const { data: allExpenses = [] } = useExpenses();
   const { data: categories = [] } = useCategories();
   const { data: settings } = useAppSettings();
@@ -176,6 +185,24 @@ export default function BillReminders() {
                   >
                     {daysLabel(days)}
                   </span>
+                  {onQuickAdd && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onQuickAdd({
+                          amount: expense.amount.toString(),
+                          categoryId: expense.categoryId,
+                          paymentMethod: expense.paymentMethod ?? "Cash",
+                          note: expense.note ?? "",
+                        })
+                      }
+                      className="h-6 w-6 flex items-center justify-center rounded-full hover:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 transition-colors"
+                      data-ocid={`bill_reminders.primary_button.${i + 1}`}
+                      aria-label="Quick add expense"
+                    >
+                      <Plus className="h-3 w-3" />
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() =>

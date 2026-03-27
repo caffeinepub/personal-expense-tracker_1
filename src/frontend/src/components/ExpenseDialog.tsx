@@ -30,9 +30,24 @@ interface ExpenseDialogProps {
   onSaveIncome: (income: MonthlyIncome) => Promise<void>;
   isSaving?: boolean;
   month?: string;
+  allExpenses?: Expense[];
+  prefill?: {
+    amount?: string;
+    categoryId?: string;
+    paymentMethod?: string;
+    note?: string;
+  };
 }
 
 type EntryType = "expense" | "income";
+
+interface Suggestion {
+  note: string;
+  amount: number;
+  categoryId: string;
+  paymentMethod: string;
+  categoryName: string;
+}
 
 export default function ExpenseDialog({
   open,
@@ -44,6 +59,8 @@ export default function ExpenseDialog({
   onSaveIncome,
   isSaving = false,
   month,
+  allExpenses = [],
+  prefill,
 }: ExpenseDialogProps) {
   const isEditing = !!expense;
   const { t } = useLanguage();
@@ -57,6 +74,8 @@ export default function ExpenseDialog({
   const [recurringFrequency, setRecurringFrequency] = useState("Monthly");
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [paymentMethods] = useState<string[]>(() => {
     try {
       const stored = localStorage.getItem("pe_payment_methods");
@@ -69,9 +88,11 @@ export default function ExpenseDialog({
   });
 
   const dateInputRef = useRef<HTMLInputElement>(null);
+  const prefillAppliedRef = useRef(false);
 
   useEffect(() => {
     if (open) {
+      prefillAppliedRef.current = false;
       if (expense) {
         setEntryType("expense");
         setAmount(expense.amount.toString());
@@ -79,6 +100,21 @@ export default function ExpenseDialog({
         setDate(expense.date);
         setNote(expense.note ?? "");
         setPaymentMethod(expense.paymentMethod ?? "Cash");
+      } else if (prefill && !prefillAppliedRef.current) {
+        prefillAppliedRef.current = true;
+        setEntryType("expense");
+        setAmount(prefill.amount ?? "");
+        setCategoryId(prefill.categoryId ?? categories[0]?.id ?? "");
+        setNote(prefill.note ?? "");
+        setPaymentMethod(prefill.paymentMethod ?? "Cash");
+        const currentMonthISO = new Date().toISOString().substring(0, 7);
+        if (month && month !== currentMonthISO) {
+          setDate(`${month}-01`);
+        } else {
+          setDate(todayISO());
+        }
+        setRecurring(false);
+        setRecurringFrequency("Monthly");
       } else {
         setEntryType("expense");
         setAmount("");
@@ -96,17 +132,75 @@ export default function ExpenseDialog({
         setRecurringFrequency("Monthly");
       }
       setErrors({});
+      setSuggestions([]);
+      setShowSuggestions(false);
     }
-  }, [open, expense, categories, month]);
+  }, [open, expense, categories, month, prefill]);
 
   // Sync category budget to amount when category changes (new expense only)
   useEffect(() => {
     if (expense || entryType !== "expense") return;
+    // Don't override prefill amount
+    if (prefill?.amount) return;
     const cat = categories.find((c) => c.id === categoryId);
     if (cat?.budget && cat.budget > 0) {
       setAmount(cat.budget.toString());
     }
-  }, [categoryId, categories, expense, entryType]);
+  }, [categoryId, categories, expense, entryType, prefill]);
+
+  // Build suggestions from note input
+  function handleNoteChange(value: string) {
+    setNote(value);
+    if (value.length < 2 || isEditing) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    const lower = value.toLowerCase();
+    const seen = new Set<string>();
+    const results: Suggestion[] = [];
+    // Sort expenses newest first
+    const sorted = [...allExpenses].sort((a, b) => {
+      const aT =
+        typeof a.createdAt === "bigint"
+          ? Number(a.createdAt)
+          : Number(a.createdAt ?? 0);
+      const bT =
+        typeof b.createdAt === "bigint"
+          ? Number(b.createdAt)
+          : Number(b.createdAt ?? 0);
+      return bT - aT;
+    });
+    for (const exp of sorted) {
+      if (!exp.note) continue;
+      const noteText = exp.note.toLowerCase();
+      if (!noteText.includes(lower)) continue;
+      const key = exp.note.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const cat = categories.find((c) => c.id === exp.categoryId);
+      results.push({
+        note: exp.note,
+        amount: exp.amount,
+        categoryId: exp.categoryId,
+        paymentMethod:
+          (exp as Expense & { paymentMethod?: string }).paymentMethod ?? "Cash",
+        categoryName: cat?.name ?? "Unknown",
+      });
+      if (results.length >= 5) break;
+    }
+    setSuggestions(results);
+    setShowSuggestions(results.length > 0);
+  }
+
+  function applySuggestion(s: Suggestion) {
+    setNote(s.note);
+    setAmount(s.amount.toString());
+    setCategoryId(s.categoryId);
+    setPaymentMethod(s.paymentMethod);
+    setShowSuggestions(false);
+    setSuggestions([]);
+  }
 
   function validate(): boolean {
     const newErrors: Record<string, string> = {};
@@ -422,14 +516,45 @@ export default function ExpenseDialog({
                   {t("optional")}
                 </span>
               </Label>
-              <Input
-                id="note"
-                data-ocid="expense.note.input"
-                placeholder={t("note_placeholder")}
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                className="h-11"
-              />
+              <div className="relative">
+                <Input
+                  id="note"
+                  data-ocid="expense.note.input"
+                  placeholder={t("note_placeholder")}
+                  value={note}
+                  onChange={(e) => handleNoteChange(e.target.value)}
+                  onBlur={() => {
+                    // Delay so onMouseDown on suggestion can fire first
+                    setTimeout(() => setShowSuggestions(false), 150);
+                  }}
+                  onFocus={() => {
+                    if (suggestions.length > 0) setShowSuggestions(true);
+                  }}
+                  className="h-11"
+                  autoComplete="off"
+                />
+                {showSuggestions && suggestions.length > 0 && (
+                  <ul className="absolute left-0 right-0 top-full mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
+                    {suggestions.map((s, idx) => (
+                      // biome-ignore lint/a11y/useKeyWithMouseEvents: handled via mousedown
+                      <li
+                        key={`${s.note}-${idx}`}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          applySuggestion(s);
+                        }}
+                        className="flex items-center justify-between px-3 py-2 hover:bg-accent cursor-pointer text-sm"
+                      >
+                        <span className="truncate flex-1 mr-2">{s.note}</span>
+                        <span className="text-muted-foreground text-xs whitespace-nowrap flex-shrink-0">
+                          {getCurrencyPrefix()}
+                          {s.amount.toFixed(2)} · {s.categoryName}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
           )}
 
