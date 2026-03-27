@@ -1524,8 +1524,16 @@ export default function SettingsTab() {
               <Button
                 variant="outline"
                 onClick={() => {
-                  setIiResetPending(true);
-                  login();
+                  // If already authenticated with II, proceed directly.
+                  // Calling login() when already authenticated sets isLoginError,
+                  // causing a false "Authentication failed" message.
+                  if (identity && !identity.getPrincipal().isAnonymous()) {
+                    setShowVerifyReset(false);
+                    setShowResetDialog(true);
+                  } else {
+                    setIiResetPending(true);
+                    login();
+                  }
                 }}
                 disabled={iiResetPending || isLoggingIn}
                 className="w-full gap-2"

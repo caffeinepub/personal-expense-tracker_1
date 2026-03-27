@@ -7,7 +7,8 @@ import { useInternetIdentity } from "../hooks/useInternetIdentity";
 
 export default function LockScreen() {
   const { isLocked, unlock, unlockWithII, hasPin, pinLength } = useAutoLock();
-  const { login, isLoggingIn, isLoginSuccess, isLoginError } =
+  // identity is used to detect if user is already authenticated with II
+  const { identity, login, isLoggingIn, isLoginSuccess, isLoginError } =
     useInternetIdentity();
   const [iiPending, setIiPending] = useState(false);
   const [pin, setPin] = useState("");
@@ -107,6 +108,7 @@ export default function LockScreen() {
     await performUnlock(currentPin ?? pinRef.current);
   }
 
+  // Only watch isLoginSuccess/isLoginError if we actually triggered a fresh login
   useEffect(() => {
     if (iiPending && isLoginSuccess) {
       setIiPending(false);
@@ -123,6 +125,16 @@ export default function LockScreen() {
 
   function handleIIUnlock() {
     setError("");
+
+    // If the user already has a valid Internet Identity session, unlock directly.
+    // Calling login() when already authenticated causes the hook to set isLoginError
+    // ("User is already authenticated"), which incorrectly shows "Authentication failed".
+    if (identity && !identity.getPrincipal().isAnonymous()) {
+      unlockWithII();
+      return;
+    }
+
+    // No active session — trigger a fresh II login
     setIiPending(true);
     login();
   }
