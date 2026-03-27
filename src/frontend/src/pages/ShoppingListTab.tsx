@@ -45,8 +45,16 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
+import type { ShoppingItem } from "../backend.d";
 import { useAppSettings, useCategories } from "../hooks/useQueries";
-import { type ShoppingItem, useShoppingList } from "../hooks/useShoppingList";
+import {
+  useClearBoughtShoppingItems,
+  useCreateShoppingItem,
+  useDeleteShoppingItem,
+  useShoppingItems,
+  useToggleShoppingItemBought,
+  useUpdateShoppingItem,
+} from "../hooks/useQueries";
 import { useLanguage } from "../i18n/LanguageContext";
 
 const MONTH_LABELS = [
@@ -102,8 +110,12 @@ function groupItemsByDate(
 
 export default function ShoppingListTab() {
   const { t } = useLanguage();
-  const { items, addItem, toggleBought, deleteItem, clearBought, updateItem } =
-    useShoppingList();
+  const { data: items = [] } = useShoppingItems();
+  const createShoppingItem = useCreateShoppingItem();
+  const updateShoppingItem = useUpdateShoppingItem();
+  const deleteShoppingItem = useDeleteShoppingItem();
+  const clearBoughtItems = useClearBoughtShoppingItems();
+  const toggleItemBought = useToggleShoppingItemBought();
   const { data: categories = [] } = useCategories();
   const { data: settings } = useAppSettings();
   const currency = settings?.currency ?? "USD";
@@ -195,12 +207,15 @@ export default function ShoppingListTab() {
       return;
     }
     const price = newPrice ? Number.parseFloat(newPrice) : undefined;
-    addItem(
-      newName.trim(),
-      newCategory,
-      price && !Number.isNaN(price) ? price : undefined,
-      newDate || undefined,
-    );
+    createShoppingItem.mutate({
+      id: crypto.randomUUID(),
+      name: newName.trim(),
+      category: newCategory,
+      estimatedPrice: price && !Number.isNaN(price) ? price : undefined,
+      bought: false,
+      createdAt: BigInt(Date.now()),
+      date: newDate || undefined,
+    });
     setNewName("");
     setNewPrice("");
     setNameError(false);
@@ -226,7 +241,8 @@ export default function ShoppingListTab() {
       return;
     }
     const price = editPrice ? Number.parseFloat(editPrice) : undefined;
-    updateItem(editItem.id, {
+    updateShoppingItem.mutate({
+      ...editItem,
       name: editName.trim(),
       category: editCategory,
       estimatedPrice: price && !Number.isNaN(price) ? price : undefined,
@@ -237,8 +253,8 @@ export default function ShoppingListTab() {
   }
 
   function handleToggle(id: string) {
-    toggleBought(id);
     const item = items.find((i) => i.id === id);
+    toggleItemBought.mutate({ id, bought: !(item?.bought ?? false) });
     if (item && !item.bought) {
       toast.success(t("item_bought"));
     }
@@ -263,7 +279,7 @@ export default function ShoppingListTab() {
               variant="ghost"
               size="sm"
               data-ocid="shopping.secondary_button"
-              onClick={clearBought}
+              onClick={() => clearBoughtItems.mutate()}
               className="text-xs text-muted-foreground hover:text-destructive h-7 px-2"
             >
               <X className="h-3 w-3 mr-1" />
@@ -512,7 +528,9 @@ export default function ShoppingListTab() {
                                       Edit
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
-                                      onClick={() => deleteItem(item.id)}
+                                      onClick={() =>
+                                        deleteShoppingItem.mutate(item.id)
+                                      }
                                       className="text-destructive focus:text-destructive"
                                     >
                                       <Trash2 className="h-4 w-4 mr-2" />

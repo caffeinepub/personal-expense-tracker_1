@@ -76,22 +76,29 @@ export default function ExpenseDialog({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [paymentMethods] = useState<string[]>(() => {
-    try {
-      const stored = localStorage.getItem("pe_payment_methods");
-      return stored
-        ? JSON.parse(stored)
-        : ["Cash", "Card", "Bank Transfer", "Other"];
-    } catch {
-      return ["Cash", "Card", "Bank Transfer", "Other"];
-    }
-  });
+  const [paymentMethods, setPaymentMethods] = useState<string[]>([]);
 
   const dateInputRef = useRef<HTMLInputElement>(null);
   const prefillAppliedRef = useRef(false);
 
   useEffect(() => {
     if (open) {
+      try {
+        const stored = localStorage.getItem("pe_payment_methods");
+        const parsed = stored ? JSON.parse(stored) : null;
+        setPaymentMethods(
+          Array.isArray(parsed) && parsed.length > 0
+            ? parsed
+            : ["Cash", "Credit Card", "Debit Card", "Bank Transfer"],
+        );
+      } catch {
+        setPaymentMethods([
+          "Cash",
+          "Credit Card",
+          "Debit Card",
+          "Bank Transfer",
+        ]);
+      }
       prefillAppliedRef.current = false;
       if (expense) {
         setEntryType("expense");

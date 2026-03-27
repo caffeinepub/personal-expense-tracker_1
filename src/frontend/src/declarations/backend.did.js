@@ -28,6 +28,15 @@ export const Expense = IDL.Record({
   'createdAt' : IDL.Int,
   'amount' : IDL.Float64,
 });
+export const ShoppingItem = IDL.Record({
+  'id' : IDL.Text,
+  'estimatedPrice' : IDL.Opt(IDL.Float64),
+  'date' : IDL.Opt(IDL.Text),
+  'name' : IDL.Text,
+  'createdAt' : IDL.Int,
+  'bought' : IDL.Bool,
+  'category' : IDL.Text,
+});
 export const AppSettings = IDL.Record({
   'updatedAt' : IDL.Int,
   'currency' : IDL.Text,
@@ -52,10 +61,13 @@ export const MonthlySummary = IDL.Record({
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+  'clearBoughtShoppingItems' : IDL.Func([], [], []),
   'createCategory' : IDL.Func([Category], [], []),
   'createExpense' : IDL.Func([Expense], [], []),
+  'createShoppingItem' : IDL.Func([ShoppingItem], [], []),
   'deleteCategory' : IDL.Func([IDL.Text], [], []),
   'deleteExpense' : IDL.Func([IDL.Text], [], []),
+  'deleteShoppingItem' : IDL.Func([IDL.Text], [], []),
   'exportExpenses' : IDL.Func([], [IDL.Vec(Expense)], ['query']),
   'getAppSettings' : IDL.Func([], [IDL.Opt(AppSettings)], ['query']),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
@@ -70,6 +82,7 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'getMonthlySummary' : IDL.Func([IDL.Text], [MonthlySummary], ['query']),
+  'getShoppingItems' : IDL.Func([], [IDL.Vec(ShoppingItem)], ['query']),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(UserProfile)],
@@ -80,8 +93,10 @@ export const idlService = IDL.Service({
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'setAppSettings' : IDL.Func([AppSettings], [], []),
   'setMonthlyIncome' : IDL.Func([MonthlyIncome], [], []),
+  'toggleShoppingItemBought' : IDL.Func([IDL.Text, IDL.Bool], [], []),
   'updateCategory' : IDL.Func([Category], [], []),
   'updateExpense' : IDL.Func([Expense], [], []),
+  'updateShoppingItem' : IDL.Func([ShoppingItem], [], []),
 });
 
 export const idlInitArgs = [];
@@ -107,6 +122,15 @@ export const idlFactory = ({ IDL }) => {
     'createdAt' : IDL.Int,
     'amount' : IDL.Float64,
   });
+  const ShoppingItem = IDL.Record({
+    'id' : IDL.Text,
+    'estimatedPrice' : IDL.Opt(IDL.Float64),
+    'date' : IDL.Opt(IDL.Text),
+    'name' : IDL.Text,
+    'createdAt' : IDL.Int,
+    'bought' : IDL.Bool,
+    'category' : IDL.Text,
+  });
   const AppSettings = IDL.Record({
     'updatedAt' : IDL.Int,
     'currency' : IDL.Text,
@@ -131,10 +155,13 @@ export const idlFactory = ({ IDL }) => {
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+    'clearBoughtShoppingItems' : IDL.Func([], [], []),
     'createCategory' : IDL.Func([Category], [], []),
     'createExpense' : IDL.Func([Expense], [], []),
+    'createShoppingItem' : IDL.Func([ShoppingItem], [], []),
     'deleteCategory' : IDL.Func([IDL.Text], [], []),
     'deleteExpense' : IDL.Func([IDL.Text], [], []),
+    'deleteShoppingItem' : IDL.Func([IDL.Text], [], []),
     'exportExpenses' : IDL.Func([], [IDL.Vec(Expense)], ['query']),
     'getAppSettings' : IDL.Func([], [IDL.Opt(AppSettings)], ['query']),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
@@ -153,6 +180,7 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'getMonthlySummary' : IDL.Func([IDL.Text], [MonthlySummary], ['query']),
+    'getShoppingItems' : IDL.Func([], [IDL.Vec(ShoppingItem)], ['query']),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(UserProfile)],
@@ -163,8 +191,10 @@ export const idlFactory = ({ IDL }) => {
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'setAppSettings' : IDL.Func([AppSettings], [], []),
     'setMonthlyIncome' : IDL.Func([MonthlyIncome], [], []),
+    'toggleShoppingItemBought' : IDL.Func([IDL.Text, IDL.Bool], [], []),
     'updateCategory' : IDL.Func([Category], [], []),
     'updateExpense' : IDL.Func([Expense], [], []),
+    'updateShoppingItem' : IDL.Func([ShoppingItem], [], []),
   });
 };
 

@@ -38,6 +38,15 @@ export interface MonthlySummary {
   'totalIncome' : number,
   'totalExpenses' : number,
 }
+export interface ShoppingItem {
+  'id' : string,
+  'estimatedPrice' : [] | [number],
+  'date' : [] | [string],
+  'name' : string,
+  'createdAt' : bigint,
+  'bought' : boolean,
+  'category' : string,
+}
 export interface UserProfile { 'name' : string }
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
@@ -45,10 +54,13 @@ export type UserRole = { 'admin' : null } |
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'clearBoughtShoppingItems' : ActorMethod<[], undefined>,
   'createCategory' : ActorMethod<[Category], undefined>,
   'createExpense' : ActorMethod<[Expense], undefined>,
+  'createShoppingItem' : ActorMethod<[ShoppingItem], undefined>,
   'deleteCategory' : ActorMethod<[string], undefined>,
   'deleteExpense' : ActorMethod<[string], undefined>,
+  'deleteShoppingItem' : ActorMethod<[string], undefined>,
   'exportExpenses' : ActorMethod<[], Array<Expense>>,
   'getAppSettings' : ActorMethod<[], [] | [AppSettings]>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
@@ -59,14 +71,17 @@ export interface _SERVICE {
   'getExpensesByMonth' : ActorMethod<[string], Array<Expense>>,
   'getMonthlyIncome' : ActorMethod<[string], [] | [MonthlyIncome]>,
   'getMonthlySummary' : ActorMethod<[string], MonthlySummary>,
+  'getShoppingItems' : ActorMethod<[], Array<ShoppingItem>>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'resetUserData' : ActorMethod<[], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'setAppSettings' : ActorMethod<[AppSettings], undefined>,
   'setMonthlyIncome' : ActorMethod<[MonthlyIncome], undefined>,
+  'toggleShoppingItemBought' : ActorMethod<[string, boolean], undefined>,
   'updateCategory' : ActorMethod<[Category], undefined>,
   'updateExpense' : ActorMethod<[Expense], undefined>,
+  'updateShoppingItem' : ActorMethod<[ShoppingItem], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

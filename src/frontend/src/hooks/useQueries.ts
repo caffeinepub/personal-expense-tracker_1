@@ -4,6 +4,7 @@ import type {
   Category,
   Expense,
   MonthlyIncome,
+  ShoppingItem,
 } from "../backend.d";
 import { useActor } from "./useActor";
 
@@ -229,5 +230,80 @@ export function useResetUserData() {
     onSuccess: () => {
       qc.invalidateQueries();
     },
+  });
+}
+
+// ─── Shopping Items ──────────────────────────────────────────────────────────
+
+export function useShoppingItems() {
+  const { actor, isFetching } = useActor();
+  return useQuery<ShoppingItem[]>({
+    queryKey: ["shopping"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getShoppingItems();
+    },
+    enabled: !!actor && !isFetching,
+    staleTime: 1000 * 30,
+  });
+}
+
+export function useCreateShoppingItem() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (item: ShoppingItem) => {
+      if (!actor) throw new Error("No actor");
+      return actor.createShoppingItem(item);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["shopping"] }),
+  });
+}
+
+export function useUpdateShoppingItem() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (item: ShoppingItem) => {
+      if (!actor) throw new Error("No actor");
+      return actor.updateShoppingItem(item);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["shopping"] }),
+  });
+}
+
+export function useDeleteShoppingItem() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (itemId: string) => {
+      if (!actor) throw new Error("No actor");
+      return actor.deleteShoppingItem(itemId);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["shopping"] }),
+  });
+}
+
+export function useClearBoughtShoppingItems() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => {
+      if (!actor) throw new Error("No actor");
+      return actor.clearBoughtShoppingItems();
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["shopping"] }),
+  });
+}
+
+export function useToggleShoppingItemBought() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, bought }: { id: string; bought: boolean }) => {
+      if (!actor) throw new Error("No actor");
+      return actor.toggleShoppingItemBought(id, bought);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["shopping"] }),
   });
 }

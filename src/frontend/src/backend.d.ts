@@ -11,6 +11,15 @@ export interface AppSettings {
     updatedAt: bigint;
     currency: string;
 }
+export interface ShoppingItem {
+    id: string;
+    estimatedPrice?: number;
+    date?: string;
+    name: string;
+    createdAt: bigint;
+    bought: boolean;
+    category: string;
+}
 export interface CategorySummary {
     categoryId: string;
     total: number;
@@ -35,14 +44,14 @@ export interface MonthlyIncome {
     month: string;
     amount: number;
 }
+export interface UserProfile {
+    name: string;
+}
 export interface Category {
     id: string;
     name: string;
     color: string;
     budget: number;
-}
-export interface UserProfile {
-    name: string;
 }
 export enum UserRole {
     admin = "admin",
@@ -51,10 +60,13 @@ export enum UserRole {
 }
 export interface backendInterface {
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
+    clearBoughtShoppingItems(): Promise<void>;
     createCategory(category: Category): Promise<void>;
     createExpense(expense: Expense): Promise<void>;
+    createShoppingItem(item: ShoppingItem): Promise<void>;
     deleteCategory(categoryId: string): Promise<void>;
     deleteExpense(expenseId: string): Promise<void>;
+    deleteShoppingItem(itemId: string): Promise<void>;
     exportExpenses(): Promise<Array<Expense>>;
     getAppSettings(): Promise<AppSettings | null>;
     getCallerUserProfile(): Promise<UserProfile | null>;
@@ -65,12 +77,15 @@ export interface backendInterface {
     getExpensesByMonth(month: string): Promise<Array<Expense>>;
     getMonthlyIncome(month: string): Promise<MonthlyIncome | null>;
     getMonthlySummary(month: string): Promise<MonthlySummary>;
+    getShoppingItems(): Promise<Array<ShoppingItem>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     resetUserData(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     setAppSettings(settings: AppSettings): Promise<void>;
     setMonthlyIncome(income: MonthlyIncome): Promise<void>;
+    toggleShoppingItemBought(itemId: string, bought: boolean): Promise<void>;
     updateCategory(category: Category): Promise<void>;
     updateExpense(expense: Expense): Promise<void>;
+    updateShoppingItem(item: ShoppingItem): Promise<void>;
 }

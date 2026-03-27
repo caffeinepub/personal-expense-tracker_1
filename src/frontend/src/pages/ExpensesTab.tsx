@@ -8,7 +8,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -514,27 +513,34 @@ export default function ExpensesTab({
                               }}
                             />
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1.5">
-                                <Badge
-                                  variant="secondary"
-                                  className="text-xs px-1.5 py-0 font-medium rounded-md"
-                                  style={{
-                                    backgroundColor: `${cat?.color ?? "#B0B0B0"}22`,
-                                    color: cat?.color ?? "#666",
-                                    border: "none",
-                                  }}
+                              <div className="flex items-center gap-1 flex-wrap min-w-0 mt-0.5">
+                                <span
+                                  className="text-xs font-medium"
+                                  style={{ color: cat?.color ?? "#666" }}
                                 >
                                   {cat?.name ?? t("unknown_category")}
-                                </Badge>
-                                <span className="text-xs text-muted-foreground">
-                                  {expense.paymentMethod}
                                 </span>
+                                {expense.paymentMethod && (
+                                  <>
+                                    <span className="text-xs text-muted-foreground/50">
+                                      |
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
+                                      {expense.paymentMethod}
+                                    </span>
+                                  </>
+                                )}
+                                {expense.note && (
+                                  <>
+                                    <span className="text-xs text-muted-foreground/50">
+                                      |
+                                    </span>
+                                    <span className="text-xs text-muted-foreground truncate">
+                                      {expense.note}
+                                    </span>
+                                  </>
+                                )}
                               </div>
-                              {expense.note && (
-                                <p className="text-sm text-foreground/80 mt-0.5 truncate">
-                                  {expense.note}
-                                </p>
-                              )}
                               {(
                                 expense as typeof expense & {
                                   recurring?: boolean;
