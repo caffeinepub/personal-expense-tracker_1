@@ -19,6 +19,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Category, Expense, MonthlyIncome } from "../backend.d";
 import { useLanguage } from "../i18n/LanguageContext";
 import { todayISO } from "../utils/format";
+import { type IncomeSource, getIncomeSources } from "../utils/incomeSources";
 
 interface ExpenseDialogProps {
   open: boolean;
@@ -77,6 +78,8 @@ export default function ExpenseDialog({
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<string[]>([]);
+  const [incomeSourceId, setIncomeSourceId] = useState("");
+  const [incomeSources, setIncomeSources] = useState<IncomeSource[]>([]);
 
   const dateInputRef = useRef<HTMLInputElement>(null);
   const prefillAppliedRef = useRef(false);
@@ -100,6 +103,8 @@ export default function ExpenseDialog({
         ]);
       }
       prefillAppliedRef.current = false;
+      setIncomeSources(getIncomeSources());
+      setIncomeSourceId("");
       if (expense) {
         setEntryType("expense");
         setAmount(expense.amount.toString());
@@ -274,6 +279,17 @@ export default function ExpenseDialog({
     return symbols[currency] ?? currency;
   };
 
+  function handleIncomeSourceSelect(id: string) {
+    setIncomeSourceId(id);
+    if (id === "__total__") {
+      const total = incomeSources.reduce((s, src) => s + src.monthlyBudget, 0);
+      setAmount(total.toString());
+    } else {
+      const src = incomeSources.find((s) => s.id === id);
+      if (src) setAmount(src.monthlyBudget.toString());
+    }
+  }
+
   function incrementAmount() {
     const current = Number.parseFloat(amount) || 0;
     setAmount((current + 1).toFixed(2));
@@ -444,6 +460,51 @@ export default function ExpenseDialog({
               )}
             </div>
           </div>
+
+          {/* Income Source — income mode only */}
+          {entryType === "income" && (
+            <div>
+              <Label className="text-xs font-medium mb-1 block">
+                Income Source
+              </Label>
+              <Select
+                value={incomeSourceId}
+                onValueChange={handleIncomeSourceSelect}
+              >
+                <SelectTrigger
+                  className="h-9"
+                  data-ocid="expense.income_source.select"
+                >
+                  <SelectValue
+                    placeholder={`Total Income: ${getCurrencyPrefix()}${incomeSources.reduce((s, src) => s + src.monthlyBudget, 0).toLocaleString()}`}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__total__">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                      Total Income ({getCurrencyPrefix()}
+                      {incomeSources
+                        .reduce((s, src) => s + src.monthlyBudget, 0)
+                        .toLocaleString()}
+                      )
+                    </div>
+                  </SelectItem>
+                  {incomeSources.map((src) => (
+                    <SelectItem key={src.id} value={src.id}>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-2.5 h-2.5 rounded-full"
+                          style={{ backgroundColor: src.color }}
+                        />
+                        {src.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Row 2: Category + Payment — expense only */}
           {!isIncome && (

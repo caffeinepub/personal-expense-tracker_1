@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   BarChart2,
   CalendarDays,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Minus,
@@ -53,6 +54,7 @@ import {
   formatMonthYear,
   pct,
 } from "../utils/format";
+import { type IncomeSource, getIncomeSources } from "../utils/incomeSources";
 
 const MONTH_KEYS = [
   "month_jan",
@@ -127,6 +129,8 @@ export default function DashboardTab({
   const currency = settings?.currency ?? "USD";
 
   const [themeDialogOpen, setThemeDialogOpen] = useState(false);
+  const [incomeOpen, setIncomeOpen] = useState(false);
+  const [incomeSources] = useState<IncomeSource[]>(() => getIncomeSources());
 
   const recentExpenses = useMemo(
     () =>
@@ -510,6 +514,103 @@ export default function DashboardTab({
 
             {/* Bill Reminders */}
             <BillReminders onQuickAdd={onQuickAddBill} />
+
+            {/* DASHBOARD | Income */}
+            <motion.div variants={itemVariants} className="px-4 mb-1">
+              <div
+                className="rounded-xl border border-border/50 overflow-hidden"
+                style={{
+                  backgroundColor:
+                    "color-mix(in oklch, var(--card) 95%, transparent)",
+                }}
+              >
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-between px-4 py-3 text-left"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, oklch(0.25 0.06 145 / 0.8), oklch(0.2 0.04 200 / 0.6))",
+                  }}
+                  onClick={() => setIncomeOpen((o) => !o)}
+                  data-ocid="dashboard.income.toggle"
+                >
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      DASHBOARD
+                    </p>
+                    <span className="text-xs text-muted-foreground/50">|</span>
+                    <h3 className="font-display text-base font-semibold">
+                      Income
+                    </h3>
+                  </div>
+                  <ChevronDown
+                    className={`h-4 w-4 text-muted-foreground transition-transform duration-300 ${incomeOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+                <div
+                  className={`grid transition-all duration-300 ease-in-out ${incomeOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+                >
+                  <div className="overflow-hidden">
+                    {incomeSources.length === 0 ? (
+                      <p className="px-4 pb-4 text-sm text-muted-foreground">
+                        No income sources defined. Add them in Settings ›
+                        Financial Settings › Income.
+                      </p>
+                    ) : (
+                      <div className="px-4 pb-3 space-y-2">
+                        {(() => {
+                          const totalBudget = incomeSources.reduce(
+                            (sum, s) => sum + s.monthlyBudget,
+                            0,
+                          );
+                          return incomeSources.map((src) => {
+                            const pct =
+                              totalBudget > 0
+                                ? Math.round(
+                                    (src.monthlyBudget / totalBudget) * 100,
+                                  )
+                                : 0;
+                            return (
+                              <div
+                                key={src.id}
+                                className="flex items-center gap-3 py-1.5"
+                                data-ocid="dashboard.income.item"
+                              >
+                                <div
+                                  className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                  style={{ backgroundColor: src.color }}
+                                />
+                                <span className="flex-1 text-sm font-medium truncate">
+                                  {src.name}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {pct}%
+                                </span>
+                                <span className="text-sm font-semibold tabular-nums">
+                                  {formatCurrency(src.monthlyBudget, currency)}
+                                </span>
+                              </div>
+                            );
+                          });
+                        })()}
+                        <div className="flex items-center justify-between rounded-lg px-3 py-2 mt-1 bg-muted/50">
+                          <span className="text-xs font-bold">Total</span>
+                          <span className="text-sm font-bold">
+                            {formatCurrency(
+                              incomeSources.reduce(
+                                (s, src) => s + src.monthlyBudget,
+                                0,
+                              ),
+                              currency,
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
 
             {/* Category breakdown */}
             {(chartData.length > 0 || chartDataIncome.length > 0) && (

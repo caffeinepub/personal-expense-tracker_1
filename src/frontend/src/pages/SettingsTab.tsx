@@ -78,6 +78,12 @@ import {
   parseImportCSV,
   parseImportJSON,
 } from "../utils/export";
+import { formatCurrency } from "../utils/format";
+import {
+  type IncomeSource,
+  getIncomeSources,
+  saveIncomeSources,
+} from "../utils/incomeSources";
 
 const CURRENCIES = [
   { code: "USD", symbol: "$", name: "US Dollar" },
@@ -159,7 +165,7 @@ export default function SettingsTab() {
   // All sections default closed
   const [regionalOpen, setRegionalOpen] = useState(false);
   const [financialOpen, setFinancialOpen] = useState(false);
-  const [financialTab, setFinancialTab] = useState("category");
+  const [financialTab, setFinancialTab] = useState("income");
   const [securityOpen, setSecurityOpen] = useState(false);
   const [securityTab, setSecurityTab] = useState("autolock");
   const [exportOpen, setExportOpen] = useState(false);
@@ -217,6 +223,20 @@ export default function SettingsTab() {
   const [catName, setCatName] = useState("");
   const [catColor, setCatColor] = useState(PRESET_COLORS[0]);
   const [catBudget, setCatBudget] = useState("");
+
+  // Income sources state
+  const [incomeSources, setIncomeSources] = useState<IncomeSource[]>(() =>
+    getIncomeSources(),
+  );
+  const [showIncomeDialog, setShowIncomeDialog] = useState(false);
+  const [editingIncomeSource, setEditingIncomeSource] =
+    useState<IncomeSource | null>(null);
+  const [deleteIncomeSourceId, setDeleteIncomeSourceId] = useState<
+    string | null
+  >(null);
+  const [incName, setIncName] = useState("");
+  const [incColor, setIncColor] = useState(PRESET_COLORS[0]);
+  const [incBudget, setIncBudget] = useState("");
 
   useEffect(() => {
     if (settings?.currency) setCurrency(settings.currency);
@@ -303,6 +323,60 @@ export default function SettingsTab() {
       toast.error(t("failed_delete_category"));
     }
     setDeleteCategoryId(null);
+  }
+
+  function openAddIncome() {
+    setEditingIncomeSource(null);
+    setIncName("");
+    setIncColor(PRESET_COLORS[0]);
+    setIncBudget("");
+    setShowIncomeDialog(true);
+  }
+  function openEditIncome(src: IncomeSource) {
+    setEditingIncomeSource(src);
+    setIncName(src.name);
+    setIncColor(src.color);
+    setIncBudget(src.monthlyBudget > 0 ? src.monthlyBudget.toString() : "");
+    setShowIncomeDialog(true);
+  }
+  function handleSaveIncome() {
+    if (!incName.trim()) {
+      toast.error("Income name is required");
+      return;
+    }
+    const budget = incBudget ? Number.parseFloat(incBudget) : 0;
+    let updated: IncomeSource[];
+    if (editingIncomeSource) {
+      updated = incomeSources.map((s) =>
+        s.id === editingIncomeSource.id
+          ? {
+              ...s,
+              name: incName.trim(),
+              color: incColor,
+              monthlyBudget: Number.isNaN(budget) ? 0 : budget,
+            }
+          : s,
+      );
+    } else {
+      updated = [
+        ...incomeSources,
+        {
+          id: crypto.randomUUID(),
+          name: incName.trim(),
+          color: incColor,
+          monthlyBudget: Number.isNaN(budget) ? 0 : budget,
+        },
+      ];
+    }
+    saveIncomeSources(updated);
+    setIncomeSources(updated);
+    setShowIncomeDialog(false);
+  }
+  function handleDeleteIncome(id: string) {
+    const updated = incomeSources.filter((s) => s.id !== id);
+    saveIncomeSources(updated);
+    setIncomeSources(updated);
+    setDeleteIncomeSourceId(null);
   }
 
   async function handleResetData() {
@@ -721,7 +795,14 @@ export default function SettingsTab() {
             <div className="overflow-hidden">
               <CardContent className="px-4 pb-3 pt-1.5">
                 <Tabs value={financialTab} onValueChange={setFinancialTab}>
-                  <TabsList className="w-full grid grid-cols-3 h-9 mb-3">
+                  <TabsList className="w-full grid grid-cols-4 h-9 mb-3">
+                    <TabsTrigger
+                      value="income"
+                      className="text-xs"
+                      data-ocid="settings.financial.income.tab"
+                    >
+                      Income
+                    </TabsTrigger>
                     <TabsTrigger
                       value="category"
                       className="text-xs"
@@ -744,6 +825,60 @@ export default function SettingsTab() {
                       {t("payment_methods")}
                     </TabsTrigger>
                   </TabsList>
+                  <TabsContent value="income" className="mt-0">
+                    <div className="flex justify-end mb-2">
+                      <Button
+                        size="sm"
+                        className="h-8 gap-1.5 text-xs"
+                        onClick={openAddIncome}
+                        data-ocid="settings.add_income.button"
+                      >
+                        <Plus className="h-3.5 w-3.5" /> Add
+                      </Button>
+                    </div>
+                    {incomeSources.length === 0 ? (
+                      <p className="text-muted-foreground text-sm text-center py-5 px-4">
+                        No income sources yet. Add your first one.
+                      </p>
+                    ) : (
+                      <div className="space-y-1">
+                        {incomeSources.map((src) => (
+                          <div
+                            key={src.id}
+                            className="flex items-center gap-2 py-2 px-1 rounded-lg hover:bg-muted/40"
+                            data-ocid="income.item"
+                          >
+                            <div
+                              className="w-3 h-3 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: src.color }}
+                            />
+                            <span className="flex-1 text-sm font-medium truncate">
+                              {src.name}
+                            </span>
+                            <span className="text-sm text-muted-foreground">
+                              {formatCurrency(src.monthlyBudget, currency)}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => openEditIncome(src)}
+                              className="p-1 text-muted-foreground hover:text-foreground"
+                              data-ocid="income.edit_button"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDeleteIncomeSourceId(src.id)}
+                              className="p-1 text-muted-foreground hover:text-destructive"
+                              data-ocid="income.delete_button"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </TabsContent>
                   <TabsContent value="category" className="mt-0">
                     <div className="flex justify-end mb-2">
                       <Button
@@ -1435,6 +1570,106 @@ export default function SettingsTab() {
               data-ocid="category.delete.confirm.button"
             >
               {t("delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Add/Edit Income Source Dialog */}
+      <Dialog open={showIncomeDialog} onOpenChange={setShowIncomeDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>
+              {editingIncomeSource ? "Edit Income Source" : "Add Income Source"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div>
+              <Label className="text-xs font-medium mb-1 block">
+                Income Name *
+              </Label>
+              <Input
+                value={incName}
+                onChange={(e) => setIncName(e.target.value)}
+                placeholder="e.g. Salary"
+                className="h-9"
+                data-ocid="income.name.input"
+              />
+            </div>
+            <div>
+              <Label className="text-xs font-medium mb-1 block">Color</Label>
+              <div className="flex flex-wrap gap-2">
+                {PRESET_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setIncColor(c)}
+                    className={`w-6 h-6 rounded-full border-2 transition-all ${incColor === c ? "border-foreground scale-110" : "border-transparent"}`}
+                    style={{ backgroundColor: c }}
+                  />
+                ))}
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs font-medium mb-1 block">
+                Monthly Budget
+              </Label>
+              <Input
+                type="number"
+                value={incBudget}
+                onChange={(e) => setIncBudget(e.target.value)}
+                placeholder="0.00"
+                className="h-9"
+                min="0"
+                step="0.01"
+                data-ocid="income.budget.input"
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowIncomeDialog(false)}
+              data-ocid="income.cancel.button"
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSaveIncome}
+              data-ocid="income.save.button"
+            >
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Income Source Confirmation */}
+      <AlertDialog
+        open={!!deleteIncomeSourceId}
+        onOpenChange={(open) => !open && setDeleteIncomeSourceId(null)}
+      >
+        <AlertDialogContent className="max-w-sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Income Source?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-ocid="income.cancel.button">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() =>
+                deleteIncomeSourceId && handleDeleteIncome(deleteIncomeSourceId)
+              }
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-ocid="income.delete.confirm.button"
+            >
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
