@@ -1,10 +1,14 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+// ============================================================
+// CRITICAL: DO NOT REMOVE LanguageProvider OR AutoLockProvider
+// These providers MUST remain at the app root. Removing them
+// causes useLanguage() and useAutoLock() to crash on startup,
+// resulting in a white screen (silent render failure).
+// ============================================================
 import ReactDOM from "react-dom/client";
 import App from "./App";
-// DO NOT REMOVE: AutoLockProvider is required for session security
 import { AutoLockProvider } from "./contexts/AutoLockContext";
 import { InternetIdentityProvider } from "./hooks/useInternetIdentity";
-// DO NOT REMOVE: LanguageProvider is required for all translations
 import { LanguageProvider } from "./i18n/LanguageContext";
 import "./index.css";
 
@@ -21,15 +25,15 @@ declare global {
 const queryClient = new QueryClient();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <QueryClientProvider client={queryClient}>
-    <InternetIdentityProvider>
-      {/* DO NOT REMOVE LanguageProvider - required for i18n */}
-      <LanguageProvider>
-        {/* DO NOT REMOVE AutoLockProvider - required for session security */}
-        <AutoLockProvider>
+  // DO NOT REMOVE: LanguageProvider — required for all translations
+  <LanguageProvider>
+    {/* DO NOT REMOVE: AutoLockProvider — required for session lock */}
+    <AutoLockProvider>
+      <QueryClientProvider client={queryClient}>
+        <InternetIdentityProvider>
           <App />
-        </AutoLockProvider>
-      </LanguageProvider>
-    </InternetIdentityProvider>
-  </QueryClientProvider>,
+        </InternetIdentityProvider>
+      </QueryClientProvider>
+    </AutoLockProvider>
+  </LanguageProvider>,
 );
