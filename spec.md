@@ -1,33 +1,33 @@
 # Personal Expense Tracker
 
 ## Current State
-- Shopping list uses Zustand + localStorage (device-local, no cross-device sync)
-- ExpenseDialog reads payment methods from localStorage once on mount (doesn't react to Settings changes)
-- Dashboard Recent Transactions shows Category badge on one line, Note/Payment on a separate line
-- Expenses tab shows Category badge + Payment on one row, Note on a separate line
-- LanguageProvider is missing from main.tsx (translations return raw keys)
+- `main.tsx` wraps App with `QueryClientProvider` and `InternetIdentityProvider` but is **missing** `LanguageProvider` and `AutoLockProvider`.
+- Dashboard > By Category > Income tab has `chartViewIncome: "donut" | "horizontal"` state.
+- `chartDataIncome` is a single entry `[{ name: "Income", value: totalIncome, color: "#10b981" }]` — not broken down by source.
+- Income tab renders: Donut chart (toggle to horizontal) and Horizontal bar chart (toggle to donut).
+- `incomeSources` is loaded from localStorage via `getIncomeSources()` and used in the Dashboard Income collapsible section.
 
 ## Requested Changes (Diff)
 
 ### Add
-- Backend: `ShoppingItem` type + `createShoppingItem`, `getShoppingItems`, `updateShoppingItem`, `deleteShoppingItem`, `clearBoughtShoppingItems` canister methods for cross-device sync
-- Shopping list query hooks in `useQueries.ts` matching the backend pattern
+- `chartViewIncome` gets a third state: `"vertical"` for vertical bar chart.
+- `chartDataIncome` now computes breakdown by income source (using `incomeSources` from localStorage). If no income sources defined, fall back to single total entry.
+- Vertical bar chart view in Income tab (replacing or alongside horizontal).
+- Toggle cycle: donut → vertical → horizontal → donut (3-way cycle using the floating toggle button).
 
 ### Modify
-- `main.tsx`: Add `LanguageProvider` and `AutoLockProvider` wrapping `App` (with comment guards)
-- `ShoppingListTab.tsx`: Replace Zustand store with backend queries for cross-device persistence
-- `ExpenseDialog.tsx`: Read payment methods dynamically on every open (useEffect on `open` prop) instead of once on mount
-- `DashboardTab.tsx` Recent Transactions: Change row info line to show `Category | Note` in a single line using `|` separator
-- `ExpensesTab.tsx` expense rows: Change info line to show `Category | Payment | Note` in a single line using `|` separator
+- `chartViewIncome` type: `"donut" | "vertical" | "horizontal"`.
+- `chartDataIncome` useMemo: map `incomeSources` to `{ name, value: src.monthlyBudget, color: src.color }`. If `incomeSources` is empty, use `[{ name: "Income", value: totalIncome, color: "#10b981" }]`.
+- Income tab rendering: add a vertical bar chart block (layout="horizontal" BarChart with XAxis as categories, YAxis as values), update toggle button icons and onClick handlers to cycle through 3 views.
+- `main.tsx`: wrap App with `LanguageProvider` and `AutoLockProvider` with permanent comment guards.
 
 ### Remove
-- `useShoppingList.ts` Zustand store (replaced by backend queries)
+- Nothing removed.
 
 ## Implementation Plan
-1. Generate Motoko backend code with ShoppingItem support
-2. Update useQueries.ts with shopping list hooks
-3. Rewrite ShoppingListTab to use backend queries
-4. Fix ExpenseDialog payment methods to re-read on open
-5. Fix DashboardTab Recent Transactions row format
-6. Fix ExpensesTab row format
-7. Fix main.tsx with LanguageProvider + AutoLockProvider
+1. Fix `main.tsx` — add `LanguageProvider` (from `../i18n/LanguageContext`) and `AutoLockProvider` (from `../contexts/AutoLockContext`) with comment guards.
+2. In `DashboardTab.tsx`:
+   a. Update `chartViewIncome` type to `"donut" | "vertical" | "horizontal"`.
+   b. Update `chartDataIncome` useMemo to use `incomeSources.map(src => ({ name: src.name, value: src.monthlyBudget, color: src.color }))` when sources exist.
+   c. Add vertical bar chart block (standard `BarChart` with no `layout="vertical"`, XAxis=category, YAxis=number).
+   d. Update toggle buttons to cycle: donut→vertical, vertical→horizontal, horizontal→donut, with appropriate icons (PieChartIcon, BarChart2, BarChartHorizontal or AlignLeft).

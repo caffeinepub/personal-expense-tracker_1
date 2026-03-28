@@ -7,6 +7,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  AlignLeft,
   BarChart2,
   CalendarDays,
   ChevronDown,
@@ -107,7 +108,7 @@ export default function DashboardTab({
   const [pickerYear, setPickerYear] = useState(() => new Date().getFullYear());
   const [chartView, setChartView] = useState<"donut" | "bar">("donut");
   const [chartViewIncome, setChartViewIncome] = useState<
-    "donut" | "horizontal"
+    "donut" | "vertical" | "horizontal"
   >("donut");
   const [chartTab, setChartTab] = useState<"expense" | "income">("expense");
 
@@ -190,9 +191,18 @@ export default function DashboardTab({
   }, [summary, categories]);
 
   const chartDataIncome = useMemo(() => {
+    if (incomeSources.length > 0) {
+      return incomeSources
+        .filter((src) => src.monthlyBudget > 0)
+        .map((src) => ({
+          name: src.name,
+          value: src.monthlyBudget,
+          color: src.color,
+        }));
+    }
     if (!totalIncome || totalIncome <= 0) return [];
     return [{ name: "Income", value: totalIncome, color: "#10b981" }];
-  }, [totalIncome]);
+  }, [incomeSources, totalIncome]);
 
   return (
     <div className="space-y-5 pb-24">
@@ -824,10 +834,10 @@ export default function DashboardTab({
                                   type="button"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    setChartViewIncome("horizontal");
+                                    setChartViewIncome("vertical");
                                   }}
                                   className="absolute top-2 right-2 z-20 h-8 w-8 flex items-center justify-center rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
-                                  aria-label="Switch to bar chart"
+                                  aria-label="Switch to vertical bar chart"
                                 >
                                   <BarChart2 className="h-4 w-4" />
                                 </button>
@@ -866,6 +876,94 @@ export default function DashboardTab({
                                         }}
                                       />
                                     </PieChart>
+                                  </ResponsiveContainer>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Vertical Bar */}
+                            {chartViewIncome === "vertical" && (
+                              <div className="relative">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setChartViewIncome("horizontal");
+                                  }}
+                                  className="absolute top-2 right-2 z-20 h-8 w-8 flex items-center justify-center rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
+                                  aria-label="Switch to horizontal bar chart"
+                                >
+                                  <AlignLeft className="h-4 w-4" />
+                                </button>
+                                <div
+                                  style={{
+                                    height: Math.max(
+                                      chartDataIncome.length * 50 + 60,
+                                      220,
+                                    ),
+                                  }}
+                                >
+                                  <ResponsiveContainer
+                                    width="100%"
+                                    height="100%"
+                                  >
+                                    <BarChart
+                                      data={chartDataIncome}
+                                      margin={{
+                                        top: 8,
+                                        right: 16,
+                                        left: 0,
+                                        bottom: 40,
+                                      }}
+                                    >
+                                      <XAxis
+                                        dataKey="name"
+                                        tick={{
+                                          fontSize: 10,
+                                          fill: "var(--foreground)",
+                                        }}
+                                        axisLine={false}
+                                        tickLine={false}
+                                        interval={0}
+                                        angle={-30}
+                                        textAnchor="end"
+                                      />
+                                      <YAxis
+                                        tick={{
+                                          fontSize: 10,
+                                          fill: "var(--foreground)",
+                                        }}
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tickFormatter={(v) =>
+                                          formatCurrency(v, currency)
+                                        }
+                                        width={60}
+                                      />
+                                      <Tooltip
+                                        formatter={(value: number) =>
+                                          formatCurrency(value, currency)
+                                        }
+                                        contentStyle={{
+                                          borderRadius: 8,
+                                          fontSize: 12,
+                                          border: "1px solid var(--border)",
+                                          background: "var(--card)",
+                                          color: "var(--foreground)",
+                                        }}
+                                      />
+                                      <Bar
+                                        dataKey="value"
+                                        radius={[4, 4, 0, 0]}
+                                      >
+                                        {chartDataIncome.map((entry) => (
+                                          <Cell
+                                            key={`income-vbar-${entry.name}`}
+                                            fill={entry.color}
+                                          />
+                                        ))}
+                                      </Bar>
+                                    </BarChart>
                                   </ResponsiveContainer>
                                 </div>
                               </div>
