@@ -8,6 +8,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -15,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Calendar, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Category, Expense, MonthlyIncome } from "../backend.d";
 import { useLanguage } from "../i18n/LanguageContext";
 import { todayISO } from "../utils/format";
@@ -75,11 +80,10 @@ export default function ExpenseDialog({
   const [recurringFrequency, setRecurringFrequency] = useState("Monthly");
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<string[]>([]);
   const [incomeSourceId, setIncomeSourceId] = useState("");
   const [incomeSources, setIncomeSources] = useState<IncomeSource[]>([]);
+  const [noteDropdownOpen, setNoteDropdownOpen] = useState(false);
 
   const dateInputRef = useRef<HTMLInputElement>(null);
   const prefillAppliedRef = useRef(false);
@@ -105,6 +109,7 @@ export default function ExpenseDialog({
       prefillAppliedRef.current = false;
       setIncomeSources(getIncomeSources());
       setIncomeSourceId("");
+      setNoteDropdownOpen(false);
       if (expense) {
         setEntryType("expense");
         setAmount(expense.amount.toString());
@@ -131,7 +136,6 @@ export default function ExpenseDialog({
         setEntryType("expense");
         setAmount("");
         setCategoryId(categories[0]?.id ?? "");
-        // Sync to selected dashboard month if it differs from today
         const currentMonthISO = new Date().toISOString().substring(0, 7);
         if (month && month !== currentMonthISO) {
           setDate(`${month}-01`);
@@ -144,15 +148,12 @@ export default function ExpenseDialog({
         setRecurringFrequency("Monthly");
       }
       setErrors({});
-      setSuggestions([]);
-      setShowSuggestions(false);
     }
   }, [open, expense, categories, month, prefill]);
 
   // Sync category budget to amount when category changes (new expense only)
   useEffect(() => {
     if (expense || entryType !== "expense") return;
-    // Don't override prefill amount
     if (prefill?.amount) return;
     const cat = categories.find((c) => c.id === categoryId);
     if (cat?.budget && cat.budget > 0) {
@@ -160,28 +161,13 @@ export default function ExpenseDialog({
     }
   }, [categoryId, categories, expense, entryType, prefill]);
 
-  // Build suggestions from note input
-  function handleNoteChange(value: string) {
-    setNote(value);
-    if (value.length < 2 || isEditing) {
-      setSuggestions([]);
-      setShowSuggestions(false);
-      return;
-    }
+  // Build full suggestions list from all expenses (up to 20 unique notes)
+  const allNoteSuggestions = useMemo(() => {
     const seen = new Set<string>();
     const results: Suggestion[] = [];
-    // Sort expenses newest first
-    const sorted = [...allExpenses].sort((a, b) => {
-      const aT =
-        typeof a.createdAt === "bigint"
-          ? Number(a.createdAt)
-          : Number(a.createdAt ?? 0);
-      const bT =
-        typeof b.createdAt === "bigint"
-          ? Number(b.createdAt)
-          : Number(b.createdAt ?? 0);
-      return bT - aT;
-    });
+    const sorted = [...allExpenses].sort(
+      (a, b) => Number(b.createdAt ?? 0) - Number(a.createdAt ?? 0),
+    );
     for (const exp of sorted) {
       if (!exp.note) continue;
       const key = exp.note.toLowerCase();
@@ -196,19 +182,17 @@ export default function ExpenseDialog({
           (exp as Expense & { paymentMethod?: string }).paymentMethod ?? "Cash",
         categoryName: cat?.name ?? "Unknown",
       });
-      if (results.length >= 8) break;
+      if (results.length >= 20) break;
     }
-    setSuggestions(results);
-    setShowSuggestions(results.length > 0);
-  }
+    return results;
+  }, [allExpenses, categories]);
 
   function applySuggestion(s: Suggestion) {
     setNote(s.note);
     setAmount(s.amount.toString());
     setCategoryId(s.categoryId);
     setPaymentMethod(s.paymentMethod);
-    setShowSuggestions(false);
-    setSuggestions([]);
+    setNoteDropdownOpen(false);
   }
 
   function validate(): boolean {
@@ -231,7 +215,6 @@ export default function ExpenseDialog({
     if (entryType === "income") {
       const incomeMonth = date.substring(0, 7);
       await onSaveIncome({ month: incomeMonth, amount: parsedAmount });
-      // Reset amount for next income entry; keep date
       setAmount("");
       setErrors({});
       return;
@@ -257,12 +240,10 @@ export default function ExpenseDialog({
               .recurringFrequency,
     } as Expense & { recurring?: boolean; recurringFrequency?: string });
 
-    // If adding (not editing), reset transient fields for next entry
     if (!expense) {
       setAmount("");
       setNote("");
       setErrors({});
-      // Keep categoryId, paymentMethod, date so user can quickly add another
     }
   }
 
@@ -572,54 +553,75 @@ export default function ExpenseDialog({
             </div>
           )}
 
-          {/* Note — expense only */}
+          {/* Note — expense only, with dropdown for suggestions */}
           {!isIncome && (
             <div className="space-y-1.5">
-              <Label htmlFor="note" className="text-sm font-medium">
+              <Label className="text-sm font-medium">
                 {t("note_label")}{" "}
                 <span className="text-muted-foreground text-xs">
                   {t("optional")}
                 </span>
               </Label>
-              <div className="relative">
-                <Input
-                  id="note"
-                  data-ocid="expense.note.input"
-                  placeholder={t("note_placeholder")}
-                  value={note}
-                  onChange={(e) => handleNoteChange(e.target.value)}
-                  onBlur={() => {
-                    // Delay so onMouseDown on suggestion can fire first
-                    setTimeout(() => setShowSuggestions(false), 150);
-                  }}
-                  onFocus={() => {
-                    if (suggestions.length > 0) setShowSuggestions(true);
-                  }}
-                  className="h-11"
-                  autoComplete="off"
-                />
-                {showSuggestions && suggestions.length > 0 && (
-                  <ul className="absolute left-0 right-0 top-full mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
-                    {suggestions.map((s, idx) => (
-                      // biome-ignore lint/a11y/useKeyWithMouseEvents: handled via mousedown
-                      <li
-                        key={`${s.note}-${idx}`}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          applySuggestion(s);
-                        }}
-                        className="flex items-center justify-between px-3 py-2 hover:bg-accent cursor-pointer text-sm"
-                      >
-                        <span className="truncate flex-1 mr-2">{s.note}</span>
-                        <span className="text-muted-foreground text-xs whitespace-nowrap flex-shrink-0">
-                          {getCurrencyPrefix()}
-                          {s.amount.toFixed(2)} · {s.categoryName}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+              <Popover
+                open={noteDropdownOpen}
+                onOpenChange={setNoteDropdownOpen}
+              >
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    data-ocid="expense.note.input"
+                    className="flex items-center justify-between w-full h-11 px-3 border border-input rounded-lg bg-background text-sm hover:bg-accent/5 transition-colors"
+                  >
+                    <span
+                      className={
+                        note ? "text-foreground" : "text-muted-foreground"
+                      }
+                    >
+                      {note || t("note_placeholder")}
+                    </span>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0 ml-2" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-[var(--radix-popover-trigger-width)] p-0"
+                  align="start"
+                >
+                  <div className="p-2 border-b border-border">
+                    <Input
+                      autoFocus
+                      placeholder={t("note_placeholder")}
+                      value={note}
+                      onChange={(e) => setNote(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") setNoteDropdownOpen(false);
+                      }}
+                      className="h-9 text-sm"
+                    />
+                  </div>
+                  {allNoteSuggestions.length > 0 ? (
+                    <div className="max-h-48 overflow-y-auto py-1">
+                      {allNoteSuggestions.map((s, idx) => (
+                        <button
+                          key={`${s.note}-${idx}`}
+                          type="button"
+                          onClick={() => applySuggestion(s)}
+                          className="flex items-center justify-between w-full px-3 py-2 hover:bg-accent cursor-pointer text-sm text-left"
+                        >
+                          <span className="truncate flex-1 mr-2">{s.note}</span>
+                          <span className="text-muted-foreground text-xs whitespace-nowrap flex-shrink-0">
+                            {getCurrencyPrefix()}
+                            {s.amount.toFixed(2)} · {s.categoryName}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground text-center py-3">
+                      No suggestions yet
+                    </p>
+                  )}
+                </PopoverContent>
+              </Popover>
             </div>
           )}
 

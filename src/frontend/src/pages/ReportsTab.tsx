@@ -58,6 +58,11 @@ const MONTH_KEYS = [
   "month_dec",
 ];
 
+type PeriodType = "monthly" | "quarterly" | "yearly";
+
+const GREEN_GRADIENT =
+  "linear-gradient(135deg, oklch(0.52 0.17 145), oklch(0.42 0.15 145))";
+
 export default function ReportsTab({
   month,
   setMonth,
@@ -67,6 +72,9 @@ export default function ReportsTab({
   const [incomeInput, setIncomeInput] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerYear, setPickerYear] = useState(() => new Date().getFullYear());
+  const [quarterPickerOpen, setQuarterPickerOpen] = useState(false);
+  const [yearPickerOpen, setYearPickerOpen] = useState(false);
+  const [periodType, setPeriodType] = useState<PeriodType>("monthly");
   const { t } = useLanguage();
 
   const { data: summary, isLoading } = useMonthlySummary(month);
@@ -89,6 +97,7 @@ export default function ReportsTab({
 
   const selectedYear = Number.parseInt(month.split("-")[0], 10);
   const selectedMonthIdx = Number.parseInt(month.split("-")[1], 10) - 1;
+  const currentQ = Math.floor(selectedMonthIdx / 3) + 1;
 
   function selectMonth(m: number) {
     const mm = String(m + 1).padStart(2, "0");
@@ -121,6 +130,24 @@ export default function ReportsTab({
     show: { opacity: 1, y: 0, transition: { duration: 0.3 } },
   } as const;
 
+  // Period nav styles
+  function getNavStyle(type: PeriodType) {
+    return periodType === type ? { background: GREEN_GRADIENT } : {};
+  }
+  function getNavBorderClass(type: PeriodType) {
+    return periodType === type ? "border-transparent" : "border-border";
+  }
+  function getLabelClass(type: PeriodType) {
+    return periodType === type ? "text-white" : "text-muted-foreground";
+  }
+  // Period label for header
+  const periodLabel =
+    periodType === "quarterly"
+      ? `Q${currentQ} ${selectedYear}`
+      : periodType === "yearly"
+        ? `${selectedYear}`
+        : formatMonthYear(month);
+
   return (
     <div className="space-y-5 pb-28">
       <div className="px-4 space-y-5">
@@ -132,7 +159,7 @@ export default function ReportsTab({
             </p>
             <span className="text-xs text-muted-foreground/50">|</span>
             <h2 className="font-display text-xl font-bold tracking-tight">
-              {formatMonthYear(month)}
+              {periodLabel}
             </h2>
           </div>
           <p className="text-sm text-muted-foreground mt-0.5">
@@ -140,95 +167,300 @@ export default function ReportsTab({
           </p>
         </div>
 
-        {/* Back + Month selector row */}
-        <div className="flex items-center gap-2">
+        {/* Back + Monthly / Quarterly / Yearly navigator row */}
+        <div className="flex items-center gap-2 flex-nowrap overflow-x-auto pb-1">
           <Button
-            size="sm"
-            className="flex items-center gap-1 h-9 px-3 flex-shrink-0 bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground rounded-lg border border-border"
+            size="icon"
+            className="h-8 w-8 flex-shrink-0 bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground rounded-lg border border-border"
             onClick={onBack}
             data-ocid="reports.back.button"
+            aria-label="Back"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span className="text-xs font-medium">{t("back")}</span>
           </Button>
-          <div className="flex items-center justify-between bg-card border border-border rounded-xl px-3 py-2 flex-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setMonth(prevMonth(month))}
-              aria-label={t("prev_month")}
+
+          {/* Monthly */}
+          <div className="flex flex-col items-center flex-1 min-w-[110px]">
+            <span
+              className={`text-[10px] font-medium mb-0.5 uppercase tracking-wide ${getLabelClass("monthly")}`}
             >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  data-ocid="reports.month.select"
-                  className="flex items-center gap-1 font-display font-semibold text-sm hover:text-primary transition-colors group"
-                >
-                  {formatMonthYear(month)}
-                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent
-                className="w-72 p-3"
-                align="center"
-                data-ocid="reports.month_picker.popover"
+              Monthly
+            </span>
+            <div
+              className={`flex items-center w-full justify-between rounded-lg px-1.5 py-1.5 h-9 border ${getNavBorderClass("monthly")}`}
+              style={getNavStyle("monthly")}
+            >
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`h-6 w-6 flex-shrink-0 ${periodType === "monthly" ? "text-white hover:text-white hover:bg-white/20" : ""}`}
+                onClick={() => {
+                  setPeriodType("monthly");
+                  setMonth(prevMonth(month));
+                }}
+                aria-label={t("prev_month")}
               >
-                <div className="flex items-center justify-between mb-3">
+                <ChevronLeft className="h-3.5 w-3.5" />
+              </Button>
+              <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+                <PopoverTrigger asChild>
                   <button
                     type="button"
-                    onClick={() => setPickerYear((y) => y - 1)}
-                    className="p-1.5 rounded-md hover:bg-muted transition-colors"
+                    data-ocid="reports.month.select"
+                    onClick={() => setPeriodType("monthly")}
+                    className={`flex items-center gap-0.5 font-semibold text-xs hover:opacity-80 transition-colors flex-1 justify-center ${periodType === "monthly" ? "text-white" : "hover:text-primary"}`}
+                  >
+                    {formatMonthYear(month)}
+                    <ChevronDown className="h-3 w-3 opacity-70" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-72 p-3"
+                  align="center"
+                  data-ocid="reports.month_picker.popover"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <button
+                      type="button"
+                      onClick={() => setPickerYear((y) => y - 1)}
+                      className="p-1.5 rounded-md hover:bg-muted transition-colors"
+                      aria-label="Previous year"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    <span className="font-semibold text-sm">{pickerYear}</span>
+                    <button
+                      type="button"
+                      onClick={() => setPickerYear((y) => y + 1)}
+                      className="p-1.5 rounded-md hover:bg-muted transition-colors"
+                      aria-label="Next year"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {MONTH_KEYS.map((key, idx) => {
+                      const isSelected =
+                        idx === selectedMonthIdx && pickerYear === selectedYear;
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => selectMonth(idx)}
+                          className={`py-2 rounded-lg text-sm font-medium transition-colors ${
+                            isSelected
+                              ? "bg-primary text-primary-foreground"
+                              : "hover:bg-muted text-foreground"
+                          }`}
+                        >
+                          {t(key)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </PopoverContent>
+              </Popover>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`h-6 w-6 flex-shrink-0 ${periodType === "monthly" ? "text-white hover:text-white hover:bg-white/20" : ""}`}
+                onClick={() => {
+                  setPeriodType("monthly");
+                  setMonth(nextMonth(month));
+                }}
+                disabled={isCurrentMonth(month)}
+                aria-label={t("next_month")}
+              >
+                <ChevronRight className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Quarterly */}
+          {(() => {
+            const nowYear = new Date().getFullYear();
+            const nowQ = Math.floor(new Date().getMonth() / 3) + 1;
+            const isLastQ = selectedYear === nowYear && currentQ === nowQ;
+            function goToQuarter(year: number, q: number) {
+              const startMonth = String((q - 1) * 3 + 1).padStart(2, "0");
+              setMonth(`${year}-${startMonth}`);
+            }
+            function prevQ() {
+              setPeriodType("quarterly");
+              if (currentQ === 1) goToQuarter(selectedYear - 1, 4);
+              else goToQuarter(selectedYear, currentQ - 1);
+            }
+            function nextQ() {
+              setPeriodType("quarterly");
+              if (currentQ === 4) goToQuarter(selectedYear + 1, 1);
+              else goToQuarter(selectedYear, currentQ + 1);
+            }
+            return (
+              <div className="flex flex-col items-center flex-1 min-w-[110px]">
+                <span
+                  className={`text-[10px] font-medium mb-0.5 uppercase tracking-wide ${getLabelClass("quarterly")}`}
+                >
+                  Quarterly
+                </span>
+                <div
+                  className={`flex items-center w-full justify-between rounded-lg px-1.5 py-1.5 h-9 border ${getNavBorderClass("quarterly")}`}
+                  style={getNavStyle("quarterly")}
+                >
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`h-6 w-6 flex-shrink-0 ${periodType === "quarterly" ? "text-white hover:text-white hover:bg-white/20" : ""}`}
+                    onClick={prevQ}
+                    aria-label="Previous quarter"
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                  </Button>
+                  <Popover
+                    open={quarterPickerOpen}
+                    onOpenChange={setQuarterPickerOpen}
+                  >
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        data-ocid="reports.quarter.select"
+                        onClick={() => setPeriodType("quarterly")}
+                        className={`flex items-center gap-0.5 font-semibold text-xs hover:opacity-80 transition-colors flex-1 justify-center ${periodType === "quarterly" ? "text-white" : "hover:text-primary"}`}
+                      >
+                        Q{currentQ} {selectedYear}
+                        <ChevronDown className="h-3 w-3 opacity-70" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="w-44 p-2"
+                      align="center"
+                      data-ocid="reports.quarter_picker.popover"
+                    >
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {[1, 2, 3, 4].map((q) => (
+                          <button
+                            key={q}
+                            type="button"
+                            onClick={() => {
+                              goToQuarter(selectedYear, q);
+                              setQuarterPickerOpen(false);
+                              setPeriodType("quarterly");
+                            }}
+                            className={`py-2 rounded-lg text-sm font-medium transition-colors ${
+                              q === currentQ
+                                ? "bg-primary text-primary-foreground"
+                                : "hover:bg-muted text-foreground"
+                            }`}
+                          >
+                            Q{q} {selectedYear}
+                          </button>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`h-6 w-6 flex-shrink-0 ${periodType === "quarterly" ? "text-white hover:text-white hover:bg-white/20" : ""}`}
+                    onClick={nextQ}
+                    disabled={isLastQ}
+                    aria-label="Next quarter"
+                  >
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Yearly */}
+          {(() => {
+            const nowYear = new Date().getFullYear();
+            const years = Array.from(
+              { length: nowYear - 2019 },
+              (_, i) => 2020 + i,
+            ).concat([nowYear + 1]);
+            return (
+              <div className="flex flex-col items-center flex-1 min-w-[110px]">
+                <span
+                  className={`text-[10px] font-medium mb-0.5 uppercase tracking-wide ${getLabelClass("yearly")}`}
+                >
+                  Yearly
+                </span>
+                <div
+                  className={`flex items-center w-full justify-between rounded-lg px-1.5 py-1.5 h-9 border ${getNavBorderClass("yearly")}`}
+                  style={getNavStyle("yearly")}
+                >
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`h-6 w-6 flex-shrink-0 ${periodType === "yearly" ? "text-white hover:text-white hover:bg-white/20" : ""}`}
+                    onClick={() => {
+                      setPeriodType("yearly");
+                      setMonth(`${selectedYear - 1}-01`);
+                    }}
                     aria-label="Previous year"
                   >
-                    <ChevronLeft className="h-4 w-4" />
-                  </button>
-                  <span className="font-semibold text-sm">{pickerYear}</span>
-                  <button
-                    type="button"
-                    onClick={() => setPickerYear((y) => y + 1)}
-                    className="p-1.5 rounded-md hover:bg-muted transition-colors"
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                  </Button>
+                  <Popover
+                    open={yearPickerOpen}
+                    onOpenChange={setYearPickerOpen}
+                  >
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        data-ocid="reports.year.select"
+                        onClick={() => setPeriodType("yearly")}
+                        className={`flex items-center gap-0.5 font-semibold text-xs hover:opacity-80 transition-colors flex-1 justify-center ${periodType === "yearly" ? "text-white" : "hover:text-primary"}`}
+                      >
+                        {selectedYear}
+                        <ChevronDown className="h-3 w-3 opacity-70" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="w-36 p-2"
+                      align="center"
+                      data-ocid="reports.year_picker.popover"
+                    >
+                      <div className="flex flex-col gap-1">
+                        {years.map((yr) => (
+                          <button
+                            key={yr}
+                            type="button"
+                            onClick={() => {
+                              setMonth(`${yr}-01`);
+                              setYearPickerOpen(false);
+                              setPeriodType("yearly");
+                            }}
+                            className={`py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                              yr === selectedYear
+                                ? "bg-primary text-primary-foreground"
+                                : "hover:bg-muted text-foreground"
+                            }`}
+                          >
+                            {yr}
+                          </button>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`h-6 w-6 flex-shrink-0 ${periodType === "yearly" ? "text-white hover:text-white hover:bg-white/20" : ""}`}
+                    onClick={() => {
+                      setPeriodType("yearly");
+                      setMonth(`${selectedYear + 1}-01`);
+                    }}
+                    disabled={selectedYear >= nowYear}
                     aria-label="Next year"
                   >
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {MONTH_KEYS.map((key, idx) => {
-                    const isSelected =
-                      idx === selectedMonthIdx && pickerYear === selectedYear;
-                    return (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => selectMonth(idx)}
-                        className={`py-2 rounded-lg text-sm font-medium transition-colors ${
-                          isSelected
-                            ? "bg-primary text-primary-foreground"
-                            : "hover:bg-muted text-foreground"
-                        }`}
-                      >
-                        {t(key)}
-                      </button>
-                    );
-                  })}
-                </div>
-              </PopoverContent>
-            </Popover>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setMonth(nextMonth(month))}
-              disabled={isCurrentMonth(month)}
-              aria-label={t("next_month")}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
+              </div>
+            );
+          })()}
         </div>
 
         {isLoading ? (
@@ -526,7 +758,7 @@ export default function ReportsTab({
               <div className="flex items-center gap-3 py-2">
                 <div className="flex-1 h-px bg-border" />
                 <p className="text-xs text-muted-foreground/60 font-medium whitespace-nowrap">
-                  {t("end_of_report", { month: formatMonthYear(month) })}
+                  {t("end_of_report", { month: periodLabel })}
                 </p>
                 <div className="flex-1 h-px bg-border" />
               </div>
