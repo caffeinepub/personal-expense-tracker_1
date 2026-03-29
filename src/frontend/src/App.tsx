@@ -260,7 +260,7 @@ export default function App() {
         className="
           w-full max-w-[480px] flex flex-col relative
           bg-background
-          min-h-screen
+          h-dvh
           md:min-h-0 md:max-h-[92vh] md:rounded-3xl md:shadow-2xl md:overflow-hidden md:border md:border-border/50
           lg:max-w-[520px]
         "

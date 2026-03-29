@@ -583,22 +583,36 @@ export default function DashboardTab({
                             return (
                               <div
                                 key={src.id}
-                                className="flex items-center gap-3 py-1.5"
+                                className="py-1.5 space-y-1"
                                 data-ocid="dashboard.income.item"
                               >
-                                <div
-                                  className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                                  style={{ backgroundColor: src.color }}
-                                />
-                                <span className="flex-1 text-sm font-medium truncate">
-                                  {src.name}
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                  {pct}%
-                                </span>
-                                <span className="text-sm font-semibold tabular-nums">
-                                  {formatCurrency(src.monthlyBudget, currency)}
-                                </span>
+                                <div className="flex items-center gap-3">
+                                  <div
+                                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                    style={{ backgroundColor: src.color }}
+                                  />
+                                  <span className="flex-1 text-sm font-medium truncate">
+                                    {src.name}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {pct}%
+                                  </span>
+                                  <span className="text-sm font-semibold tabular-nums">
+                                    {formatCurrency(
+                                      src.monthlyBudget,
+                                      currency,
+                                    )}
+                                  </span>
+                                </div>
+                                <div className="relative h-1.5 bg-muted/60 rounded-full overflow-hidden">
+                                  <div
+                                    className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
+                                    style={{
+                                      width: `${pct}%`,
+                                      backgroundColor: src.color,
+                                    }}
+                                  />
+                                </div>
                               </div>
                             );
                           });

@@ -22,12 +22,13 @@ import {
   X,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import {
   useAppSettings,
   useCategories,
+  useExpenses,
   useMonthlyIncome,
   useMonthlySummary,
   useSetMonthlyIncome,
@@ -84,20 +85,73 @@ export default function ReportsTab({
   const currency = settings?.currency ?? "USD";
 
   const setIncome = useSetMonthlyIncome();
+  const { data: allExpenses = [] } = useExpenses();
 
-  const totalExpenses = summary?.totalExpenses ?? 0;
+  const selectedYear = Number.parseInt(month.split("-")[0], 10);
+  const selectedMonthIdx = Number.parseInt(month.split("-")[1], 10) - 1;
+  const currentQ = Math.floor(selectedMonthIdx / 3) + 1;
+
+  // Compute which months are in the selected period
+  const periodMonths = useMemo(() => {
+    if (periodType === "quarterly") {
+      const startM = (currentQ - 1) * 3 + 1;
+      return [0, 1, 2].map(
+        (i) => `${selectedYear}-${String(startM + i).padStart(2, "0")}`,
+      );
+    }
+    if (periodType === "yearly") {
+      return Array.from(
+        { length: 12 },
+        (_, i) => `${selectedYear}-${String(i + 1).padStart(2, "0")}`,
+      );
+    }
+    return [month];
+  }, [periodType, currentQ, selectedYear, month]);
+
+  // Period-aggregated category breakdown (for quarterly/yearly)
+  const periodCategoryBreakdown = useMemo(() => {
+    if (periodType === "monthly") return null;
+    const filtered = allExpenses.filter((e) =>
+      periodMonths.includes(e.date.substring(0, 7)),
+    );
+    const map = new Map<string, { total: number; categoryName: string }>();
+    for (const e of filtered) {
+      const existing = map.get(e.categoryId);
+      const cat = categories.find((c) => c.id === e.categoryId);
+      const name = cat?.name ?? e.categoryId;
+      if (existing) {
+        existing.total += Number(e.amount);
+      } else {
+        map.set(e.categoryId, { total: Number(e.amount), categoryName: name });
+      }
+    }
+    return Array.from(map.entries()).map(([categoryId, v]) => ({
+      categoryId,
+      total: v.total,
+      categoryName: v.categoryName,
+    }));
+  }, [periodType, periodMonths, allExpenses, categories]);
+
+  const periodTotalExpenses = useMemo(() => {
+    if (periodType === "monthly") return summary?.totalExpenses ?? 0;
+    return (periodCategoryBreakdown ?? []).reduce((s, i) => s + i.total, 0);
+  }, [periodType, periodCategoryBreakdown, summary]);
+
+  const totalExpenses = periodTotalExpenses;
   const totalIncome = summary?.totalIncome ?? incomeData?.amount ?? 0;
   const balance = totalIncome - totalExpenses;
   const isOver = balance < 0;
 
   const savingsRate =
-    totalIncome > 0
+    totalIncome > 0 && periodType === "monthly"
       ? (((totalIncome - totalExpenses) / totalIncome) * 100).toFixed(1)
       : null;
 
-  const selectedYear = Number.parseInt(month.split("-")[0], 10);
-  const selectedMonthIdx = Number.parseInt(month.split("-")[1], 10) - 1;
-  const currentQ = Math.floor(selectedMonthIdx / 3) + 1;
+  // Use period breakdown for quarterly/yearly, otherwise use summary breakdown
+  const displayBreakdown =
+    periodType !== "monthly"
+      ? (periodCategoryBreakdown ?? [])
+      : (summary?.categoryBreakdown ?? []);
 
   function selectMonth(m: number) {
     const mm = String(m + 1).padStart(2, "0");
@@ -654,12 +708,12 @@ export default function ReportsTab({
                   </div>
                 </CardHeader>
                 <CardContent className="px-4 pb-4 pt-3 space-y-4">
-                  {(summary?.categoryBreakdown?.length ?? 0) === 0 ? (
+                  {displayBreakdown.length === 0 ? (
                     <p className="text-muted-foreground text-sm text-center py-6">
                       {t("no_expenses_month")}
                     </p>
                   ) : (
-                    summary!.categoryBreakdown
+                    displayBreakdown
                       .sort((a, b) => b.total - a.total)
                       .map((item) => {
                         const cat = getCategoryById(
