@@ -9,7 +9,6 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  ArrowLeft,
   Check,
   ChevronDown,
   ChevronLeft,
@@ -67,8 +66,7 @@ const GREEN_GRADIENT =
 export default function ReportsTab({
   month,
   setMonth,
-  onBack,
-}: { month: string; setMonth: (m: string) => void; onBack: () => void }) {
+}: { month: string; setMonth: (m: string) => void }) {
   const [editingIncome, setEditingIncome] = useState(false);
   const [incomeInput, setIncomeInput] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -138,12 +136,52 @@ export default function ReportsTab({
   }, [periodType, periodCategoryBreakdown, summary]);
 
   const totalExpenses = periodTotalExpenses;
-  const totalIncome = summary?.totalIncome ?? incomeData?.amount ?? 0;
+  // Load all 12 months of the selected year for period income aggregation
+  const incY01 = useMonthlyIncome(`${selectedYear}-01`);
+  const incY02 = useMonthlyIncome(`${selectedYear}-02`);
+  const incY03 = useMonthlyIncome(`${selectedYear}-03`);
+  const incY04 = useMonthlyIncome(`${selectedYear}-04`);
+  const incY05 = useMonthlyIncome(`${selectedYear}-05`);
+  const incY06 = useMonthlyIncome(`${selectedYear}-06`);
+  const incY07 = useMonthlyIncome(`${selectedYear}-07`);
+  const incY08 = useMonthlyIncome(`${selectedYear}-08`);
+  const incY09 = useMonthlyIncome(`${selectedYear}-09`);
+  const incY10 = useMonthlyIncome(`${selectedYear}-10`);
+  const incY11 = useMonthlyIncome(`${selectedYear}-11`);
+  const incY12 = useMonthlyIncome(`${selectedYear}-12`);
+
+  const allYearlyIncomeData = [
+    incY01,
+    incY02,
+    incY03,
+    incY04,
+    incY05,
+    incY06,
+    incY07,
+    incY08,
+    incY09,
+    incY10,
+    incY11,
+    incY12,
+  ];
+
+  const totalIncome = (() => {
+    if (periodType === "monthly")
+      return summary?.totalIncome ?? incomeData?.amount ?? 0;
+    const monthNums = periodMonths.map((m) =>
+      Number.parseInt(m.split("-")[1], 10),
+    );
+    return monthNums.reduce((sum, mNum) => {
+      const d = allYearlyIncomeData[mNum - 1]?.data;
+      return sum + (d?.amount ?? 0);
+    }, 0);
+  })();
+
   const balance = totalIncome - totalExpenses;
   const isOver = balance < 0;
 
   const savingsRate =
-    totalIncome > 0 && periodType === "monthly"
+    totalIncome > 0
       ? (((totalIncome - totalExpenses) / totalIncome) * 100).toFixed(1)
       : null;
 
@@ -223,16 +261,6 @@ export default function ReportsTab({
 
         {/* Back + Monthly / Quarterly / Yearly navigator row */}
         <div className="flex items-center gap-2 flex-nowrap overflow-x-auto pb-1">
-          <Button
-            size="icon"
-            className="h-8 w-8 flex-shrink-0 bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground rounded-lg border border-border"
-            onClick={onBack}
-            data-ocid="reports.back.button"
-            aria-label="Back"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-
           {/* Monthly */}
           <div className="flex flex-col items-center flex-1 min-w-[110px]">
             <span
@@ -721,7 +749,8 @@ export default function ReportsTab({
                           item.categoryId,
                         );
                         const percentage = pct(item.total, totalExpenses);
-                        const budget = cat?.budget ?? 0;
+                        const numMonths = periodMonths.length;
+                        const budget = (cat?.budget ?? 0) * numMonths;
                         const budgetPct =
                           budget > 0
                             ? Math.min(pct(item.total, budget), 100)

@@ -53,6 +53,12 @@ export interface Category {
     color: string;
     budget: number;
 }
+export interface IncomeSource {
+    id: string;
+    name: string;
+    color: string;
+    monthlyBudget: number;
+}
 export enum UserRole {
     admin = "admin",
     user = "user",
@@ -75,6 +81,7 @@ export interface backendInterface {
     getExpenses(): Promise<Array<Expense>>;
     getExpensesByCategory(categoryId: string): Promise<Array<Expense>>;
     getExpensesByMonth(month: string): Promise<Array<Expense>>;
+    getIncomeSourcesList(): Promise<Array<IncomeSource>>;
     getMonthlyIncome(month: string): Promise<MonthlyIncome | null>;
     getMonthlySummary(month: string): Promise<MonthlySummary>;
     getShoppingItems(): Promise<Array<ShoppingItem>>;
@@ -82,6 +89,7 @@ export interface backendInterface {
     isCallerAdmin(): Promise<boolean>;
     resetUserData(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    saveIncomeSources(sources: Array<IncomeSource>): Promise<void>;
     setAppSettings(settings: AppSettings): Promise<void>;
     setMonthlyIncome(income: MonthlyIncome): Promise<void>;
     toggleShoppingItemBought(itemId: string, bought: boolean): Promise<void>;

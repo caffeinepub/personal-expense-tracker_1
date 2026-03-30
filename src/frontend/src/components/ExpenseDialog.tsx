@@ -22,9 +22,10 @@ import {
 import { Calendar, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Category, Expense, MonthlyIncome } from "../backend.d";
+import { useIncomeSources } from "../hooks/useQueries";
 import { useLanguage } from "../i18n/LanguageContext";
 import { todayISO } from "../utils/format";
-import { type IncomeSource, getIncomeSources } from "../utils/incomeSources";
+import type { IncomeSource } from "../utils/incomeSources";
 
 interface ExpenseDialogProps {
   open: boolean;
@@ -76,18 +77,20 @@ export default function ExpenseDialog({
   const [categoryId, setCategoryId] = useState("");
   const [date, setDate] = useState(todayISO());
   const [note, setNote] = useState("");
-  const [recurring, setRecurring] = useState(false);
+  const [recurring, setRecurring] = useState(true);
   const [recurringFrequency, setRecurringFrequency] = useState("Monthly");
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [paymentMethods, setPaymentMethods] = useState<string[]>([]);
   const [incomeSourceId, setIncomeSourceId] = useState("");
+  const { data: backendIncomeSources = [] } = useIncomeSources();
   const [incomeSources, setIncomeSources] = useState<IncomeSource[]>([]);
   const [noteDropdownOpen, setNoteDropdownOpen] = useState(false);
 
   const dateInputRef = useRef<HTMLInputElement>(null);
   const prefillAppliedRef = useRef(false);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: backendIncomeSources handled intentionally
   useEffect(() => {
     if (open) {
       try {
@@ -107,7 +110,18 @@ export default function ExpenseDialog({
         ]);
       }
       prefillAppliedRef.current = false;
-      setIncomeSources(getIncomeSources());
+      setIncomeSources(
+        backendIncomeSources.length > 0
+          ? backendIncomeSources
+          : ((): IncomeSource[] => {
+              try {
+                const s = localStorage.getItem("pe_income_sources");
+                return s ? JSON.parse(s) : [];
+              } catch {
+                return [];
+              }
+            })(),
+      );
       setIncomeSourceId("");
       setNoteDropdownOpen(false);
       if (expense) {
@@ -117,6 +131,14 @@ export default function ExpenseDialog({
         setDate(expense.date);
         setNote(expense.note ?? "");
         setPaymentMethod(expense.paymentMethod ?? "Cash");
+        setRecurring(
+          (expense as typeof expense & { recurring?: boolean }).recurring ??
+            false,
+        );
+        setRecurringFrequency(
+          (expense as typeof expense & { recurringFrequency?: string })
+            .recurringFrequency ?? "Monthly",
+        );
       } else if (prefill && !prefillAppliedRef.current) {
         prefillAppliedRef.current = true;
         setEntryType("expense");

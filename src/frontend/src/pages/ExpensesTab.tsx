@@ -31,7 +31,6 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  ArrowLeft,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -90,7 +89,6 @@ interface ExpensesTabProps {
   onEditExpense: (expense: Expense) => void;
   month: string;
   setMonth: (m: string) => void;
-  onBack: () => void;
 }
 
 // Hook to load all 12 months for a given year (always called, never conditional)
@@ -114,7 +112,6 @@ export default function ExpensesTab({
   onEditExpense,
   month,
   setMonth,
-  onBack,
 }: ExpensesTabProps) {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -214,7 +211,6 @@ export default function ExpensesTab({
       (currentQ - 1) * 3 + 2,
     ];
     return qIdxs.flatMap((idx) => allMonthQueries[idx]?.data ?? []);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     // biome-ignore lint/correctness/useExhaustiveDependencies: intentional
   }, [allMonthQueries, currentQ]);
 
@@ -315,16 +311,6 @@ export default function ExpensesTab({
 
         {/* Back + Monthly / Quarterly / Yearly navigator row */}
         <div className="flex items-center gap-2 flex-nowrap overflow-x-auto pb-1">
-          <Button
-            size="icon"
-            className="h-8 w-8 flex-shrink-0 bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground rounded-lg border border-border"
-            onClick={onBack}
-            data-ocid="expenses.back.button"
-            aria-label="Back"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-
           {/* Monthly */}
           <div className="flex flex-col items-center flex-1 min-w-[110px]">
             <span

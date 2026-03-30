@@ -56,6 +56,13 @@ actor {
     name : Text;
   };
 
+  public type IncomeSource = {
+    id : Text;
+    name : Text;
+    color : Text;
+    monthlyBudget : Float;
+  };
+
   type CategoryInternal = {
     id : Text;
     name : Text;
@@ -71,10 +78,12 @@ actor {
     var shoppingItems : Map.Map<Text, ShoppingItem>;
     var settings : ?AppSettings;
     var initialized : Bool;
+
   };
 
   let userData = Map.empty<Principal, UserData>();
   let userProfiles = Map.empty<Principal, UserProfile>();
+  let userIncomeSources = Map.empty<Principal, Map.Map<Text, IncomeSource>>();
 
   // Helper function to get or create user data with default categories
   func getOrCreateUserData(caller : Principal) : UserData {
@@ -94,6 +103,7 @@ actor {
           var shoppingItems = Map.empty<Text, ShoppingItem>();
           var settings = null;
           var initialized = false;
+
         };
         seedDefaultCategories(newData);
         newData.initialized := true;
@@ -273,6 +283,22 @@ actor {
   public query ({ caller }) func getAppSettings() : async ?AppSettings {
     let data = getOrCreateUserData(caller);
     data.settings;
+  };
+
+  // Income Sources (cross-device sync)
+  public shared ({ caller }) func saveIncomeSources(sources : [IncomeSource]) : async () {
+    let sourcesMap = Map.empty<Text, IncomeSource>();
+    for (src in sources.vals()) {
+      sourcesMap.add(src.id, src);
+    };
+    userIncomeSources.add(caller, sourcesMap);
+  };
+
+  public query ({ caller }) func getIncomeSourcesList() : async [IncomeSource] {
+    switch (userIncomeSources.get(caller)) {
+      case (?sourcesMap) { sourcesMap.values().toArray() };
+      case (null) { [] };
+    };
   };
 
   // Filter expenses by month

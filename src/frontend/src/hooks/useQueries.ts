@@ -3,6 +3,7 @@ import type {
   AppSettings,
   Category,
   Expense,
+  IncomeSource,
   MonthlyIncome,
   ShoppingItem,
 } from "../backend.d";
@@ -305,5 +306,39 @@ export function useToggleShoppingItemBought() {
       return actor.toggleShoppingItemBought(id, bought);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["shopping"] }),
+  });
+}
+
+// ─── Income Sources ──────────────────────────────────────────────────────────
+
+type ExtendedActor = {
+  getIncomeSourcesList(): Promise<IncomeSource[]>;
+  saveIncomeSources(sources: IncomeSource[]): Promise<void>;
+};
+
+export function useIncomeSources() {
+  const { actor, isFetching } = useActor();
+  return useQuery<IncomeSource[]>({
+    queryKey: ["incomeSources"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return (actor as unknown as ExtendedActor).getIncomeSourcesList();
+    },
+    enabled: !!actor && !isFetching,
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+export function useSaveIncomeSources() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (sources: IncomeSource[]) => {
+      if (!actor) throw new Error("No actor");
+      return (actor as unknown as ExtendedActor).saveIncomeSources(sources);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["incomeSources"] });
+    },
   });
 }

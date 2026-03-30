@@ -234,6 +234,18 @@ export default function App() {
     updateExpense.isPending ||
     setMonthlyIncome.isPending;
 
+  // Show loading spinner on initial load to prevent white screen
+  if (actorLoading || (loadingCats && categories.length === 0)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+          <p className="text-sm text-muted-foreground">Loading your data...</p>
+        </div>
+      </div>
+    );
+  }
+
   const tabVariants = {
     hidden: { opacity: 0, y: 6 },
     show: { opacity: 1, y: 0, transition: { duration: 0.25 } },
@@ -304,7 +316,6 @@ export default function App() {
                   onEditExpense={openEditExpense}
                   month={month}
                   setMonth={setMonth}
-                  onBack={() => setActiveTab("dashboard")}
                 />
               </motion.div>
             )}
@@ -316,11 +327,7 @@ export default function App() {
                 animate="show"
                 exit="exit"
               >
-                <ReportsTab
-                  month={month}
-                  setMonth={setMonth}
-                  onBack={() => setActiveTab("dashboard")}
-                />
+                <ReportsTab month={month} setMonth={setMonth} />
               </motion.div>
             )}
             {activeTab === "shopping" && (

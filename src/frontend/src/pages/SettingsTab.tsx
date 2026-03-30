@@ -66,7 +66,9 @@ import {
   useCreateExpense,
   useDeleteCategory,
   useExportExpenses,
+  useIncomeSources,
   useResetUserData,
+  useSaveIncomeSources,
   useSetAppSettings,
   useUpdateCategory,
 } from "../hooks/useQueries";
@@ -158,6 +160,8 @@ export default function SettingsTab() {
   const resetData = useResetUserData();
   const exportForCSV = useExportExpenses();
   const exportForJSON = useExportExpenses();
+  const { data: backendIncomeSources } = useIncomeSources();
+  const saveIncomeSourcesMutation = useSaveIncomeSources();
   const { t, language, setLanguage } = useLanguage();
 
   const [currency, setCurrency] = useState(settings?.currency ?? "USD");
@@ -169,7 +173,13 @@ export default function SettingsTab() {
   const [securityOpen, setSecurityOpen] = useState(false);
   const [securityTab, setSecurityTab] = useState("autolock");
   const [exportOpen, setExportOpen] = useState(false);
-  const [exportMode, setExportMode] = useState<"month" | "year">("month");
+  const [exportMode, setExportMode] = useState<"month" | "quarter" | "year">(
+    "month",
+  );
+  const [exportQuarter, setExportQuarter] = useState(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), q: Math.floor(now.getMonth() / 3) + 1 };
+  });
   const [exportMonth, setExportMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -241,6 +251,15 @@ export default function SettingsTab() {
   useEffect(() => {
     if (settings?.currency) setCurrency(settings.currency);
   }, [settings?.currency]);
+
+  // Load income sources from backend when available
+  useEffect(() => {
+    if (backendIncomeSources && backendIncomeSources.length > 0) {
+      saveIncomeSources(backendIncomeSources);
+      setIncomeSources(backendIncomeSources);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [backendIncomeSources]);
 
   useEffect(() => {
     if (iiResetPending && isLoginSuccess) {
@@ -371,12 +390,16 @@ export default function SettingsTab() {
     saveIncomeSources(updated);
     setIncomeSources(updated);
     setShowIncomeDialog(false);
+    // Sync to backend
+    saveIncomeSourcesMutation.mutateAsync(updated).catch(() => {});
   }
   function handleDeleteIncome(id: string) {
     const updated = incomeSources.filter((s) => s.id !== id);
     saveIncomeSources(updated);
     setIncomeSources(updated);
     setDeleteIncomeSourceId(null);
+    // Sync to backend
+    saveIncomeSourcesMutation.mutateAsync(updated).catch(() => {});
   }
 
   async function handleResetData() {
@@ -427,13 +450,26 @@ export default function SettingsTab() {
     }
   }
 
+  function getExportMonths(): string[] {
+    if (exportMode === "month") return [exportMonth];
+    if (exportMode === "quarter") {
+      const startM = (exportQuarter.q - 1) * 3 + 1;
+      return [0, 1, 2].map(
+        (i) => `${exportQuarter.year}-${String(startM + i).padStart(2, "0")}`,
+      );
+    }
+    return Array.from(
+      { length: 12 },
+      (_, i) => `${exportYear}-${String(i + 1).padStart(2, "0")}`,
+    );
+  }
+
   async function handleExportCSV() {
     try {
       const allExpenses = await exportForCSV.mutateAsync();
+      const months = getExportMonths();
       const expenses = allExpenses.filter((e) =>
-        exportMode === "month"
-          ? e.date.startsWith(exportMonth)
-          : e.date.startsWith(String(exportYear)),
+        months.some((m) => e.date.startsWith(m)),
       );
       exportToCSV(expenses, categories);
       toast.success(t("export_success"));
@@ -445,10 +481,9 @@ export default function SettingsTab() {
   async function handleExportJSON() {
     try {
       const allExpenses = await exportForJSON.mutateAsync();
+      const months = getExportMonths();
       const expenses = allExpenses.filter((e) =>
-        exportMode === "month"
-          ? e.date.startsWith(exportMonth)
-          : e.date.startsWith(String(exportYear)),
+        months.some((m) => e.date.startsWith(m)),
       );
       exportToJSON(expenses, categories);
       toast.success(t("export_success"));
@@ -1080,6 +1115,18 @@ export default function SettingsTab() {
                   </button>
                   <button
                     type="button"
+                    data-ocid="settings.export_mode_quarter.toggle"
+                    onClick={() => setExportMode("quarter")}
+                    className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+                      exportMode === "quarter"
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Quarter
+                  </button>
+                  <button
+                    type="button"
                     data-ocid="settings.export_mode_year.toggle"
                     onClick={() => setExportMode("year")}
                     className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition-colors ${
@@ -1093,7 +1140,7 @@ export default function SettingsTab() {
                 </div>
 
                 {/* Range selector */}
-                {exportMode === "month" ? (
+                {exportMode === "month" && (
                   <select
                     data-ocid="settings.export_month.select"
                     value={exportMonth}
@@ -1116,7 +1163,33 @@ export default function SettingsTab() {
                       );
                     })}
                   </select>
-                ) : (
+                )}
+                {exportMode === "quarter" && (
+                  <select
+                    data-ocid="settings.export_quarter.select"
+                    value={`${exportQuarter.year}-Q${exportQuarter.q}`}
+                    onChange={(e) => {
+                      const [yr, q] = e.target.value.split("-Q");
+                      setExportQuarter({ year: Number(yr), q: Number(q) });
+                    }}
+                    className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  >
+                    {Array.from({ length: 8 }, (_, i) => {
+                      const now = new Date();
+                      const totalQ =
+                        Math.floor(now.getMonth() / 3) + now.getFullYear() * 4;
+                      const tq = totalQ - i;
+                      const yr = Math.floor(tq / 4);
+                      const q = (tq % 4) + 1;
+                      return (
+                        <option key={`${yr}-Q${q}`} value={`${yr}-Q${q}`}>
+                          Q{q} {yr}
+                        </option>
+                      );
+                    })}
+                  </select>
+                )}
+                {exportMode === "year" && (
                   <select
                     data-ocid="settings.export_year.select"
                     value={exportYear}

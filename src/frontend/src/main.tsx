@@ -1,13 +1,17 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 // ============================================================
-// CRITICAL: DO NOT REMOVE OR MODIFY THE PROVIDERS BELOW
-// LanguageProvider and AutoLockProvider MUST stay at the root.
-// Removing them will cause white screen crashes and break all translations.
+// CRITICAL: DO NOT REMOVE LanguageProvider OR AutoLockProvider
+// These providers MUST remain in main.tsx and wrap the entire app.
+// Removing them will cause white screen / translation failures.
+// They are intentionally placed here (not in App.tsx) because
+// App.tsx is regenerated during builds but main.tsx is not.
 // ============================================================
 import ReactDOM from "react-dom/client";
 import App from "./App";
+// PERMANENT IMPORT -- DO NOT REMOVE
 import { AutoLockProvider } from "./contexts/AutoLockContext";
 import { InternetIdentityProvider } from "./hooks/useInternetIdentity";
+// PERMANENT IMPORT -- DO NOT REMOVE
 import { LanguageProvider } from "./i18n/LanguageContext";
 import "./index.css";
 
@@ -24,12 +28,13 @@ declare global {
 const queryClient = new QueryClient();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  // DO NOT REMOVE: LanguageProvider must wrap App at the root
+  // PERMANENT PROVIDERS -- DO NOT REMOVE LanguageProvider or AutoLockProvider
+  // These must always wrap the entire app at the root level.
   <QueryClientProvider client={queryClient}>
     <InternetIdentityProvider>
-      {/* DO NOT REMOVE: LanguageProvider - required for all translations */}
+      {/* PERMANENT -- DO NOT REMOVE */}
       <LanguageProvider>
-        {/* DO NOT REMOVE: AutoLockProvider - required for session security */}
+        {/* PERMANENT -- DO NOT REMOVE */}
         <AutoLockProvider>
           <App />
         </AutoLockProvider>
