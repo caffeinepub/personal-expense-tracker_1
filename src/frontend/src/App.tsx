@@ -235,12 +235,27 @@ export default function App() {
     setMonthlyIncome.isPending;
 
   // Show loading spinner on initial load to prevent white screen
+  // Keep visible until actor is ready AND initial categories have loaded
   if (actorLoading || (loadingCats && categories.length === 0)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 rounded-full border-4 border-primary border-t-transparent animate-spin" />
-          <p className="text-sm text-muted-foreground">Loading your data...</p>
+      <div
+        className="min-h-screen flex items-center justify-center bg-background"
+        style={{ animation: "fadeIn 0.3s ease-in" }}
+      >
+        <style>
+          {"@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }"}
+        </style>
+        <div className="flex flex-col items-center gap-4">
+          <div
+            className="w-12 h-12 rounded-full border-4 border-t-transparent animate-spin"
+            style={{
+              borderColor:
+                "oklch(0.52 0.15 160) oklch(0.52 0.15 160 / 0.2) oklch(0.52 0.15 160 / 0.2) oklch(0.52 0.15 160 / 0.2)",
+            }}
+          />
+          <p className="text-sm font-medium text-muted-foreground">
+            Loading your data…
+          </p>
         </div>
       </div>
     );

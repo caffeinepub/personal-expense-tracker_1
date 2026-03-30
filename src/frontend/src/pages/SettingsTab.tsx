@@ -836,7 +836,7 @@ export default function SettingsTab() {
                       className="text-xs"
                       data-ocid="settings.financial.income.tab"
                     >
-                      Income
+                      Incomes
                     </TabsTrigger>
                     <TabsTrigger
                       value="category"
@@ -850,14 +850,14 @@ export default function SettingsTab() {
                       className="text-xs"
                       data-ocid="settings.financial.budget.tab"
                     >
-                      {t("budget_settings")}
+                      Budgets
                     </TabsTrigger>
                     <TabsTrigger
                       value="payment"
                       className="text-xs"
                       data-ocid="settings.financial.payment.tab"
                     >
-                      {t("payment_methods")}
+                      Payments
                     </TabsTrigger>
                   </TabsList>
                   <TabsContent value="income" className="mt-0">

@@ -605,11 +605,16 @@ export default function ShoppingListTab() {
               )}
             </div>
 
-            <div className="flex gap-2">
-              <div className="space-y-1.5 flex-1">
-                <Label>{t("category")}</Label>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2 min-w-0">
+                <Label className="text-sm font-semibold text-foreground">
+                  {t("category")}
+                </Label>
                 <Select value={newCategory} onValueChange={setNewCategory}>
-                  <SelectTrigger data-ocid="shopping.select" className="h-11">
+                  <SelectTrigger
+                    data-ocid="shopping.select"
+                    className="h-11 w-full text-sm"
+                  >
                     <SelectValue placeholder={t("select_category")} />
                   </SelectTrigger>
                   <SelectContent>
@@ -621,26 +626,29 @@ export default function ShoppingListTab() {
                   </SelectContent>
                 </Select>
               </div>
-              {/* Bug 1 fix: reliable visible date input */}
-              <div className="space-y-1.5 flex-1">
-                <Label>{t("date")}</Label>
-                <div className="relative">
-                  <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              {/* Date field — reliable on mobile and desktop */}
+              <div className="space-y-2 min-w-0 overflow-hidden">
+                <Label className="text-sm font-semibold text-foreground">
+                  {t("date")}
+                </Label>
+                <div className="relative w-full overflow-hidden">
+                  <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                   <input
                     type="date"
                     value={newDate}
                     onChange={(e) => setNewDate(e.target.value)}
-                    className="w-full h-11 rounded-md border border-input bg-background pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
+                    className="w-full h-11 rounded-md border border-input bg-background pl-9 pr-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
+                    style={{ minWidth: 0 }}
                   />
                 </div>
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="est-price">
+              <Label htmlFor="est-price" className="text-sm font-medium">
                 {t("estimated_price")}{" "}
-                <span className="text-muted-foreground text-xs">
-                  ({t("optional") ?? "optional"})
+                <span className="text-muted-foreground text-xs font-normal">
+                  (Optional)
                 </span>
               </Label>
               <div className="relative">
@@ -663,24 +671,30 @@ export default function ShoppingListTab() {
             </div>
           </div>
 
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              data-ocid="shopping.cancel_button"
-              onClick={() => setAddOpen(false)}
-              className="bg-muted/60"
-            >
-              {t("cancel")}
-            </Button>
-            <Button
-              data-ocid="shopping.submit_button"
-              onClick={handleAddItem}
-              className="bg-primary text-primary-foreground"
-            >
-              <Plus className="h-4 w-4 mr-1" />
-              {t("add_item")}
-            </Button>
-          </DialogFooter>
+          <div className="pt-2 space-y-2">
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                variant="outline"
+                data-ocid="shopping.cancel_button"
+                onClick={() => setAddOpen(false)}
+                className="h-11 w-full bg-muted/60"
+              >
+                {t("cancel")}
+              </Button>
+              <Button
+                data-ocid="shopping.submit_button"
+                onClick={handleAddItem}
+                className="h-11 w-full bg-primary text-primary-foreground"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                {t("add_item")}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              <span className="text-destructive font-semibold">*</span> Required
+              field
+            </p>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -725,11 +739,16 @@ export default function ShoppingListTab() {
               )}
             </div>
 
-            <div className="flex gap-2">
-              <div className="space-y-1.5 flex-1">
-                <Label>{t("category")}</Label>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2 min-w-0">
+                <Label className="text-sm font-semibold text-foreground">
+                  {t("category")}
+                </Label>
                 <Select value={editCategory} onValueChange={setEditCategory}>
-                  <SelectTrigger data-ocid="shopping.select" className="h-11">
+                  <SelectTrigger
+                    data-ocid="shopping.select"
+                    className="h-11 w-full text-sm"
+                  >
                     <SelectValue placeholder={t("select_category")} />
                   </SelectTrigger>
                   <SelectContent>
@@ -741,26 +760,29 @@ export default function ShoppingListTab() {
                   </SelectContent>
                 </Select>
               </div>
-              {/* Bug 1 fix: reliable visible date input for edit dialog */}
-              <div className="space-y-1.5 flex-1">
-                <Label>{t("date")}</Label>
-                <div className="relative">
-                  <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              {/* Date field — reliable on mobile and desktop */}
+              <div className="space-y-2 min-w-0 overflow-hidden">
+                <Label className="text-sm font-semibold text-foreground">
+                  {t("date")}
+                </Label>
+                <div className="relative w-full overflow-hidden">
+                  <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                   <input
                     type="date"
                     value={editDate}
                     onChange={(e) => setEditDate(e.target.value)}
-                    className="w-full h-11 rounded-md border border-input bg-background pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
+                    className="w-full h-11 rounded-md border border-input bg-background pl-9 pr-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
+                    style={{ minWidth: 0 }}
                   />
                 </div>
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="edit-est-price">
+              <Label htmlFor="edit-est-price" className="text-sm font-medium">
                 {t("estimated_price")}{" "}
-                <span className="text-muted-foreground text-xs">
-                  ({t("optional") ?? "optional"})
+                <span className="text-muted-foreground text-xs font-normal">
+                  (Optional)
                 </span>
               </Label>
               <div className="relative">
@@ -783,23 +805,29 @@ export default function ShoppingListTab() {
             </div>
           </div>
 
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              data-ocid="shopping.cancel_button"
-              onClick={() => setEditItem(null)}
-              className="bg-muted/60"
-            >
-              {t("cancel")}
-            </Button>
-            <Button
-              data-ocid="shopping.save_button"
-              onClick={handleSaveEdit}
-              className="bg-primary text-primary-foreground"
-            >
-              Save Changes
-            </Button>
-          </DialogFooter>
+          <div className="pt-2 space-y-2">
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                variant="outline"
+                data-ocid="shopping.cancel_button"
+                onClick={() => setEditItem(null)}
+                className="h-11 w-full bg-muted/60"
+              >
+                {t("cancel")}
+              </Button>
+              <Button
+                data-ocid="shopping.save_button"
+                onClick={handleSaveEdit}
+                className="h-11 w-full bg-primary text-primary-foreground"
+              >
+                Save Changes
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              <span className="text-destructive font-semibold">*</span> Required
+              field
+            </p>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

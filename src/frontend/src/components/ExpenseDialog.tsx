@@ -372,9 +372,9 @@ export default function ExpenseDialog({
 
         <div className="space-y-4 py-2">
           {/* Row 1: Amount + Date */}
-          <div className="grid grid-cols-2 gap-2 items-start">
+          <div className="grid grid-cols-2 gap-2 items-start overflow-hidden">
             {/* Amount */}
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 min-w-0">
               <Label htmlFor="amount" className="text-sm font-medium">
                 {t("amount_label")} <span className="text-destructive">*</span>
               </Label>
@@ -428,12 +428,12 @@ export default function ExpenseDialog({
             </div>
 
             {/* Date */}
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 min-w-0 overflow-hidden">
               <Label htmlFor="date" className="text-sm font-medium">
                 {isIncome ? t("month_label") : t("date_label")}{" "}
                 <span className="text-destructive">*</span>
               </Label>
-              <div className="relative w-full">
+              <div className="relative w-full overflow-hidden">
                 <Input
                   ref={dateInputRef}
                   id="date"
