@@ -2,6 +2,7 @@ import { LogOut, Moon, Pencil, Sun } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
+import { useSaveUserProfile, useUserProfile } from "../hooks/useQueries";
 import { useLanguage } from "../i18n/LanguageContext";
 
 interface AppHeaderProps {
@@ -12,6 +13,8 @@ interface AppHeaderProps {
 export default function AppHeader({ showTitle = true, style }: AppHeaderProps) {
   const { clear } = useInternetIdentity();
   const { t } = useLanguage();
+  const { data: userProfile } = useUserProfile();
+  const saveUserProfile = useSaveUserProfile();
 
   const [isDark, setIsDark] = useState(() => {
     const saved = localStorage.getItem("pe_dark_mode");
@@ -19,12 +22,21 @@ export default function AppHeader({ showTitle = true, style }: AppHeaderProps) {
     return document.documentElement.classList.contains("dark");
   });
 
+  // Username: backend is source of truth; fall back to localStorage, then default
   const [username, setUsername] = useState(
     () => localStorage.getItem("pe_username") || "Alex Rivera",
   );
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(username);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync username from backend when loaded
+  useEffect(() => {
+    if (userProfile?.name) {
+      setUsername(userProfile.name);
+      localStorage.setItem("pe_username", userProfile.name);
+    }
+  }, [userProfile?.name]);
 
   useEffect(() => {
     if (isDark) {
@@ -46,6 +58,8 @@ export default function AppHeader({ showTitle = true, style }: AppHeaderProps) {
     const trimmed = nameInput.trim() || "Alex Rivera";
     setUsername(trimmed);
     localStorage.setItem("pe_username", trimmed);
+    // Save to backend for cross-device sync
+    saveUserProfile.mutate({ name: trimmed });
     setEditingName(false);
   }
 

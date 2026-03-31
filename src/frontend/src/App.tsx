@@ -353,7 +353,7 @@ export default function App() {
                 animate="show"
                 exit="exit"
               >
-                <ShoppingListTab />
+                <ShoppingListTab month={month} setMonth={setMonth} />
               </motion.div>
             )}
             {activeTab === "settings" && (

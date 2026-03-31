@@ -108,7 +108,15 @@ function groupItemsByDate(
   }));
 }
 
-export default function ShoppingListTab() {
+interface ShoppingListTabProps {
+  month?: string;
+  setMonth?: (m: string) => void;
+}
+
+export default function ShoppingListTab({
+  month,
+  setMonth,
+}: ShoppingListTabProps) {
   const { t } = useLanguage();
   const { data: items = [] } = useShoppingItems();
   const createShoppingItem = useCreateShoppingItem();
@@ -120,10 +128,15 @@ export default function ShoppingListTab() {
   const { data: settings } = useAppSettings();
   const currency = settings?.currency ?? "USD";
 
-  // Month filter
-  const [selectedMonth, setSelectedMonth] = useState(() =>
+  // Month filter - synced from Dashboard via props
+  const [localMonth, setLocalMonth] = useState(() =>
     new Date().toISOString().substring(0, 7),
   );
+  const selectedMonth = month ?? localMonth;
+  const setSelectedMonth = (m: string) => {
+    setLocalMonth(m);
+    setMonth?.(m);
+  };
   // Month picker popover state
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
   const [pickerYear, setPickerYear] = useState(() => new Date().getFullYear());

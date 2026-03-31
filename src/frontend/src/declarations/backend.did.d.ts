@@ -47,6 +47,12 @@ export interface ShoppingItem {
   'bought' : boolean,
   'category' : string,
 }
+export interface IncomeSource {
+  'id' : string,
+  'name' : string,
+  'color' : string,
+  'monthlyBudget' : number,
+}
 export interface UserProfile { 'name' : string }
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
@@ -70,12 +76,14 @@ export interface _SERVICE {
   'getExpensesByCategory' : ActorMethod<[string], Array<Expense>>,
   'getExpensesByMonth' : ActorMethod<[string], Array<Expense>>,
   'getMonthlyIncome' : ActorMethod<[string], [] | [MonthlyIncome]>,
+  'getIncomeSourcesList' : ActorMethod<[], Array<IncomeSource>>,
   'getMonthlySummary' : ActorMethod<[string], MonthlySummary>,
   'getShoppingItems' : ActorMethod<[], Array<ShoppingItem>>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'resetUserData' : ActorMethod<[], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'saveIncomeSources' : ActorMethod<[Array<IncomeSource>], undefined>,
   'setAppSettings' : ActorMethod<[AppSettings], undefined>,
   'setMonthlyIncome' : ActorMethod<[MonthlyIncome], undefined>,
   'toggleShoppingItemBought' : ActorMethod<[string, boolean], undefined>,

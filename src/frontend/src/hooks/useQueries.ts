@@ -311,21 +311,20 @@ export function useToggleShoppingItemBought() {
 
 // ─── Income Sources ──────────────────────────────────────────────────────────
 
-type ExtendedActor = {
-  getIncomeSourcesList(): Promise<IncomeSource[]>;
-  saveIncomeSources(sources: IncomeSource[]): Promise<void>;
-};
-
 export function useIncomeSources() {
   const { actor, isFetching } = useActor();
   return useQuery<IncomeSource[]>({
     queryKey: ["incomeSources"],
     queryFn: async () => {
       if (!actor) return [];
-      return (actor as unknown as ExtendedActor).getIncomeSourcesList();
+      try {
+        return await actor.getIncomeSourcesList();
+      } catch {
+        return [];
+      }
     },
     enabled: !!actor && !isFetching,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 0,
   });
 }
 
@@ -335,10 +334,37 @@ export function useSaveIncomeSources() {
   return useMutation({
     mutationFn: (sources: IncomeSource[]) => {
       if (!actor) throw new Error("No actor");
-      return (actor as unknown as ExtendedActor).saveIncomeSources(sources);
+      return actor.saveIncomeSources(sources);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["incomeSources"] });
     },
+  });
+}
+
+// ─── User Profile ─────────────────────────────────────────────────────────────
+
+export function useUserProfile() {
+  const { actor, isFetching } = useActor();
+  return useQuery<{ name: string } | null>({
+    queryKey: ["userProfile"],
+    queryFn: async () => {
+      if (!actor) return null;
+      return actor.getCallerUserProfile();
+    },
+    enabled: !!actor && !isFetching,
+    staleTime: 1000 * 60 * 10,
+  });
+}
+
+export function useSaveUserProfile() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (profile: { name: string }) => {
+      if (!actor) throw new Error("No actor");
+      return actor.saveCallerUserProfile(profile);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["userProfile"] }),
   });
 }

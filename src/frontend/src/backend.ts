@@ -135,6 +135,12 @@ export interface Category {
     color: string;
     budget: number;
 }
+export interface IncomeSource {
+    id: string;
+    name: string;
+    color: string;
+    monthlyBudget: number;
+}
 export enum UserRole {
     admin = "admin",
     user = "user",
@@ -165,6 +171,8 @@ export interface backendInterface {
     isCallerAdmin(): Promise<boolean>;
     resetUserData(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    getIncomeSourcesList(): Promise<Array<IncomeSource>>;
+    saveIncomeSources(sources: Array<IncomeSource>): Promise<void>;
     setAppSettings(settings: AppSettings): Promise<void>;
     setMonthlyIncome(income: MonthlyIncome): Promise<void>;
     toggleShoppingItemBought(itemId: string, bought: boolean): Promise<void>;
@@ -172,7 +180,7 @@ export interface backendInterface {
     updateExpense(expense: Expense): Promise<void>;
     updateShoppingItem(item: ShoppingItem): Promise<void>;
 }
-import type { AppSettings as _AppSettings, MonthlyIncome as _MonthlyIncome, ShoppingItem as _ShoppingItem, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
+import type { AppSettings as _AppSettings, IncomeSource as _IncomeSource, MonthlyIncome as _MonthlyIncome, ShoppingItem as _ShoppingItem, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
     async _initializeAccessControlWithSecret(arg0: string): Promise<void> {
@@ -536,6 +544,34 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.setMonthlyIncome(arg0);
+            return result;
+        }
+    }
+    async getIncomeSourcesList(): Promise<Array<IncomeSource>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getIncomeSourcesList();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getIncomeSourcesList();
+            return result;
+        }
+    }
+    async saveIncomeSources(arg0: Array<IncomeSource>): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.saveIncomeSources(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.saveIncomeSources(arg0);
             return result;
         }
     }

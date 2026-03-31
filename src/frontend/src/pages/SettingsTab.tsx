@@ -29,6 +29,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Calendar,
   Check,
@@ -70,6 +71,7 @@ import {
   useResetUserData,
   useSaveIncomeSources,
   useSetAppSettings,
+  useSetMonthlyIncome,
   useUpdateCategory,
 } from "../hooks/useQueries";
 import { LANGUAGES, useLanguage } from "../i18n/LanguageContext";
@@ -80,12 +82,8 @@ import {
   parseImportCSV,
   parseImportJSON,
 } from "../utils/export";
-import { formatCurrency } from "../utils/format";
-import {
-  type IncomeSource,
-  getIncomeSources,
-  saveIncomeSources,
-} from "../utils/incomeSources";
+import { currentMonth, formatCurrency } from "../utils/format";
+import type { IncomeSource } from "../utils/incomeSources";
 
 const CURRENCIES = [
   { code: "USD", symbol: "$", name: "US Dollar" },
@@ -162,6 +160,8 @@ export default function SettingsTab() {
   const exportForJSON = useExportExpenses();
   const { data: backendIncomeSources } = useIncomeSources();
   const saveIncomeSourcesMutation = useSaveIncomeSources();
+  const setMonthlyIncomeMutation = useSetMonthlyIncome();
+  const qc = useQueryClient();
   const { t, language, setLanguage } = useLanguage();
 
   const [currency, setCurrency] = useState(settings?.currency ?? "USD");
@@ -235,9 +235,8 @@ export default function SettingsTab() {
   const [catBudget, setCatBudget] = useState("");
 
   // Income sources state
-  const [incomeSources, setIncomeSources] = useState<IncomeSource[]>(() =>
-    getIncomeSources(),
-  );
+  // Income sources come from React Query (backend is source of truth)
+  const incomeSources = backendIncomeSources ?? [];
   const [showIncomeDialog, setShowIncomeDialog] = useState(false);
   const [editingIncomeSource, setEditingIncomeSource] =
     useState<IncomeSource | null>(null);
@@ -251,15 +250,6 @@ export default function SettingsTab() {
   useEffect(() => {
     if (settings?.currency) setCurrency(settings.currency);
   }, [settings?.currency]);
-
-  // Load income sources from backend when available
-  useEffect(() => {
-    if (backendIncomeSources && backendIncomeSources.length > 0) {
-      saveIncomeSources(backendIncomeSources);
-      setIncomeSources(backendIncomeSources);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [backendIncomeSources]);
 
   useEffect(() => {
     if (iiResetPending && isLoginSuccess) {
@@ -358,7 +348,7 @@ export default function SettingsTab() {
     setIncBudget(src.monthlyBudget > 0 ? src.monthlyBudget.toString() : "");
     setShowIncomeDialog(true);
   }
-  function handleSaveIncome() {
+  async function handleSaveIncome() {
     if (!incName.trim()) {
       toast.error("Income name is required");
       return;
@@ -387,19 +377,48 @@ export default function SettingsTab() {
         },
       ];
     }
-    saveIncomeSources(updated);
-    setIncomeSources(updated);
+    // Optimistically update React Query cache immediately (no race condition)
+    qc.setQueryData(["incomeSources"], updated);
     setShowIncomeDialog(false);
     // Sync to backend
-    saveIncomeSourcesMutation.mutateAsync(updated).catch(() => {});
+    try {
+      await saveIncomeSourcesMutation.mutateAsync(updated);
+      // Auto-sync total budget to monthly income spent card
+      const totalBudget = updated.reduce(
+        (sum, s) => sum + (s.monthlyBudget || 0),
+        0,
+      );
+      if (totalBudget > 0) {
+        setMonthlyIncomeMutation
+          .mutateAsync({ month: currentMonth(), amount: totalBudget })
+          .catch(() => {});
+      }
+    } catch {
+      // Revert on failure
+      qc.invalidateQueries({ queryKey: ["incomeSources"] });
+      toast.error("Failed to save income source. Please try again.");
+    }
   }
-  function handleDeleteIncome(id: string) {
+  async function handleDeleteIncome(id: string) {
     const updated = incomeSources.filter((s) => s.id !== id);
-    saveIncomeSources(updated);
-    setIncomeSources(updated);
+    // Optimistically update React Query cache
+    qc.setQueryData(["incomeSources"], updated);
     setDeleteIncomeSourceId(null);
     // Sync to backend
-    saveIncomeSourcesMutation.mutateAsync(updated).catch(() => {});
+    try {
+      await saveIncomeSourcesMutation.mutateAsync(updated);
+      const totalBudget = updated.reduce(
+        (sum, s) => sum + (s.monthlyBudget || 0),
+        0,
+      );
+      setMonthlyIncomeMutation
+        .mutateAsync({ month: currentMonth(), amount: totalBudget })
+        .catch(() => {});
+    } catch {
+      // Revert on failure
+      qc.invalidateQueries({ queryKey: ["incomeSources"] });
+      toast.error("Failed to delete income source. Please try again.");
+    }
   }
 
   async function handleResetData() {

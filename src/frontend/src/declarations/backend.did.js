@@ -57,6 +57,12 @@ export const MonthlySummary = IDL.Record({
   'totalIncome' : IDL.Float64,
   'totalExpenses' : IDL.Float64,
 });
+export const IncomeSource = IDL.Record({
+  'id' : IDL.Text,
+  'name' : IDL.Text,
+  'color' : IDL.Text,
+  'monthlyBudget' : IDL.Float64,
+});
 
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
@@ -76,6 +82,7 @@ export const idlService = IDL.Service({
   'getExpenses' : IDL.Func([], [IDL.Vec(Expense)], ['query']),
   'getExpensesByCategory' : IDL.Func([IDL.Text], [IDL.Vec(Expense)], ['query']),
   'getExpensesByMonth' : IDL.Func([IDL.Text], [IDL.Vec(Expense)], ['query']),
+  'getIncomeSourcesList' : IDL.Func([], [IDL.Vec(IncomeSource)], ['query']),
   'getMonthlyIncome' : IDL.Func(
       [IDL.Text],
       [IDL.Opt(MonthlyIncome)],
@@ -91,6 +98,7 @@ export const idlService = IDL.Service({
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'resetUserData' : IDL.Func([], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+  'saveIncomeSources' : IDL.Func([IDL.Vec(IncomeSource)], [], []),
   'setAppSettings' : IDL.Func([AppSettings], [], []),
   'setMonthlyIncome' : IDL.Func([MonthlyIncome], [], []),
   'toggleShoppingItemBought' : IDL.Func([IDL.Text, IDL.Bool], [], []),
@@ -151,6 +159,12 @@ export const idlFactory = ({ IDL }) => {
     'totalIncome' : IDL.Float64,
     'totalExpenses' : IDL.Float64,
   });
+  const IncomeSource = IDL.Record({
+    'id' : IDL.Text,
+    'name' : IDL.Text,
+    'color' : IDL.Text,
+    'monthlyBudget' : IDL.Float64,
+  });
   
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
@@ -174,6 +188,7 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'getExpensesByMonth' : IDL.Func([IDL.Text], [IDL.Vec(Expense)], ['query']),
+    'getIncomeSourcesList' : IDL.Func([], [IDL.Vec(IncomeSource)], ['query']),
     'getMonthlyIncome' : IDL.Func(
         [IDL.Text],
         [IDL.Opt(MonthlyIncome)],
@@ -189,6 +204,7 @@ export const idlFactory = ({ IDL }) => {
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'resetUserData' : IDL.Func([], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+    'saveIncomeSources' : IDL.Func([IDL.Vec(IncomeSource)], [], []),
     'setAppSettings' : IDL.Func([AppSettings], [], []),
     'setMonthlyIncome' : IDL.Func([MonthlyIncome], [], []),
     'toggleShoppingItemBought' : IDL.Func([IDL.Text, IDL.Bool], [], []),
