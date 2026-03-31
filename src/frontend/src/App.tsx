@@ -293,7 +293,7 @@ export default function App() {
         "
         style={{ "--theme-tint": theme.orb } as React.CSSProperties}
       >
-        <AppHeader />
+        <AppHeader theme={theme} />
         <main
           className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 pb-16
             md:pb-20"
@@ -378,7 +378,7 @@ export default function App() {
             lg:max-w-[520px]
           "
           style={{
-            backgroundColor: `color-mix(in oklch, ${theme.orb} 12%, oklch(var(--card) / 0.95))`,
+            backgroundColor: `color-mix(in oklch, ${theme.orb} 30%, oklch(var(--card) / 0.95))`,
           }}
         >
           <div className="flex items-center justify-around px-2 py-1">

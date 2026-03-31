@@ -8,9 +8,14 @@ import { useLanguage } from "../i18n/LanguageContext";
 interface AppHeaderProps {
   showTitle?: boolean;
   style?: React.CSSProperties;
+  theme?: { orb: string; gradient: string };
 }
 
-export default function AppHeader({ showTitle = true, style }: AppHeaderProps) {
+export default function AppHeader({
+  showTitle = true,
+  style,
+  theme,
+}: AppHeaderProps) {
   const { clear } = useInternetIdentity();
   const { t } = useLanguage();
   const { data: userProfile } = useUserProfile();
@@ -63,14 +68,15 @@ export default function AppHeader({ showTitle = true, style }: AppHeaderProps) {
     setEditingName(false);
   }
 
+  const themeBg = theme
+    ? `color-mix(in oklch, ${theme.orb} 30%, oklch(var(--card) / 0.95))`
+    : undefined;
+
   return (
     <div className="sticky top-0 z-50 shadow-sm" style={style ?? undefined}>
       <div
-        className={`${
-          isDark
-            ? "bg-background/95 backdrop-blur-sm"
-            : "bg-gradient-to-r from-[#F8FAFC] to-[#F1F5F9]"
-        }`}
+        className="backdrop-blur-sm"
+        style={themeBg ? { backgroundColor: themeBg } : undefined}
       >
         <div className="flex items-center justify-between px-4 pt-4 pb-3">
           {/* Left: App title + subtitle */}
