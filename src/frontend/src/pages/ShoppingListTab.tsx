@@ -607,7 +607,7 @@ export default function ShoppingListTab() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2 min-w-0">
-                <Label className="text-sm font-semibold text-foreground">
+                <Label className="text-sm font-semibold text-foreground capitalize">
                   {t("category")}
                 </Label>
                 <Select value={newCategory} onValueChange={setNewCategory}>
@@ -628,7 +628,7 @@ export default function ShoppingListTab() {
               </div>
               {/* Date field — reliable on mobile and desktop */}
               <div className="space-y-2 min-w-0 overflow-hidden">
-                <Label className="text-sm font-semibold text-foreground">
+                <Label className="text-sm font-semibold text-foreground capitalize">
                   {t("date")}
                 </Label>
                 <div className="relative w-full overflow-hidden">
@@ -741,7 +741,7 @@ export default function ShoppingListTab() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2 min-w-0">
-                <Label className="text-sm font-semibold text-foreground">
+                <Label className="text-sm font-semibold text-foreground capitalize">
                   {t("category")}
                 </Label>
                 <Select value={editCategory} onValueChange={setEditCategory}>
@@ -762,7 +762,7 @@ export default function ShoppingListTab() {
               </div>
               {/* Date field — reliable on mobile and desktop */}
               <div className="space-y-2 min-w-0 overflow-hidden">
-                <Label className="text-sm font-semibold text-foreground">
+                <Label className="text-sm font-semibold text-foreground capitalize">
                   {t("date")}
                 </Label>
                 <div className="relative w-full overflow-hidden">

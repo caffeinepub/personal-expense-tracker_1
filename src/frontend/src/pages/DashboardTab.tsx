@@ -43,6 +43,7 @@ import {
   useAppSettings,
   useCategories,
   useExpensesByMonth,
+  useIncomeSources,
   useMonthlySummary,
 } from "../hooks/useQueries";
 import { useLanguage } from "../i18n/LanguageContext";
@@ -55,7 +56,7 @@ import {
   formatMonthYear,
   pct,
 } from "../utils/format";
-import { type IncomeSource, getIncomeSources } from "../utils/incomeSources";
+import type { IncomeSource } from "../utils/incomeSources";
 
 const MONTH_KEYS = [
   "month_jan",
@@ -120,6 +121,20 @@ export default function DashboardTab({
   }, [chartTab]);
   const { t } = useLanguage();
 
+  const [isDark, setIsDark] = useState(() =>
+    document.documentElement.classList.contains("dark"),
+  );
+  useEffect(() => {
+    const obs = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    });
+    obs.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => obs.disconnect();
+  }, []);
+
   const { data: expenses = [], isLoading: loadingExpenses } =
     useExpensesByMonth(month);
   const { data: summary, isLoading: loadingSummary } = useMonthlySummary(month);
@@ -131,17 +146,16 @@ export default function DashboardTab({
 
   const [themeDialogOpen, setThemeDialogOpen] = useState(false);
   const [incomeOpen, setIncomeOpen] = useState(false);
-  const [incomeSources] = useState<IncomeSource[]>(() => getIncomeSources());
+  const { data: incomeSourcesData } = useIncomeSources();
+  const incomeSources = incomeSourcesData ?? [];
 
   const recentExpenses = useMemo(
     () =>
-      [...expenses]
-        .sort(
-          (a, b) =>
-            new Date(b.date).getTime() - new Date(a.date).getTime() ||
-            Number(b.createdAt) - Number(a.createdAt),
-        )
-        .slice(0, 7),
+      [...expenses].sort(
+        (a, b) =>
+          new Date(b.date).getTime() - new Date(a.date).getTime() ||
+          Number(b.createdAt) - Number(a.createdAt),
+      ),
     [expenses],
   );
 
@@ -550,7 +564,7 @@ export default function DashboardTab({
                     </p>
                     <span className="text-xs text-muted-foreground/50">|</span>
                     <h3 className="font-display text-base font-semibold">
-                      Income
+                      Income Source
                     </h3>
                   </div>
                   <ChevronDown
@@ -783,7 +797,7 @@ export default function DashboardTab({
                                     dataKey="name"
                                     tick={{
                                       fontSize: 10,
-                                      fill: "var(--foreground)",
+                                      fill: isDark ? "#e2e8f0" : "#334155",
                                     }}
                                     axisLine={false}
                                     tickLine={false}
@@ -794,7 +808,7 @@ export default function DashboardTab({
                                   <YAxis
                                     tick={{
                                       fontSize: 10,
-                                      fill: "var(--foreground)",
+                                      fill: isDark ? "#e2e8f0" : "#334155",
                                     }}
                                     tickFormatter={(v) =>
                                       formatCurrency(v, currency)
@@ -934,7 +948,7 @@ export default function DashboardTab({
                                         dataKey="name"
                                         tick={{
                                           fontSize: 10,
-                                          fill: "var(--foreground)",
+                                          fill: isDark ? "#e2e8f0" : "#334155",
                                         }}
                                         axisLine={false}
                                         tickLine={false}
@@ -945,7 +959,7 @@ export default function DashboardTab({
                                       <YAxis
                                         tick={{
                                           fontSize: 10,
-                                          fill: "var(--foreground)",
+                                          fill: isDark ? "#e2e8f0" : "#334155",
                                         }}
                                         axisLine={false}
                                         tickLine={false}
@@ -1023,7 +1037,7 @@ export default function DashboardTab({
                                         type="number"
                                         tick={{
                                           fontSize: 10,
-                                          fill: "var(--foreground)",
+                                          fill: isDark ? "#e2e8f0" : "#334155",
                                         }}
                                         tickFormatter={(v) =>
                                           formatCurrency(v, currency)
@@ -1037,7 +1051,7 @@ export default function DashboardTab({
                                         dataKey="name"
                                         tick={{
                                           fontSize: 10,
-                                          fill: "var(--foreground)",
+                                          fill: isDark ? "#e2e8f0" : "#334155",
                                         }}
                                         axisLine={false}
                                         tickLine={false}

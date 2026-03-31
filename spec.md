@@ -1,33 +1,28 @@
-# Personal Expense Tracker
+# PE Tracker - Version 89
 
 ## Current State
-- Expenses and Reports tabs have a horizontal toolbar with Monthly/Quarterly/Yearly navigators.
-- The active/selected period button has no distinct visual style (no green gradient).
-- The list in Expenses only shows the current month's data; Quarterly and Yearly selections don't aggregate data across multiple months.
-- The Note field in Add Expense is a plain text input that shows inline suggestion dropdown only when typing 2+ chars.
-- main.tsx is missing LanguageProvider and AutoLockProvider.
+The app is a full-stack Personal Expense Tracker with dashboard, expenses, reports, settings, and shopping list tabs. Key issues: income sources not synced on mobile in dashboard, wrong header section title, recent transactions truncated to 7, chart labels may not be visible in dark mode, Add Item labels not capitalized, AppHeader needs redesign, LanguageProvider missing from main.tsx.
 
 ## Requested Changes (Diff)
 
 ### Add
-- Active period type (Monthly / Quarterly / Yearly) indicator: whichever navigator was last interacted with gets a green gradient highlight on its container/label.
-- `periodType` state (`'monthly' | 'quarterly' | 'yearly'`) in both ExpensesTab and ReportsTab.
-- Quarterly aggregation: when Quarterly is active, aggregate expenses for all 3 months of the selected quarter (Q1=Jan-Mar, Q2=Apr-Jun, Q3=Jul-Sep, Q4=Oct-Dec) and show per-row totals.
-- Yearly aggregation: when Yearly is active, aggregate expenses for all 12 months of the selected year and show per-row totals.
-- Note field becomes a dropdown-style button: shows current note value (or placeholder), clicking opens a dropdown list of all unique past expense notes as suggestion options.
-- LanguageProvider and AutoLockProvider back in main.tsx with comment guards.
+- New premium AppHeader with username display (editable), pencil icon, theme toggle (rounded square), logout (rounded square)
 
 ### Modify
-- Toolbar period buttons styled with green gradient when that period type is active.
-- Expenses list: when quarterly or yearly, load all relevant months' data and group/sum by category for a summary view.
-- ReportsTab: when quarterly or yearly, show aggregated totals in summary cards.
-- Note field: replace Input with a button+dropdown using DropdownMenu component.
+1. DashboardTab: Load incomeSources reactively from `useIncomeSources()` hook (backend sync) instead of one-time localStorage read
+2. DashboardTab: Rename "DASHBOARD | Income" header to "DASHBOARD | Income Source"
+3. DashboardTab: Remove `.slice(0, 7)` from recentExpenses so all transactions show
+4. DashboardTab: Fix chart labels (XAxis/YAxis tick fill) to use CSS variable that adapts to dark mode; donut chart legend text color fixed
+5. ShoppingListTab: Use `t("category_label")` and `t("date_label")` for Add/Edit Item dialog labels (returns "Category" and "Date" capitalized)
+6. main.tsx: Wrap app with LanguageProvider and AutoLockProvider permanently with comment guards
+7. App.tsx: Ensure smooth loading with spinner until data ready
 
 ### Remove
-- Note field text input inline suggestion behavior (replace entirely with dropdown).
+- Nothing removed
 
 ## Implementation Plan
-1. Add `periodType` state and green-gradient active styling to the Monthly/Quarterly/Yearly navigator containers in ExpensesTab and ReportsTab.
-2. In ExpensesTab: when `periodType === 'quarterly'`, load expenses for 3 months; when `periodType === 'yearly'`, load all 12 months. Aggregate and display summary rows per category with total amount.
-3. In ExpenseDialog: replace the Note Input field with a DropdownMenu trigger button that shows the note value and a ChevronDown icon, with all unique past notes as dropdown items (plus a text input within the dropdown or an editable approach).
-4. Fix main.tsx: add LanguageProvider and AutoLockProvider with comment guards.
+1. Update main.tsx with LanguageProvider + AutoLockProvider + comment guards
+2. Update AppHeader.tsx with new premium design: gradient bg, PE Tracker title, subtitle, username with edit icon, theme toggle rounded square, logout rounded square
+3. Update DashboardTab.tsx: use useIncomeSources hook for reactive sync, rename header, remove slice, fix chart label colors
+4. Update ShoppingListTab.tsx: capitalize Category/Date labels
+5. Ensure App.tsx loading is smooth
