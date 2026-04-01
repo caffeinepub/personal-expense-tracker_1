@@ -141,6 +141,10 @@ export interface IncomeSource {
     color: string;
     monthlyBudget: number;
 }
+export interface ExpenseMeta {
+    tags: string | null;
+    receiptUrl: string | null;
+}
 export enum UserRole {
     admin = "admin",
     user = "user",
@@ -173,6 +177,9 @@ export interface backendInterface {
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     getIncomeSourcesList(): Promise<Array<IncomeSource>>;
     saveIncomeSources(sources: Array<IncomeSource>): Promise<void>;
+    getExpenseMetaList(): Promise<Array<[string, ExpenseMeta]>>;
+    setExpenseMeta(expenseId: string, meta: ExpenseMeta): Promise<void>;
+    deleteExpenseMeta(expenseId: string): Promise<void>;
     setAppSettings(settings: AppSettings): Promise<void>;
     setMonthlyIncome(income: MonthlyIncome): Promise<void>;
     toggleShoppingItemBought(itemId: string, bought: boolean): Promise<void>;
@@ -574,6 +581,28 @@ export class Backend implements backendInterface {
             const result = await this.actor.saveIncomeSources(arg0);
             return result;
         }
+    }
+    async getExpenseMetaList(): Promise<Array<[string, ExpenseMeta]>> {
+        const result = await (this.actor as any).getExpenseMetaList();
+        return (result as Array<[string, { tags: [] | [string]; receiptUrl: [] | [string] }]>).map(
+            ([id, meta]) => [
+                id,
+                {
+                    tags: meta.tags.length === 0 ? null : meta.tags[0],
+                    receiptUrl: meta.receiptUrl.length === 0 ? null : meta.receiptUrl[0],
+                },
+            ]
+        );
+    }
+    async setExpenseMeta(expenseId: string, meta: ExpenseMeta): Promise<void> {
+        const candidMeta = {
+            tags: meta.tags != null ? [meta.tags] : ([] as []),
+            receiptUrl: meta.receiptUrl != null ? [meta.receiptUrl] : ([] as []),
+        };
+        await (this.actor as any).setExpenseMeta(expenseId, candidMeta);
+    }
+    async deleteExpenseMeta(expenseId: string): Promise<void> {
+        await (this.actor as any).deleteExpenseMeta(expenseId);
     }
     async toggleShoppingItemBought(arg0: string, arg1: boolean): Promise<void> {
         if (this.processError) {

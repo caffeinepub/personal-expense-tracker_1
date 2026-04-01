@@ -1,9 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { ExpenseMeta } from "../backend";
 import type {
   AppSettings,
   Category,
   Expense,
-  ExpenseMeta,
   IncomeSource,
   MonthlyIncome,
   ShoppingItem,
@@ -130,7 +130,7 @@ export function useDeleteExpense() {
       if (!actor) throw new Error("No actor");
       await actor.deleteExpense(expenseId);
       try {
-        await (actor as any).deleteExpenseMeta(expenseId);
+        await actor.deleteExpenseMeta(expenseId);
       } catch {
         /* ignore if no meta */
       }
@@ -385,7 +385,7 @@ export function useExpenseMetaList() {
     queryFn: async () => {
       if (!actor) return [];
       try {
-        return await (actor as any).getExpenseMetaList();
+        return await actor.getExpenseMetaList();
       } catch {
         return [];
       }
@@ -404,7 +404,7 @@ export function useSetExpenseMeta() {
       meta,
     }: { expenseId: string; meta: ExpenseMeta }) => {
       if (!actor) throw new Error("No actor");
-      return (actor as any).setExpenseMeta(expenseId, meta);
+      return actor.setExpenseMeta(expenseId, meta);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["expenseMeta"] }),
   });
@@ -416,7 +416,7 @@ export function useDeleteExpenseMeta() {
   return useMutation({
     mutationFn: (expenseId: string) => {
       if (!actor) throw new Error("No actor");
-      return (actor as any).deleteExpenseMeta(expenseId);
+      return actor.deleteExpenseMeta(expenseId);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["expenseMeta"] }),
   });

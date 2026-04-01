@@ -8,6 +8,8 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlignLeft,
+  ArrowDownCircle,
+  ArrowUpCircle,
   BarChart2,
   CalendarDays,
   Check,
@@ -18,6 +20,7 @@ import {
   MoreVertical,
   Pencil,
   PieChart as PieChartIcon,
+  Scale,
   Target,
   TrendingDown,
   TrendingUp,
@@ -115,6 +118,7 @@ export default function DashboardTab({
     "donut" | "vertical" | "horizontal"
   >("donut");
   const [chartTab, setChartTab] = useState<"expense" | "income">("expense");
+  const [dashTab, setDashTab] = useState<"category" | "recent">("category");
 
   // Reset income chart view when switching back to expense tab
   useEffect(() => {
@@ -361,7 +365,7 @@ export default function DashboardTab({
                 <CardContent className="relative pt-4 pb-5 px-5">
                   {/* Row 1: pill label + three-dots */}
                   <div className="flex items-center justify-between mb-4">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-widest bg-white/15 text-white/90 border border-white/20 backdrop-blur-sm">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-base font-semibold uppercase tracking-widest bg-white/15 text-white/90 border border-white/20 backdrop-blur-sm">
                       <span className="w-1.5 h-1.5 rounded-full bg-white/70 inline-block" />
                       {t("total_spent")}
                     </span>
@@ -380,11 +384,11 @@ export default function DashboardTab({
                   {/* Row 2: hero amount + wallet icon */}
                   <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0">
-                      <p className="font-display text-5xl font-bold tracking-tight leading-none text-white">
+                      <p className="font-display text-6xl font-bold tracking-tight leading-none text-white">
                         {formatCurrency(totalSpent, currency)}
                       </p>
                       {totalIncome > 0 && (
-                        <p className="text-white/60 text-xs mt-2 font-medium">
+                        <p className="text-white/60 text-base mt-2 font-medium">
                           {t("of_income", {
                             amount: formatCurrency(totalIncome, currency),
                           })}
@@ -427,7 +431,7 @@ export default function DashboardTab({
                     <div className="flex items-center justify-between mt-3 gap-2">
                       {totalIncome > 0 ? (
                         <>
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/12 border border-white/15 text-white/90">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-base font-semibold bg-white/12 border border-white/15 text-white/90">
                             {balance >= 0 ? (
                               <TrendingUp className="h-3 w-3 text-white/80" />
                             ) : (
@@ -438,12 +442,12 @@ export default function DashboardTab({
                               {balance < 0 ? t("over") : t("left")}
                             </span>
                           </span>
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-white/12 border border-white/15 text-white/90">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-base font-bold bg-white/12 border border-white/15 text-white/90">
                             {pct(totalSpent, totalIncome)}%
                           </span>
                         </>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-white/10 border border-white/12 text-white/55">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-base font-medium bg-white/10 border border-white/12 text-white/55">
                           {t("no_budget_set")}
                         </span>
                       )}
@@ -460,27 +464,36 @@ export default function DashboardTab({
                 data-ocid="dashboard.stats.card"
               >
                 <div className="rounded-xl border border-border bg-card p-3 shadow-sm flex flex-col gap-1">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    {t("income")}
-                  </p>
-                  <p className="font-display font-bold text-base leading-tight text-foreground truncate">
+                  <div className="flex items-center gap-1">
+                    <ArrowUpCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                    <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                      {t("income")}
+                    </p>
+                  </div>
+                  <p className="font-display font-bold text-lg leading-tight text-blue-600 dark:text-blue-400 truncate">
                     {formatCurrency(totalIncome, currency)}
                   </p>
                 </div>
                 <div className="rounded-xl border border-border bg-card p-3 shadow-sm flex flex-col gap-1">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    {t("expenses")}
-                  </p>
-                  <p className="font-display font-bold text-base leading-tight text-foreground truncate">
+                  <div className="flex items-center gap-1">
+                    <ArrowDownCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                    <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                      {t("expenses")}
+                    </p>
+                  </div>
+                  <p className="font-display font-bold text-lg leading-tight text-red-600 dark:text-red-400 truncate">
                     {formatCurrency(totalSpent, currency)}
                   </p>
                 </div>
                 <div className="rounded-xl border border-border bg-card p-3 shadow-sm flex flex-col gap-1">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    {t("balance")}
-                  </p>
+                  <div className="flex items-center gap-1">
+                    <Scale className="h-3.5 w-3.5 text-muted-foreground" />
+                    <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                      {t("balance")}
+                    </p>
+                  </div>
                   <p
-                    className={`font-display font-bold text-base leading-tight truncate ${
+                    className={`font-display font-bold text-lg leading-tight truncate ${
                       balance >= 0
                         ? "text-emerald-600 dark:text-emerald-400"
                         : "text-destructive"
@@ -492,67 +505,16 @@ export default function DashboardTab({
               </div>
             </motion.div>
 
-            {/* ── Spending Insights ────────────────────────────── */}
+            {/* ── Spending Insights + Savings Goal ──────────── */}
             {(() => {
               const currentSpent = summary?.totalExpenses ?? 0;
               const prevSpent = prevSummary?.totalExpenses ?? 0;
-              if (currentSpent === 0 && prevSpent === 0) return null;
-              let icon: React.ReactNode;
-              let message: string;
-              let colorClass: string;
-              let secondaryText: string;
-              if (prevSpent === 0 && currentSpent > 0) {
-                icon = <TrendingUp className="h-4 w-4 text-primary" />;
-                message = "First month tracked! Keep it up.";
-                colorClass = "text-primary";
-                secondaryText = `${formatCurrency(currentSpent, currency)} spent this month`;
-              } else {
-                const pctChange = Math.round(
-                  ((currentSpent - prevSpent) / prevSpent) * 100,
-                );
-                if (pctChange > 0) {
-                  icon = <TrendingUp className="h-4 w-4 text-destructive" />;
-                  message = `You spent ${pctChange}% more this month vs last month`;
-                  colorClass = "text-destructive";
-                } else if (pctChange < 0) {
-                  icon = <TrendingDown className="h-4 w-4 text-emerald-500" />;
-                  message = `You spent ${Math.abs(pctChange)}% less this month vs last month`;
-                  colorClass = "text-emerald-600 dark:text-emerald-400";
-                } else {
-                  icon = <Minus className="h-4 w-4 text-muted-foreground" />;
-                  message = "Same spending as last month";
-                  colorClass = "text-muted-foreground";
-                }
-                secondaryText = `${formatCurrency(currentSpent, currency)} this month vs ${formatCurrency(prevSpent, currency)} last month`;
-              }
-              return (
-                <motion.div
-                  variants={itemVariants}
-                  data-ocid="dashboard.spending_insights.card"
-                >
-                  <div className="rounded-xl border border-border bg-card shadow-sm px-4 py-3 flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                      {icon}
-                      <p className={`text-sm font-semibold ${colorClass}`}>
-                        {message}
-                      </p>
-                    </div>
-                    <p className="text-xs text-muted-foreground pl-6">
-                      {secondaryText}
-                    </p>
-                  </div>
-                </motion.div>
-              );
-            })()}
-
-            {/* ── Savings Goal ────────────────────────────────── */}
-            {(() => {
               const actualSavings = totalIncome - totalSpent;
               const hasGoal = savingsGoal > 0;
               const progressPct = hasGoal
                 ? Math.min(Math.round((actualSavings / savingsGoal) * 100), 100)
                 : 0;
-              const colorClass =
+              const savingsColorClass =
                 progressPct >= 80
                   ? "text-emerald-500"
                   : progressPct >= 50
@@ -565,91 +527,166 @@ export default function DashboardTab({
                     ? "bg-amber-500"
                     : "bg-destructive";
 
-              return (
-                <motion.div
-                  variants={itemVariants}
-                  className="px-4"
-                  data-ocid="dashboard.savings_goal.card"
-                >
-                  <div className="rounded-xl border border-border bg-card shadow-sm px-4 py-3 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Target className="h-4 w-4 text-primary" />
-                        <p className="text-sm font-semibold">Savings Goal</p>
-                      </div>
-                      <button
-                        type="button"
-                        data-ocid="dashboard.savings_goal.edit_button"
-                        onClick={() => {
-                          setGoalInput(
-                            savingsGoal > 0 ? savingsGoal.toString() : "",
-                          );
-                          setEditingGoal((v) => !v);
-                        }}
-                        className="h-7 w-7 flex items-center justify-center rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-
-                    {editingGoal && (
-                      <div className="flex gap-2 items-center">
-                        <input
-                          type="number"
-                          min="0"
-                          step="1"
-                          placeholder="Enter savings goal..."
-                          value={goalInput}
-                          onChange={(e) => setGoalInput(e.target.value)}
-                          data-ocid="dashboard.savings_goal.input"
-                          className="flex-1 h-8 rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                        />
-                        <button
-                          type="button"
-                          data-ocid="dashboard.savings_goal.save_button"
-                          onClick={() => {
-                            const val = Number(goalInput);
-                            setSavingsGoal(val);
-                            localStorage.setItem(
-                              "pe_savings_goal",
-                              val.toString(),
-                            );
-                            setEditingGoal(false);
-                          }}
-                          className="h-8 w-8 flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-                        >
-                          <Check className="h-4 w-4" />
-                        </button>
-                      </div>
-                    )}
-
-                    {!hasGoal && !editingGoal ? (
-                      <p className="text-xs text-muted-foreground">
-                        Set a savings goal to track your progress
+              let insightsNode: React.ReactNode = null;
+              if (!(currentSpent === 0 && prevSpent === 0)) {
+                let icon: React.ReactNode;
+                let message: string;
+                let colorClass: string;
+                let secondaryText: string;
+                if (prevSpent === 0 && currentSpent > 0) {
+                  icon = <TrendingUp className="h-4 w-4 text-primary" />;
+                  message = "First month tracked! Keep it up.";
+                  colorClass = "text-primary";
+                  secondaryText = `${formatCurrency(currentSpent, currency)} spent this month`;
+                } else {
+                  const pctChange = Math.round(
+                    ((currentSpent - prevSpent) / prevSpent) * 100,
+                  );
+                  if (pctChange > 0) {
+                    icon = <TrendingUp className="h-4 w-4 text-destructive" />;
+                    message = `You spent ${pctChange}% more this month vs last month`;
+                    colorClass = "text-destructive";
+                  } else if (pctChange < 0) {
+                    icon = (
+                      <TrendingDown className="h-4 w-4 text-emerald-500" />
+                    );
+                    message = `You spent ${Math.abs(pctChange)}% less this month vs last month`;
+                    colorClass = "text-emerald-600 dark:text-emerald-400";
+                  } else {
+                    icon = <Minus className="h-4 w-4 text-muted-foreground" />;
+                    message = "Same spending as last month";
+                    colorClass = "text-muted-foreground";
+                  }
+                  secondaryText = `${formatCurrency(currentSpent, currency)} this month vs ${formatCurrency(prevSpent, currency)} last month`;
+                }
+                insightsNode = (
+                  <div
+                    className="rounded-xl border border-border bg-card shadow-sm px-4 py-3 flex flex-col gap-1 h-full"
+                    data-ocid="dashboard.spending_insights.card"
+                  >
+                    <div className="flex items-center gap-2">
+                      {icon}
+                      <p className={`text-sm font-semibold ${colorClass}`}>
+                        {message}
                       </p>
-                    ) : hasGoal ? (
-                      <>
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground">
-                            {formatCurrency(
-                              Math.max(actualSavings, 0),
-                              currency,
-                            )}{" "}
-                            saved
-                          </span>
-                          <span className={`font-semibold ${colorClass}`}>
-                            {progressPct}% of{" "}
-                            {formatCurrency(savingsGoal, currency)}
-                          </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground pl-6">
+                      {secondaryText}
+                    </p>
+                  </div>
+                );
+              }
+
+              return (
+                <motion.div variants={itemVariants}>
+                  <div className="grid grid-cols-2 gap-3 items-stretch">
+                    <div className="flex flex-col">
+                      {insightsNode ?? (
+                        <div
+                          className="rounded-xl border border-border bg-card shadow-sm px-4 py-3 flex flex-col gap-1 h-full"
+                          data-ocid="dashboard.spending_insights.card"
+                        >
+                          <div className="flex items-center gap-2">
+                            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                            <p className="text-sm font-semibold text-muted-foreground">
+                              No data yet
+                            </p>
+                          </div>
+                          <p className="text-xs text-muted-foreground pl-6">
+                            Add expenses to see insights
+                          </p>
                         </div>
-                        <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all duration-700 ${barColor}`}
-                            style={{ width: `${progressPct}%` }}
-                          />
+                      )}
+                    </div>
+                    <div className="flex flex-col">
+                      <div
+                        className="rounded-xl border border-border bg-card shadow-sm px-4 py-3 space-y-2 h-full"
+                        data-ocid="dashboard.savings_goal.card"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Target className="h-4 w-4 text-primary" />
+                            <p className="text-sm font-semibold">
+                              Savings Goal
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            data-ocid="dashboard.savings_goal.edit_button"
+                            onClick={() => {
+                              setGoalInput(
+                                savingsGoal > 0 ? savingsGoal.toString() : "",
+                              );
+                              setEditingGoal((v) => !v);
+                            }}
+                            className="h-7 w-7 flex items-center justify-center rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
                         </div>
-                      </>
-                    ) : null}
+
+                        {editingGoal && (
+                          <div className="flex gap-2 items-center">
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              placeholder="Enter savings goal..."
+                              value={goalInput}
+                              onChange={(e) => setGoalInput(e.target.value)}
+                              data-ocid="dashboard.savings_goal.input"
+                              className="flex-1 h-8 rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                            />
+                            <button
+                              type="button"
+                              data-ocid="dashboard.savings_goal.save_button"
+                              onClick={() => {
+                                const val = Number(goalInput);
+                                setSavingsGoal(val);
+                                localStorage.setItem(
+                                  "pe_savings_goal",
+                                  val.toString(),
+                                );
+                                setEditingGoal(false);
+                              }}
+                              className="h-8 w-8 flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                            >
+                              <Check className="h-4 w-4" />
+                            </button>
+                          </div>
+                        )}
+
+                        {!hasGoal && !editingGoal ? (
+                          <p className="text-xs text-muted-foreground">
+                            Set a savings goal to track your progress
+                          </p>
+                        ) : hasGoal ? (
+                          <>
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-muted-foreground">
+                                {formatCurrency(
+                                  Math.max(actualSavings, 0),
+                                  currency,
+                                )}{" "}
+                                saved
+                              </span>
+                              <span
+                                className={`font-semibold ${savingsColorClass}`}
+                              >
+                                {progressPct}% of{" "}
+                                {formatCurrency(savingsGoal, currency)}
+                              </span>
+                            </div>
+                            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all duration-700 ${barColor}`}
+                                style={{ width: `${progressPct}%` }}
+                              />
+                            </div>
+                          </>
+                        ) : null}
+                      </div>
+                    </div>
                   </div>
                 </motion.div>
               );
@@ -672,20 +709,14 @@ export default function DashboardTab({
                   className="w-full flex items-center justify-between px-4 py-3 text-left"
                   style={{
                     background:
-                      "linear-gradient(135deg, oklch(0.25 0.06 145 / 0.8), oklch(0.2 0.04 200 / 0.6))",
+                      "linear-gradient(135deg, #1a4731 0%, #0f3460 50%, #16213e 100%)",
                   }}
                   onClick={() => setIncomeOpen((o) => !o)}
                   data-ocid="dashboard.income.toggle"
                 >
-                  <div className="flex items-baseline gap-2">
-                    <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      DASHBOARD
-                    </p>
-                    <span className="text-xs text-muted-foreground/50">|</span>
-                    <h3 className="font-display text-base font-semibold">
-                      Income Source
-                    </h3>
-                  </div>
+                  <h3 className="font-display text-base font-semibold text-white">
+                    Income Source
+                  </h3>
                   <ChevronDown
                     className={`h-4 w-4 text-muted-foreground transition-transform duration-300 ${incomeOpen ? "rotate-180" : ""}`}
                   />
@@ -769,233 +800,118 @@ export default function DashboardTab({
               </div>
             </motion.div>
 
-            {/* Category breakdown */}
-            {(chartData.length > 0 || chartDataIncome.length > 0) && (
-              <motion.div variants={itemVariants}>
-                <Card className="border-0 shadow-sm">
-                  <CardHeader className="pb-0 pt-4 px-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-baseline gap-2 flex-1">
-                        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                          {t("dashboard_label")}
-                        </p>
-                        <span className="text-xs text-muted-foreground/50">
-                          |
+            {/* Category + Recent Transactions (tabbed) */}
+            <motion.div variants={itemVariants}>
+              <Card className="border-0 shadow-sm">
+                <CardHeader className="pb-0 pt-4 px-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex gap-1 p-1 rounded-lg bg-muted flex-1">
+                      <button
+                        type="button"
+                        onClick={() => setDashTab("category")}
+                        className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-colors ${dashTab === "category" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                        data-ocid="dashboard.category.tab"
+                      >
+                        {t("by_category")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDashTab("recent")}
+                        className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-colors ${dashTab === "recent" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                        data-ocid="dashboard.recent.tab"
+                      >
+                        {t("recent_transactions")}
+                      </button>
+                    </div>
+                    {dashTab === "recent" && recentExpenses.length > 0 && (
+                      <div className="flex items-center gap-2 ml-2">
+                        <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full font-medium">
+                          {recentExpenses.length}
                         </span>
-                        <h3 className="font-display text-base font-semibold">
-                          {t("by_category")}
-                        </h3>
+                        <button
+                          type="button"
+                          onClick={onViewAll}
+                          data-ocid="dashboard.view_all.button"
+                          className="text-xs font-medium text-primary hover:underline"
+                        >
+                          View All
+                        </button>
                       </div>
-                    </div>
-                  </CardHeader>
-                  <Separator />
-                  <CardContent className="px-4 pb-4 pt-4 space-y-5">
-                    {/* Expense / Income tabs */}
-                    <div
-                      className="flex gap-1 p-1 rounded-lg bg-muted"
-                      data-ocid="dashboard.chart.tab"
-                    >
-                      <button
-                        type="button"
-                        onClick={() => setChartTab("expense")}
-                        className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                          chartTab === "expense"
-                            ? "bg-primary text-primary-foreground shadow-sm"
-                            : "text-muted-foreground hover:text-foreground"
-                        }`}
-                        data-ocid="dashboard.expense.tab"
-                      >
-                        {t("expenses")}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setChartTab("income")}
-                        className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                          chartTab === "income"
-                            ? "bg-primary text-primary-foreground shadow-sm"
-                            : "text-muted-foreground hover:text-foreground"
-                        }`}
-                        data-ocid="dashboard.income.tab"
-                      >
-                        {t("income")}
-                      </button>
-                    </div>
-
-                    {/* Expense tab charts */}
-                    {chartTab === "expense" && (
-                      <>
-                        {/* Donut Chart */}
-                        {chartView === "donut" && (
-                          <div className="relative">
-                            <button
-                              type="button"
-                              data-ocid="dashboard.chart_toggle.toggle"
-                              onClick={() =>
-                                setChartView((v) =>
-                                  v === "donut" ? "bar" : "donut",
-                                )
-                              }
-                              className="absolute top-2 right-2 z-10 h-8 w-8 flex items-center justify-center rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
-                              aria-label={t("switch_to_bar_chart")}
-                            >
-                              <BarChart2 className="h-4 w-4" />
-                            </button>
-                            <div
-                              data-ocid="dashboard.donut_chart.canvas_target"
-                              style={{ height: 220 }}
-                            >
-                              <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                  <Pie
-                                    data={chartData}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={58}
-                                    outerRadius={90}
-                                    paddingAngle={2}
-                                    dataKey="value"
-                                  >
-                                    {chartData.map((entry) => (
-                                      <Cell
-                                        key={`cell-${entry.name}`}
-                                        fill={entry.color}
-                                      />
-                                    ))}
-                                  </Pie>
-                                  <Tooltip
-                                    formatter={(value: number) =>
-                                      formatCurrency(value, currency)
-                                    }
-                                    contentStyle={{
-                                      borderRadius: 8,
-                                      fontSize: 12,
-                                      border: "1px solid var(--border)",
-                                      background: "var(--card)",
-                                      color: "var(--foreground)",
-                                    }}
-                                  />
-                                </PieChart>
-                              </ResponsiveContainer>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Vertical Bar Chart - Expense */}
-                        {chartView === "bar" && (
-                          <div className="relative">
-                            <button
-                              type="button"
-                              data-ocid="dashboard.chart_toggle.toggle"
-                              onClick={() =>
-                                setChartView((v) =>
-                                  v === "donut" ? "bar" : "donut",
-                                )
-                              }
-                              className="absolute top-2 right-2 z-10 h-8 w-8 flex items-center justify-center rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
-                              aria-label={t("switch_to_donut_chart")}
-                            >
-                              <PieChartIcon className="h-4 w-4" />
-                            </button>
-                            <div
-                              data-ocid="dashboard.bar_chart.canvas_target"
-                              style={{
-                                height: Math.max(chartData.length * 50, 200),
-                              }}
-                            >
-                              <ResponsiveContainer width="100%" height="100%">
-                                <BarChart
-                                  data={chartData}
-                                  margin={{
-                                    top: 8,
-                                    right: 8,
-                                    left: 0,
-                                    bottom: 40,
-                                  }}
-                                >
-                                  <XAxis
-                                    dataKey="name"
-                                    tick={{
-                                      fontSize: 10,
-                                      fill: isDark ? "#e2e8f0" : "#334155",
-                                    }}
-                                    axisLine={false}
-                                    tickLine={false}
-                                    angle={-35}
-                                    textAnchor="end"
-                                    interval={0}
-                                  />
-                                  <YAxis
-                                    tick={{
-                                      fontSize: 10,
-                                      fill: isDark ? "#e2e8f0" : "#334155",
-                                    }}
-                                    tickFormatter={(v) =>
-                                      formatCurrency(v, currency)
-                                    }
-                                    axisLine={false}
-                                    tickLine={false}
-                                    width={60}
-                                  />
-                                  <Tooltip
-                                    formatter={(value: number) =>
-                                      formatCurrency(value, currency)
-                                    }
-                                    contentStyle={{
-                                      borderRadius: 8,
-                                      fontSize: 12,
-                                      border: "1px solid var(--border)",
-                                      background: "var(--card)",
-                                      color: "var(--foreground)",
-                                    }}
-                                  />
-                                  <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                                    {chartData.map((entry) => (
-                                      <Cell
-                                        key={`bar-${entry.name}`}
-                                        fill={entry.color}
-                                      />
-                                    ))}
-                                  </Bar>
-                                </BarChart>
-                              </ResponsiveContainer>
-                            </div>
-                          </div>
-                        )}
-                      </>
                     )}
+                  </div>
+                </CardHeader>
+                <Separator />
 
-                    {/* Income tab - Donut + Horizontal Bar Chart */}
-                    {chartTab === "income" && (
-                      <div data-ocid="dashboard.income_chart.canvas_target">
-                        {chartDataIncome.length === 0 ? (
-                          <div className="flex flex-col items-center justify-center h-40 text-muted-foreground gap-2">
-                            <PieChartIcon className="h-8 w-8 opacity-30" />
-                            <p className="text-sm">{t("no_income_recorded")}</p>
-                          </div>
-                        ) : (
+                {/* By Category Tab */}
+                {dashTab === "category" && (
+                  <CardContent className="px-4 pb-4 pt-4 space-y-5">
+                    {chartData.length === 0 && chartDataIncome.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-6">
+                        {t("no_expenses_this_month")}
+                      </p>
+                    ) : (
+                      <>
+                        {/* Expense / Income tabs */}
+                        <div
+                          className="flex gap-1 p-1 rounded-lg bg-muted"
+                          data-ocid="dashboard.chart.tab"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setChartTab("expense")}
+                            className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                              chartTab === "expense"
+                                ? "bg-primary text-primary-foreground shadow-sm"
+                                : "text-muted-foreground hover:text-foreground"
+                            }`}
+                            data-ocid="dashboard.expense.tab"
+                          >
+                            {t("expenses")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setChartTab("income")}
+                            className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                              chartTab === "income"
+                                ? "bg-primary text-primary-foreground shadow-sm"
+                                : "text-muted-foreground hover:text-foreground"
+                            }`}
+                            data-ocid="dashboard.income.tab"
+                          >
+                            {t("income")}
+                          </button>
+                        </div>
+
+                        {/* Expense tab charts */}
+                        {chartTab === "expense" && (
                           <>
-                            {/* Donut */}
-                            {chartViewIncome === "donut" && (
+                            {/* Donut Chart */}
+                            {chartView === "donut" && (
                               <div className="relative">
                                 <button
                                   type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setChartViewIncome("vertical");
-                                  }}
-                                  className="absolute top-2 right-2 z-20 h-8 w-8 flex items-center justify-center rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
-                                  aria-label="Switch to vertical bar chart"
+                                  data-ocid="dashboard.chart_toggle.toggle"
+                                  onClick={() =>
+                                    setChartView((v) =>
+                                      v === "donut" ? "bar" : "donut",
+                                    )
+                                  }
+                                  className="absolute top-2 right-2 z-10 h-8 w-8 flex items-center justify-center rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
+                                  aria-label={t("switch_to_bar_chart")}
                                 >
                                   <BarChart2 className="h-4 w-4" />
                                 </button>
-                                <div style={{ height: 220 }}>
+                                <div
+                                  data-ocid="dashboard.donut_chart.canvas_target"
+                                  style={{ height: 220 }}
+                                >
                                   <ResponsiveContainer
                                     width="100%"
                                     height="100%"
                                   >
                                     <PieChart>
                                       <Pie
-                                        data={chartDataIncome}
+                                        data={chartData}
                                         cx="50%"
                                         cy="50%"
                                         innerRadius={58}
@@ -1003,9 +919,9 @@ export default function DashboardTab({
                                         paddingAngle={2}
                                         dataKey="value"
                                       >
-                                        {chartDataIncome.map((entry) => (
+                                        {chartData.map((entry) => (
                                           <Cell
-                                            key={`income-cell-${entry.name}`}
+                                            key={`cell-${entry.name}`}
                                             fill={entry.color}
                                           />
                                         ))}
@@ -1028,25 +944,28 @@ export default function DashboardTab({
                               </div>
                             )}
 
-                            {/* Vertical Bar */}
-                            {chartViewIncome === "vertical" && (
+                            {/* Vertical Bar Chart - Expense */}
+                            {chartView === "bar" && (
                               <div className="relative">
                                 <button
                                   type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setChartViewIncome("horizontal");
-                                  }}
-                                  className="absolute top-2 right-2 z-20 h-8 w-8 flex items-center justify-center rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
-                                  aria-label="Switch to horizontal bar chart"
+                                  data-ocid="dashboard.chart_toggle.toggle"
+                                  onClick={() =>
+                                    setChartView((v) =>
+                                      v === "donut" ? "bar" : "donut",
+                                    )
+                                  }
+                                  className="absolute top-2 right-2 z-10 h-8 w-8 flex items-center justify-center rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
+                                  aria-label={t("switch_to_donut_chart")}
                                 >
-                                  <AlignLeft className="h-4 w-4" />
+                                  <PieChartIcon className="h-4 w-4" />
                                 </button>
                                 <div
+                                  data-ocid="dashboard.bar_chart.canvas_target"
                                   style={{
                                     height: Math.max(
-                                      chartDataIncome.length * 50 + 60,
-                                      220,
+                                      chartData.length * 50,
+                                      200,
                                     ),
                                   }}
                                 >
@@ -1055,10 +974,10 @@ export default function DashboardTab({
                                     height="100%"
                                   >
                                     <BarChart
-                                      data={chartDataIncome}
+                                      data={chartData}
                                       margin={{
                                         top: 8,
-                                        right: 16,
+                                        right: 8,
                                         left: 0,
                                         bottom: 40,
                                       }}
@@ -1071,20 +990,20 @@ export default function DashboardTab({
                                         }}
                                         axisLine={false}
                                         tickLine={false}
-                                        interval={0}
-                                        angle={-30}
+                                        angle={-35}
                                         textAnchor="end"
+                                        interval={0}
                                       />
                                       <YAxis
                                         tick={{
                                           fontSize: 10,
                                           fill: isDark ? "#e2e8f0" : "#334155",
                                         }}
-                                        axisLine={false}
-                                        tickLine={false}
                                         tickFormatter={(v) =>
                                           formatCurrency(v, currency)
                                         }
+                                        axisLine={false}
+                                        tickLine={false}
                                         width={60}
                                       />
                                       <Tooltip
@@ -1103,98 +1022,9 @@ export default function DashboardTab({
                                         dataKey="value"
                                         radius={[4, 4, 0, 0]}
                                       >
-                                        {chartDataIncome.map((entry) => (
+                                        {chartData.map((entry) => (
                                           <Cell
-                                            key={`income-vbar-${entry.name}`}
-                                            fill={entry.color}
-                                          />
-                                        ))}
-                                      </Bar>
-                                    </BarChart>
-                                  </ResponsiveContainer>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Horizontal Bar */}
-                            {chartViewIncome === "horizontal" && (
-                              <div className="relative">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setChartViewIncome("donut");
-                                  }}
-                                  className="absolute top-2 right-2 z-20 h-8 w-8 flex items-center justify-center rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
-                                  aria-label="Switch to donut chart"
-                                >
-                                  <PieChartIcon className="h-4 w-4" />
-                                </button>
-                                <div
-                                  style={{
-                                    height: Math.max(
-                                      chartDataIncome.length * 44,
-                                      200,
-                                    ),
-                                  }}
-                                >
-                                  <ResponsiveContainer
-                                    width="100%"
-                                    height="100%"
-                                  >
-                                    <BarChart
-                                      data={chartDataIncome}
-                                      layout="vertical"
-                                      margin={{
-                                        top: 8,
-                                        right: 16,
-                                        left: 0,
-                                        bottom: 8,
-                                      }}
-                                    >
-                                      <XAxis
-                                        type="number"
-                                        tick={{
-                                          fontSize: 10,
-                                          fill: isDark ? "#e2e8f0" : "#334155",
-                                        }}
-                                        tickFormatter={(v) =>
-                                          formatCurrency(v, currency)
-                                        }
-                                        axisLine={false}
-                                        tickLine={false}
-                                        width={60}
-                                      />
-                                      <YAxis
-                                        type="category"
-                                        dataKey="name"
-                                        tick={{
-                                          fontSize: 10,
-                                          fill: isDark ? "#e2e8f0" : "#334155",
-                                        }}
-                                        axisLine={false}
-                                        tickLine={false}
-                                        width={80}
-                                      />
-                                      <Tooltip
-                                        formatter={(value: number) =>
-                                          formatCurrency(value, currency)
-                                        }
-                                        contentStyle={{
-                                          borderRadius: 8,
-                                          fontSize: 12,
-                                          border: "1px solid var(--border)",
-                                          background: "var(--card)",
-                                          color: "var(--foreground)",
-                                        }}
-                                      />
-                                      <Bar
-                                        dataKey="value"
-                                        radius={[0, 4, 4, 0]}
-                                      >
-                                        {chartDataIncome.map((entry) => (
-                                          <Cell
-                                            key={`income-hbar-${entry.name}`}
+                                            key={`bar-${entry.name}`}
                                             fill={entry.color}
                                           />
                                         ))}
@@ -1206,177 +1036,410 @@ export default function DashboardTab({
                             )}
                           </>
                         )}
-                      </div>
+
+                        {/* Income tab - Donut + Horizontal Bar Chart */}
+                        {chartTab === "income" && (
+                          <div data-ocid="dashboard.income_chart.canvas_target">
+                            {chartDataIncome.length === 0 ? (
+                              <div className="flex flex-col items-center justify-center h-40 text-muted-foreground gap-2">
+                                <PieChartIcon className="h-8 w-8 opacity-30" />
+                                <p className="text-sm">
+                                  {t("no_income_recorded")}
+                                </p>
+                              </div>
+                            ) : (
+                              <>
+                                {/* Donut */}
+                                {chartViewIncome === "donut" && (
+                                  <div className="relative">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setChartViewIncome("vertical");
+                                      }}
+                                      className="absolute top-2 right-2 z-20 h-8 w-8 flex items-center justify-center rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
+                                      aria-label="Switch to vertical bar chart"
+                                    >
+                                      <BarChart2 className="h-4 w-4" />
+                                    </button>
+                                    <div style={{ height: 220 }}>
+                                      <ResponsiveContainer
+                                        width="100%"
+                                        height="100%"
+                                      >
+                                        <PieChart>
+                                          <Pie
+                                            data={chartDataIncome}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={58}
+                                            outerRadius={90}
+                                            paddingAngle={2}
+                                            dataKey="value"
+                                          >
+                                            {chartDataIncome.map((entry) => (
+                                              <Cell
+                                                key={`income-cell-${entry.name}`}
+                                                fill={entry.color}
+                                              />
+                                            ))}
+                                          </Pie>
+                                          <Tooltip
+                                            formatter={(value: number) =>
+                                              formatCurrency(value, currency)
+                                            }
+                                            contentStyle={{
+                                              borderRadius: 8,
+                                              fontSize: 12,
+                                              border: "1px solid var(--border)",
+                                              background: "var(--card)",
+                                              color: "var(--foreground)",
+                                            }}
+                                          />
+                                        </PieChart>
+                                      </ResponsiveContainer>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Vertical Bar */}
+                                {chartViewIncome === "vertical" && (
+                                  <div className="relative">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setChartViewIncome("horizontal");
+                                      }}
+                                      className="absolute top-2 right-2 z-20 h-8 w-8 flex items-center justify-center rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
+                                      aria-label="Switch to horizontal bar chart"
+                                    >
+                                      <AlignLeft className="h-4 w-4" />
+                                    </button>
+                                    <div
+                                      style={{
+                                        height: Math.max(
+                                          chartDataIncome.length * 50 + 60,
+                                          220,
+                                        ),
+                                      }}
+                                    >
+                                      <ResponsiveContainer
+                                        width="100%"
+                                        height="100%"
+                                      >
+                                        <BarChart
+                                          data={chartDataIncome}
+                                          margin={{
+                                            top: 8,
+                                            right: 16,
+                                            left: 0,
+                                            bottom: 40,
+                                          }}
+                                        >
+                                          <XAxis
+                                            dataKey="name"
+                                            tick={{
+                                              fontSize: 10,
+                                              fill: isDark
+                                                ? "#e2e8f0"
+                                                : "#334155",
+                                            }}
+                                            axisLine={false}
+                                            tickLine={false}
+                                            interval={0}
+                                            angle={-30}
+                                            textAnchor="end"
+                                          />
+                                          <YAxis
+                                            tick={{
+                                              fontSize: 10,
+                                              fill: isDark
+                                                ? "#e2e8f0"
+                                                : "#334155",
+                                            }}
+                                            axisLine={false}
+                                            tickLine={false}
+                                            tickFormatter={(v) =>
+                                              formatCurrency(v, currency)
+                                            }
+                                            width={60}
+                                          />
+                                          <Tooltip
+                                            formatter={(value: number) =>
+                                              formatCurrency(value, currency)
+                                            }
+                                            contentStyle={{
+                                              borderRadius: 8,
+                                              fontSize: 12,
+                                              border: "1px solid var(--border)",
+                                              background: "var(--card)",
+                                              color: "var(--foreground)",
+                                            }}
+                                          />
+                                          <Bar
+                                            dataKey="value"
+                                            radius={[4, 4, 0, 0]}
+                                          >
+                                            {chartDataIncome.map((entry) => (
+                                              <Cell
+                                                key={`income-vbar-${entry.name}`}
+                                                fill={entry.color}
+                                              />
+                                            ))}
+                                          </Bar>
+                                        </BarChart>
+                                      </ResponsiveContainer>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Horizontal Bar */}
+                                {chartViewIncome === "horizontal" && (
+                                  <div className="relative">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setChartViewIncome("donut");
+                                      }}
+                                      className="absolute top-2 right-2 z-20 h-8 w-8 flex items-center justify-center rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
+                                      aria-label="Switch to donut chart"
+                                    >
+                                      <PieChartIcon className="h-4 w-4" />
+                                    </button>
+                                    <div
+                                      style={{
+                                        height: Math.max(
+                                          chartDataIncome.length * 44,
+                                          200,
+                                        ),
+                                      }}
+                                    >
+                                      <ResponsiveContainer
+                                        width="100%"
+                                        height="100%"
+                                      >
+                                        <BarChart
+                                          data={chartDataIncome}
+                                          layout="vertical"
+                                          margin={{
+                                            top: 8,
+                                            right: 16,
+                                            left: 0,
+                                            bottom: 8,
+                                          }}
+                                        >
+                                          <XAxis
+                                            type="number"
+                                            tick={{
+                                              fontSize: 10,
+                                              fill: isDark
+                                                ? "#e2e8f0"
+                                                : "#334155",
+                                            }}
+                                            tickFormatter={(v) =>
+                                              formatCurrency(v, currency)
+                                            }
+                                            axisLine={false}
+                                            tickLine={false}
+                                            width={60}
+                                          />
+                                          <YAxis
+                                            type="category"
+                                            dataKey="name"
+                                            tick={{
+                                              fontSize: 10,
+                                              fill: isDark
+                                                ? "#e2e8f0"
+                                                : "#334155",
+                                            }}
+                                            axisLine={false}
+                                            tickLine={false}
+                                            width={80}
+                                          />
+                                          <Tooltip
+                                            formatter={(value: number) =>
+                                              formatCurrency(value, currency)
+                                            }
+                                            contentStyle={{
+                                              borderRadius: 8,
+                                              fontSize: 12,
+                                              border: "1px solid var(--border)",
+                                              background: "var(--card)",
+                                              color: "var(--foreground)",
+                                            }}
+                                          />
+                                          <Bar
+                                            dataKey="value"
+                                            radius={[0, 4, 4, 0]}
+                                          >
+                                            {chartDataIncome.map((entry) => (
+                                              <Cell
+                                                key={`income-hbar-${entry.name}`}
+                                                fill={entry.color}
+                                              />
+                                            ))}
+                                          </Bar>
+                                        </BarChart>
+                                      </ResponsiveContainer>
+                                    </div>
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        )}
+
+                        <Separator />
+
+                        {/* Category list with progress bars */}
+                        <div className="space-y-3">
+                          {summary!.categoryBreakdown
+                            .sort((a, b) => b.total - a.total)
+                            .map((item) => {
+                              const cat = getCategoryById(
+                                categories,
+                                item.categoryId,
+                              );
+                              const percentage = pct(item.total, totalSpent);
+                              const budget = cat?.budget ?? 0;
+                              return (
+                                <div
+                                  key={item.categoryId}
+                                  className="space-y-1.5"
+                                >
+                                  <div className="flex items-center justify-between text-sm">
+                                    <div className="flex items-center gap-2">
+                                      <span
+                                        className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                        style={{
+                                          backgroundColor:
+                                            cat?.color ?? "#B0B0B0",
+                                        }}
+                                      />
+                                      <span className="font-medium truncate max-w-[120px]">
+                                        {item.categoryName}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-right">
+                                      <span className="text-muted-foreground text-xs">
+                                        {percentage}%
+                                      </span>
+                                      <span className="font-semibold text-foreground">
+                                        {formatCurrency(item.total, currency)}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="relative h-1.5 bg-muted rounded-full overflow-hidden">
+                                    <div
+                                      className="absolute left-0 top-0 h-full rounded-full transition-all duration-500"
+                                      style={{
+                                        width: `${percentage}%`,
+                                        backgroundColor:
+                                          cat?.color ?? "#B0B0B0",
+                                      }}
+                                    />
+                                    {budget > 0 && item.total > budget && (
+                                      <div className="absolute right-0 top-0 w-0.5 h-full bg-destructive" />
+                                    )}
+                                  </div>
+                                  {budget > 0 && (
+                                    <p className="text-xs text-muted-foreground">
+                                      {t("budget_of", {
+                                        spent: formatCurrency(
+                                          item.total,
+                                          currency,
+                                        ),
+                                        budget: formatCurrency(
+                                          budget,
+                                          currency,
+                                        ),
+                                      })}
+                                      {item.total > budget && (
+                                        <span className="text-destructive ml-1 font-medium">
+                                          {t("over_budget")}
+                                        </span>
+                                      )}
+                                    </p>
+                                  )}
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </>
                     )}
+                  </CardContent>
+                )}
 
-                    <Separator />
-
-                    {/* Category list with progress bars */}
-                    <div className="space-y-3">
-                      {summary!.categoryBreakdown
-                        .sort((a, b) => b.total - a.total)
-                        .map((item) => {
+                {/* Recent Transactions Tab */}
+                {dashTab === "recent" && (
+                  <CardContent className="px-0 pb-2 pt-0">
+                    {recentExpenses.length === 0 ? (
+                      <p
+                        className="text-muted-foreground text-sm text-center py-6 px-4"
+                        data-ocid="expense.empty_state"
+                      >
+                        {t("no_expenses_this_month")}
+                      </p>
+                    ) : (
+                      <ul className="divide-y divide-border">
+                        {recentExpenses.map((expense, i) => {
                           const cat = getCategoryById(
                             categories,
-                            item.categoryId,
+                            expense.categoryId,
                           );
-                          const percentage = pct(item.total, totalSpent);
-                          const budget = cat?.budget ?? 0;
                           return (
-                            <div key={item.categoryId} className="space-y-1.5">
-                              <div className="flex items-center justify-between text-sm">
-                                <div className="flex items-center gap-2">
-                                  <span
-                                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                                    style={{
-                                      backgroundColor: cat?.color ?? "#B0B0B0",
-                                    }}
-                                  />
-                                  <span className="font-medium truncate max-w-[120px]">
-                                    {item.categoryName}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2 text-right">
-                                  <span className="text-muted-foreground text-xs">
-                                    {percentage}%
-                                  </span>
-                                  <span className="font-semibold text-foreground">
-                                    {formatCurrency(item.total, currency)}
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="relative h-1.5 bg-muted rounded-full overflow-hidden">
+                            <li key={expense.id}>
+                              <button
+                                type="button"
+                                className="flex items-center gap-3 px-4 py-3 hover:bg-muted/40 cursor-pointer transition-colors w-full text-left"
+                                onClick={() => onEditExpense(expense)}
+                                data-ocid={`expense.item.${i + 1}`}
+                              >
                                 <div
-                                  className="absolute left-0 top-0 h-full rounded-full transition-all duration-500"
+                                  className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                                   style={{
-                                    width: `${percentage}%`,
                                     backgroundColor: cat?.color ?? "#B0B0B0",
                                   }}
                                 />
-                                {budget > 0 && item.total > budget && (
-                                  <div className="absolute right-0 top-0 w-0.5 h-full bg-destructive" />
-                                )}
-                              </div>
-                              {budget > 0 && (
-                                <p className="text-xs text-muted-foreground">
-                                  {t("budget_of", {
-                                    spent: formatCurrency(item.total, currency),
-                                    budget: formatCurrency(budget, currency),
-                                  })}
-                                  {item.total > budget && (
-                                    <span className="text-destructive ml-1 font-medium">
-                                      {t("over_budget")}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-1 flex-wrap min-w-0">
+                                    <span
+                                      className="text-xs font-medium truncate"
+                                      style={{ color: cat?.color ?? "#666" }}
+                                    >
+                                      {cat?.name ?? t("unknown_category")}
                                     </span>
-                                  )}
-                                </p>
-                              )}
-                            </div>
+                                    {expense.note && (
+                                      <>
+                                        <span className="text-xs text-muted-foreground/50">
+                                          |
+                                        </span>
+                                        <span className="text-xs text-muted-foreground truncate">
+                                          {expense.note}
+                                        </span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="text-right flex-shrink-0">
+                                  <p className="font-semibold text-sm">
+                                    {formatCurrency(expense.amount, currency)}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {formatDateShort(expense.date)}
+                                  </p>
+                                </div>
+                              </button>
+                            </li>
                           );
                         })}
-                    </div>
+                      </ul>
+                    )}
                   </CardContent>
-                </Card>
-              </motion.div>
-            )}
-
-            {/* Recent transactions */}
-            <motion.div variants={itemVariants}>
-              <Card className="border-0 shadow-sm">
-                <CardHeader className="pb-0 pt-4 px-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-baseline gap-2 flex-1">
-                      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                        {t("dashboard_label")}
-                      </p>
-                      <span className="text-xs text-muted-foreground/50">
-                        |
-                      </span>
-                      <h3 className="font-display text-base font-semibold">
-                        {t("recent_transactions")}
-                      </h3>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {recentExpenses.length > 0 && (
-                        <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full font-medium">
-                          {recentExpenses.length}
-                        </span>
-                      )}
-                      <button
-                        type="button"
-                        onClick={onViewAll}
-                        data-ocid="dashboard.view_all.button"
-                        className="text-xs font-medium text-primary hover:underline"
-                      >
-                        View All
-                      </button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <Separator />
-                <CardContent className="px-0 pb-2 pt-0">
-                  {recentExpenses.length === 0 ? (
-                    <p
-                      className="text-muted-foreground text-sm text-center py-6 px-4"
-                      data-ocid="expense.empty_state"
-                    >
-                      {t("no_expenses_this_month")}
-                    </p>
-                  ) : (
-                    <ul className="divide-y divide-border">
-                      {recentExpenses.map((expense, i) => {
-                        const cat = getCategoryById(
-                          categories,
-                          expense.categoryId,
-                        );
-                        return (
-                          <li key={expense.id}>
-                            <button
-                              type="button"
-                              className="flex items-center gap-3 px-4 py-3 hover:bg-muted/40 cursor-pointer transition-colors w-full text-left"
-                              onClick={() => onEditExpense(expense)}
-                              data-ocid={`expense.item.${i + 1}`}
-                            >
-                              <div
-                                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                                style={{
-                                  backgroundColor: cat?.color ?? "#B0B0B0",
-                                }}
-                              />
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-1 flex-wrap min-w-0">
-                                  <span
-                                    className="text-xs font-medium truncate"
-                                    style={{ color: cat?.color ?? "#666" }}
-                                  >
-                                    {cat?.name ?? t("unknown_category")}
-                                  </span>
-                                  {expense.note && (
-                                    <>
-                                      <span className="text-xs text-muted-foreground/50">
-                                        |
-                                      </span>
-                                      <span className="text-xs text-muted-foreground truncate">
-                                        {expense.note}
-                                      </span>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="text-right flex-shrink-0">
-                                <p className="font-semibold text-sm">
-                                  {formatCurrency(expense.amount, currency)}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {formatDateShort(expense.date)}
-                                </p>
-                              </div>
-                            </button>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                </CardContent>
+                )}
               </Card>
             </motion.div>
           </motion.div>
