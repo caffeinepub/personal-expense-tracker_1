@@ -120,6 +120,8 @@ export default function ExpensesTab({
   const [paymentFilter, setPaymentFilter] = useState("all");
   const [minAmount, setMinAmount] = useState("");
   const [maxAmount, setMaxAmount] = useState("");
+  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateTo, setFilterDateTo] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerYear, setPickerYear] = useState(() => new Date().getFullYear());
   const [quarterPickerOpen, setQuarterPickerOpen] = useState(false);
@@ -149,6 +151,8 @@ export default function ExpensesTab({
     paymentFilter !== "all",
     minAmount !== "",
     maxAmount !== "",
+    filterDateFrom !== "",
+    filterDateTo !== "",
   ].filter(Boolean).length;
   const deleteExpense = useDeleteExpense();
 
@@ -172,6 +176,8 @@ export default function ExpensesTab({
       )
       .filter((e) => minAmt === null || Number(e.amount) >= minAmt)
       .filter((e) => maxAmt === null || Number(e.amount) <= maxAmt)
+      .filter((e) => !filterDateFrom || e.date >= filterDateFrom)
+      .filter((e) => !filterDateTo || e.date <= filterDateTo)
       .sort(
         (a, b) =>
           new Date(b.date).getTime() - new Date(a.date).getTime() ||
@@ -185,6 +191,8 @@ export default function ExpensesTab({
     paymentFilter,
     minAmount,
     maxAmount,
+    filterDateFrom,
+    filterDateTo,
   ]);
 
   const grouped = useMemo(() => groupByDate(filtered), [filtered]);
@@ -818,6 +826,8 @@ export default function ExpensesTab({
                               setPaymentFilter("all");
                               setMinAmount("");
                               setMaxAmount("");
+                              setFilterDateFrom("");
+                              setFilterDateTo("");
                             }}
                             className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
                             data-ocid="expenses.filter.clear_button"
@@ -878,6 +888,65 @@ export default function ExpensesTab({
                             data-ocid="expenses.max_amount.input"
                             min="0"
                           />
+                        </div>
+                      </div>
+
+                      {/* Date range filter */}
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-medium text-muted-foreground">
+                            Date Range
+                          </p>
+                          {(filterDateFrom || filterDateTo) && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setFilterDateFrom("");
+                                setFilterDateTo("");
+                              }}
+                              className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
+                              data-ocid="expenses.date_filter.clear_button"
+                            >
+                              <X className="h-3 w-3" />
+                              Clear
+                            </button>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-0.5">
+                            <label
+                              htmlFor="filter-date-from"
+                              className="text-[10px] text-muted-foreground"
+                            >
+                              From
+                            </label>
+                            <input
+                              id="filter-date-from"
+                              type="date"
+                              value={filterDateFrom}
+                              onChange={(e) =>
+                                setFilterDateFrom(e.target.value)
+                              }
+                              data-ocid="expenses.date_from.input"
+                              className="w-full h-8 rounded-lg border border-border bg-background px-2 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+                            />
+                          </div>
+                          <div className="space-y-0.5">
+                            <label
+                              htmlFor="filter-date-to"
+                              className="text-[10px] text-muted-foreground"
+                            >
+                              To
+                            </label>
+                            <input
+                              id="filter-date-to"
+                              type="date"
+                              value={filterDateTo}
+                              onChange={(e) => setFilterDateTo(e.target.value)}
+                              data-ocid="expenses.date_to.input"
+                              className="w-full h-8 rounded-lg border border-border bg-background px-2 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1000,9 +1069,22 @@ export default function ExpensesTab({
                                 </div>
 
                                 <div className="flex items-center gap-2">
-                                  <span className="font-semibold text-sm">
-                                    {formatCurrency(expense.amount, currency)}
-                                  </span>
+                                  <div className="text-right">
+                                    <span className="font-semibold text-sm block">
+                                      {formatCurrency(expense.amount, currency)}
+                                    </span>
+                                    {(() => {
+                                      const match = expense.note?.match(
+                                        /\[([A-Z]{2,4})\s+([\d.]+)\]$/,
+                                      );
+                                      if (!match) return null;
+                                      return (
+                                        <span className="text-[10px] text-muted-foreground">
+                                          ≈ {match[2]} {match[1]}
+                                        </span>
+                                      );
+                                    })()}
+                                  </div>
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                       <Button

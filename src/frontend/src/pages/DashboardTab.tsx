@@ -10,12 +10,15 @@ import {
   AlignLeft,
   BarChart2,
   CalendarDays,
+  Check,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   Minus,
   MoreVertical,
+  Pencil,
   PieChart as PieChartIcon,
+  Target,
   TrendingDown,
   TrendingUp,
   Wallet,
@@ -146,6 +149,12 @@ export default function DashboardTab({
 
   const [themeDialogOpen, setThemeDialogOpen] = useState(false);
   const [incomeOpen, setIncomeOpen] = useState(false);
+  const [savingsGoal, setSavingsGoal] = useState<number>(() => {
+    const v = localStorage.getItem("pe_savings_goal");
+    return v ? Number(v) : 0;
+  });
+  const [editingGoal, setEditingGoal] = useState(false);
+  const [goalInput, setGoalInput] = useState("");
   const { data: incomeSourcesData } = useIncomeSources();
   const incomeSources = incomeSourcesData ?? [];
 
@@ -531,6 +540,116 @@ export default function DashboardTab({
                     <p className="text-xs text-muted-foreground pl-6">
                       {secondaryText}
                     </p>
+                  </div>
+                </motion.div>
+              );
+            })()}
+
+            {/* ── Savings Goal ────────────────────────────────── */}
+            {(() => {
+              const actualSavings = totalIncome - totalSpent;
+              const hasGoal = savingsGoal > 0;
+              const progressPct = hasGoal
+                ? Math.min(Math.round((actualSavings / savingsGoal) * 100), 100)
+                : 0;
+              const colorClass =
+                progressPct >= 80
+                  ? "text-emerald-500"
+                  : progressPct >= 50
+                    ? "text-amber-500"
+                    : "text-destructive";
+              const barColor =
+                progressPct >= 80
+                  ? "bg-emerald-500"
+                  : progressPct >= 50
+                    ? "bg-amber-500"
+                    : "bg-destructive";
+
+              return (
+                <motion.div
+                  variants={itemVariants}
+                  className="px-4"
+                  data-ocid="dashboard.savings_goal.card"
+                >
+                  <div className="rounded-xl border border-border bg-card shadow-sm px-4 py-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Target className="h-4 w-4 text-primary" />
+                        <p className="text-sm font-semibold">Savings Goal</p>
+                      </div>
+                      <button
+                        type="button"
+                        data-ocid="dashboard.savings_goal.edit_button"
+                        onClick={() => {
+                          setGoalInput(
+                            savingsGoal > 0 ? savingsGoal.toString() : "",
+                          );
+                          setEditingGoal((v) => !v);
+                        }}
+                        className="h-7 w-7 flex items-center justify-center rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+
+                    {editingGoal && (
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          placeholder="Enter savings goal..."
+                          value={goalInput}
+                          onChange={(e) => setGoalInput(e.target.value)}
+                          data-ocid="dashboard.savings_goal.input"
+                          className="flex-1 h-8 rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                        />
+                        <button
+                          type="button"
+                          data-ocid="dashboard.savings_goal.save_button"
+                          onClick={() => {
+                            const val = Number(goalInput);
+                            setSavingsGoal(val);
+                            localStorage.setItem(
+                              "pe_savings_goal",
+                              val.toString(),
+                            );
+                            setEditingGoal(false);
+                          }}
+                          className="h-8 w-8 flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                        >
+                          <Check className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
+
+                    {!hasGoal && !editingGoal ? (
+                      <p className="text-xs text-muted-foreground">
+                        Set a savings goal to track your progress
+                      </p>
+                    ) : hasGoal ? (
+                      <>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">
+                            {formatCurrency(
+                              Math.max(actualSavings, 0),
+                              currency,
+                            )}{" "}
+                            saved
+                          </span>
+                          <span className={`font-semibold ${colorClass}`}>
+                            {progressPct}% of{" "}
+                            {formatCurrency(savingsGoal, currency)}
+                          </span>
+                        </div>
+                        <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-700 ${barColor}`}
+                            style={{ width: `${progressPct}%` }}
+                          />
+                        </div>
+                      </>
+                    ) : null}
                   </div>
                 </motion.div>
               );

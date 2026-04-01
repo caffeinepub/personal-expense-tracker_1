@@ -86,6 +86,23 @@ export default function ExpenseDialog({
   const { data: backendIncomeSources = [] } = useIncomeSources();
   const [incomeSources, setIncomeSources] = useState<IncomeSource[]>([]);
   const [noteDropdownOpen, setNoteDropdownOpen] = useState(false);
+  const [selectedDisplayCurrency, setSelectedDisplayCurrency] = useState("");
+  const secondaryCurrencies: { code: string; rate: number }[] = (() => {
+    try {
+      const v = localStorage.getItem("pe_secondary_currencies");
+      return v ? JSON.parse(v) : [];
+    } catch {
+      return [];
+    }
+  })();
+  const multiCurrencyEnabled =
+    localStorage.getItem("pe_multi_currency_enabled") === "true";
+  const allCurrencies = [
+    currency,
+    ...secondaryCurrencies
+      .map((s) => s.code)
+      .filter((c) => c && c !== currency),
+  ];
 
   const dateInputRef = useRef<HTMLInputElement>(null);
   const prefillAppliedRef = useRef(false);
@@ -232,7 +249,7 @@ export default function ExpenseDialog({
 
   async function handleSave() {
     if (!validate()) return;
-    const parsedAmount = Number.parseFloat(amount);
+    let parsedAmount = Number.parseFloat(amount);
 
     if (entryType === "income") {
       const incomeMonth = date.substring(0, 7);
@@ -242,6 +259,19 @@ export default function ExpenseDialog({
       return;
     }
 
+    // Multi-currency conversion
+    const dispCurrency = selectedDisplayCurrency || currency;
+    let finalNote = note.trim();
+    if (dispCurrency !== currency && multiCurrencyEnabled) {
+      const sc = secondaryCurrencies.find((s) => s.code === dispCurrency);
+      if (sc && sc.rate > 0) {
+        const origAmount = parsedAmount;
+        parsedAmount = origAmount / sc.rate;
+        const tag = ` [${dispCurrency} ${origAmount.toFixed(2)}]`;
+        finalNote = finalNote ? finalNote + tag : tag.trim();
+      }
+    }
+
     const id = expense?.id ?? crypto.randomUUID();
     const createdAt = expense?.createdAt ?? BigInt(Date.now());
     await onSave({
@@ -249,7 +279,7 @@ export default function ExpenseDialog({
       amount: parsedAmount,
       categoryId,
       date,
-      note: note.trim(),
+      note: finalNote,
       paymentMethod,
       createdAt,
       recurring: !expense
@@ -425,6 +455,32 @@ export default function ExpenseDialog({
                   {errors.amount}
                 </p>
               )}
+              {multiCurrencyEnabled &&
+                !isIncome &&
+                allCurrencies.length > 1 && (
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {allCurrencies.map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        data-ocid={`expense.currency.${c.toLowerCase()}.toggle`}
+                        onClick={() => setSelectedDisplayCurrency(c)}
+                        className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-colors ${
+                          (selectedDisplayCurrency || currency) === c
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
+                        }`}
+                      >
+                        {c}
+                      </button>
+                    ))}
+                    {(selectedDisplayCurrency || currency) !== currency && (
+                      <span className="text-[10px] text-muted-foreground">
+                        Auto-converts to {currency}
+                      </span>
+                    )}
+                  </div>
+                )}
             </div>
 
             {/* Date */}

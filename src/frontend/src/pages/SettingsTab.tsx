@@ -165,6 +165,19 @@ export default function SettingsTab() {
   const { t, language, setLanguage } = useLanguage();
 
   const [currency, setCurrency] = useState(settings?.currency ?? "USD");
+  const [multiCurrencyEnabled, setMultiCurrencyEnabled] = useState(
+    () => localStorage.getItem("pe_multi_currency_enabled") === "true",
+  );
+  const [secondaryCurrencies, setSecondaryCurrencies] = useState<
+    { code: string; rate: number }[]
+  >(() => {
+    try {
+      const v = localStorage.getItem("pe_secondary_currencies");
+      return v ? JSON.parse(v) : [];
+    } catch {
+      return [];
+    }
+  });
 
   // All sections default closed
   const [regionalOpen, setRegionalOpen] = useState(false);
@@ -751,6 +764,123 @@ export default function SettingsTab() {
                         ))}
                       </SelectContent>
                     </Select>
+                    {/* Multi-currency */}
+                    <div className="mt-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium">Multi-Currency</p>
+                          <p className="text-xs text-muted-foreground">
+                            Log expenses in other currencies
+                          </p>
+                        </div>
+                        <Switch
+                          data-ocid="settings.multi_currency.switch"
+                          checked={multiCurrencyEnabled}
+                          onCheckedChange={(v) => {
+                            setMultiCurrencyEnabled(v);
+                            localStorage.setItem(
+                              "pe_multi_currency_enabled",
+                              v ? "true" : "false",
+                            );
+                          }}
+                        />
+                      </div>
+
+                      {multiCurrencyEnabled && (
+                        <div className="space-y-2">
+                          {secondaryCurrencies.map((sc, idx) => (
+                            <div
+                              key={`${sc.code}-${idx}`}
+                              className="flex items-center gap-2"
+                            >
+                              <input
+                                type="text"
+                                maxLength={3}
+                                placeholder="USD"
+                                value={sc.code}
+                                onChange={(e) => {
+                                  const updated = [...secondaryCurrencies];
+                                  updated[idx] = {
+                                    ...updated[idx],
+                                    code: e.target.value.toUpperCase(),
+                                  };
+                                  setSecondaryCurrencies(updated);
+                                  localStorage.setItem(
+                                    "pe_secondary_currencies",
+                                    JSON.stringify(updated),
+                                  );
+                                }}
+                                data-ocid={`settings.secondary_currency.code.${idx + 1}`}
+                                className="w-16 h-8 rounded-lg border border-border bg-background px-2 text-xs font-mono uppercase focus:outline-none focus:ring-2 focus:ring-ring"
+                              />
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.0001"
+                                placeholder="Rate"
+                                value={sc.rate || ""}
+                                onChange={(e) => {
+                                  const updated = [...secondaryCurrencies];
+                                  updated[idx] = {
+                                    ...updated[idx],
+                                    rate: Number(e.target.value),
+                                  };
+                                  setSecondaryCurrencies(updated);
+                                  localStorage.setItem(
+                                    "pe_secondary_currencies",
+                                    JSON.stringify(updated),
+                                  );
+                                }}
+                                data-ocid={`settings.secondary_currency.rate.${idx + 1}`}
+                                className="flex-1 h-8 rounded-lg border border-border bg-background px-2 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+                              />
+                              <button
+                                type="button"
+                                data-ocid={`settings.secondary_currency.delete_button.${idx + 1}`}
+                                onClick={() => {
+                                  const updated = secondaryCurrencies.filter(
+                                    (_, i) => i !== idx,
+                                  );
+                                  setSecondaryCurrencies(updated);
+                                  localStorage.setItem(
+                                    "pe_secondary_currencies",
+                                    JSON.stringify(updated),
+                                  );
+                                }}
+                                className="h-8 w-8 flex items-center justify-center rounded-lg text-destructive hover:bg-destructive/10 transition-colors flex-shrink-0"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          ))}
+                          {secondaryCurrencies.length < 5 && (
+                            <button
+                              type="button"
+                              data-ocid="settings.add_secondary_currency.button"
+                              onClick={() => {
+                                const updated = [
+                                  ...secondaryCurrencies,
+                                  { code: "", rate: 1 },
+                                ];
+                                setSecondaryCurrencies(updated);
+                                localStorage.setItem(
+                                  "pe_secondary_currencies",
+                                  JSON.stringify(updated),
+                                );
+                              }}
+                              className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors font-medium"
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                              Add Currency
+                            </button>
+                          )}
+                          <p className="text-[10px] text-muted-foreground">
+                            Rate = units of secondary per 1 {currency} (e.g. 1
+                            EUR = 1.08 USD → rate 1.08)
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </TabsContent>
 
                   <TabsContent value="number-date" className="mt-0 space-y-5">
