@@ -3,6 +3,7 @@ import type {
   AppSettings,
   Category,
   Expense,
+  ExpenseMeta,
   IncomeSource,
   MonthlyIncome,
   ShoppingItem,
@@ -125,13 +126,19 @@ export function useDeleteExpense() {
   const { actor } = useActor();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (expenseId: string) => {
+    mutationFn: async (expenseId: string) => {
       if (!actor) throw new Error("No actor");
-      return actor.deleteExpense(expenseId);
+      await actor.deleteExpense(expenseId);
+      try {
+        await (actor as any).deleteExpenseMeta(expenseId);
+      } catch {
+        /* ignore if no meta */
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["expenses"] });
       qc.invalidateQueries({ queryKey: ["summary"] });
+      qc.invalidateQueries({ queryKey: ["expenseMeta"] });
     },
   });
 }
@@ -366,5 +373,51 @@ export function useSaveUserProfile() {
       return actor.saveCallerUserProfile(profile);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["userProfile"] }),
+  });
+}
+
+// ─── Expense Metadata (tags + receiptUrl stored separately) ─────────────────
+
+export function useExpenseMetaList() {
+  const { actor, isFetching } = useActor();
+  return useQuery<[string, ExpenseMeta][]>({
+    queryKey: ["expenseMeta"],
+    queryFn: async () => {
+      if (!actor) return [];
+      try {
+        return await (actor as any).getExpenseMetaList();
+      } catch {
+        return [];
+      }
+    },
+    enabled: !!actor && !isFetching,
+    staleTime: 1000 * 60,
+  });
+}
+
+export function useSetExpenseMeta() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      expenseId,
+      meta,
+    }: { expenseId: string; meta: ExpenseMeta }) => {
+      if (!actor) throw new Error("No actor");
+      return (actor as any).setExpenseMeta(expenseId, meta);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["expenseMeta"] }),
+  });
+}
+
+export function useDeleteExpenseMeta() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (expenseId: string) => {
+      if (!actor) throw new Error("No actor");
+      return (actor as any).deleteExpenseMeta(expenseId);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["expenseMeta"] }),
   });
 }

@@ -12,6 +12,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -53,6 +59,7 @@ import {
   useAppSettings,
   useCategories,
   useDeleteExpense,
+  useExpenseMetaList,
   useExpensesByMonth,
 } from "../hooks/useQueries";
 import { useLanguage } from "../i18n/LanguageContext";
@@ -118,6 +125,7 @@ export default function ExpensesTab({
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [receiptViewerUrl, setReceiptViewerUrl] = useState<string | null>(null);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [paymentFilter, setPaymentFilter] = useState("all");
   const [minAmount, setMinAmount] = useState("");
@@ -135,6 +143,17 @@ export default function ExpensesTab({
   const { data: categories = [] } = useCategories();
   const { data: settings } = useAppSettings();
   const currency = settings?.currency ?? "USD";
+  const { data: expenseMetaList = [] } = useExpenseMetaList();
+  const metaByExpenseId = useMemo(() => {
+    const map = new Map<string, { tags?: string; receiptUrl?: string }>();
+    for (const [id, meta] of expenseMetaList) {
+      map.set(id, {
+        tags: meta.tags ?? undefined,
+        receiptUrl: meta.receiptUrl ?? undefined,
+      });
+    }
+    return map;
+  }, [expenseMetaList]);
 
   const selectedYear = Number.parseInt(month.split("-")[0], 10);
   const selectedMonthIdx = Number.parseInt(month.split("-")[1], 10) - 1;
@@ -1053,34 +1072,18 @@ export default function ExpensesTab({
                                       </>
                                     )}
                                   </div>
-                                  {(
-                                    expense as typeof expense & {
-                                      recurring?: boolean;
-                                      recurringFrequency?: string;
-                                    }
-                                  ).recurring && (
+                                  {expense.recurring && (
                                     <span className="inline-flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-primary/10 text-primary mt-0.5">
                                       ↻{" "}
-                                      {(
-                                        expense as typeof expense & {
-                                          recurringFrequency?: string;
-                                        }
-                                      ).recurringFrequency ?? "Monthly"}
+                                      {expense.recurringFrequency ?? "Monthly"}
                                     </span>
                                   )}
                                   {/* Tags chips */}
-                                  {(
-                                    expense as typeof expense & {
-                                      tags?: string;
-                                    }
-                                  ).tags && (
+                                  {metaByExpenseId.get(expense.id)?.tags && (
                                     <div className="flex flex-wrap gap-1 mt-0.5">
                                       {(
-                                        (
-                                          expense as typeof expense & {
-                                            tags?: string;
-                                          }
-                                        ).tags ?? ""
+                                        metaByExpenseId.get(expense.id)?.tags ??
+                                        ""
                                       )
                                         .split(",")
                                         .map((tag) => tag.trim())
@@ -1099,27 +1102,23 @@ export default function ExpensesTab({
                                 </div>
 
                                 <div className="flex items-center gap-2">
-                                  {(
-                                    expense as typeof expense & {
-                                      receiptUrl?: string;
-                                    }
-                                  ).receiptUrl && (
-                                    <a
-                                      href={
-                                        (
-                                          expense as typeof expense & {
-                                            receiptUrl?: string;
-                                          }
-                                        ).receiptUrl
-                                      }
-                                      target="_blank"
-                                      rel="noopener noreferrer"
+                                  {metaByExpenseId.get(expense.id)
+                                    ?.receiptUrl && (
+                                    <button
+                                      type="button"
                                       className="text-muted-foreground hover:text-primary transition-colors"
                                       aria-label="View receipt"
-                                      onClick={(e) => e.stopPropagation()}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setReceiptViewerUrl(
+                                          metaByExpenseId.get(expense.id)!
+                                            .receiptUrl!,
+                                        );
+                                      }}
+                                      data-ocid="expense.receipt.button"
                                     >
                                       <Paperclip className="h-3.5 w-3.5" />
-                                    </a>
+                                    </button>
                                   )}
                                   <div className="text-right">
                                     <span className="font-semibold text-sm block">
@@ -1234,6 +1233,23 @@ export default function ExpensesTab({
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Receipt Viewer Dialog */}
+        <Dialog
+          open={!!receiptViewerUrl}
+          onOpenChange={() => setReceiptViewerUrl(null)}
+        >
+          <DialogContent className="max-w-sm p-2" data-ocid="receipt.dialog">
+            <DialogHeader>
+              <DialogTitle>Receipt</DialogTitle>
+            </DialogHeader>
+            <img
+              src={receiptViewerUrl!}
+              alt="Receipt"
+              className="w-full rounded-lg object-contain max-h-[70vh]"
+            />
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

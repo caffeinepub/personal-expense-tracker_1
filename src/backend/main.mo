@@ -15,6 +15,8 @@ actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
 
+  // Expense type — kept at original shape to preserve stable variable compatibility.
+  // Tags and receipts are stored separately in expenseMetaByUser below.
   public type Expense = {
     id : Text;
     amount : Float;
@@ -23,6 +25,12 @@ actor {
     note : Text;
     paymentMethod : Text;
     createdAt : Int;
+  };
+
+  // Expense metadata stored separately to avoid migration issues with existing stable data.
+  public type ExpenseMeta = {
+    tags : ?Text;
+    receiptUrl : ?Text;
   };
 
   public type Category = {
@@ -84,6 +92,9 @@ actor {
   let userData = Map.empty<Principal, UserData>();
   let userProfiles = Map.empty<Principal, UserProfile>();
   let userIncomeSources = Map.empty<Principal, Map.Map<Text, IncomeSource>>();
+  // Separate stable map for expense metadata (tags + receiptUrl).
+  // Stored outside UserData to avoid migration issues with existing stored Expense records.
+  let expenseMetaByUser = Map.empty<Principal, Map.Map<Text, ExpenseMeta>>();
 
   // Helper function to get or create user data with default categories
   func getOrCreateUserData(caller : Principal) : UserData {
@@ -194,6 +205,38 @@ actor {
     };
 
     data.expenses.remove(expenseId);
+    // Also remove associated metadata
+    switch (expenseMetaByUser.get(caller)) {
+      case (?metaMap) { metaMap.remove(expenseId) };
+      case (null) {};
+    };
+  };
+
+  // Expense Metadata (tags + receiptUrl stored separately from main Expense record)
+  public shared ({ caller }) func setExpenseMeta(expenseId : Text, meta : ExpenseMeta) : async () {
+    let metaMap = switch (expenseMetaByUser.get(caller)) {
+      case (?m) { m };
+      case (null) {
+        let m = Map.empty<Text, ExpenseMeta>();
+        expenseMetaByUser.add(caller, m);
+        m;
+      };
+    };
+    metaMap.add(expenseId, meta);
+  };
+
+  public shared ({ caller }) func deleteExpenseMeta(expenseId : Text) : async () {
+    switch (expenseMetaByUser.get(caller)) {
+      case (?m) { m.remove(expenseId) };
+      case (null) {};
+    };
+  };
+
+  public query ({ caller }) func getExpenseMetaList() : async [(Text, ExpenseMeta)] {
+    switch (expenseMetaByUser.get(caller)) {
+      case (?m) { m.entries().toArray() };
+      case (null) { [] };
+    };
   };
 
   // Category CRUD
@@ -388,6 +431,7 @@ actor {
   // Reset all user data
   public shared ({ caller }) func resetUserData() : async () {
     userData.remove(caller);
+    expenseMetaByUser.remove(caller);
   };
 
   // Shopping List Functions

@@ -401,11 +401,12 @@ export default function SettingsTab() {
         (sum, s) => sum + (s.monthlyBudget || 0),
         0,
       );
-      if (totalBudget > 0) {
-        setMonthlyIncomeMutation
-          .mutateAsync({ month: currentMonth(), amount: totalBudget })
-          .catch(() => {});
-      }
+      await setMonthlyIncomeMutation.mutateAsync({
+        month: currentMonth(),
+        amount: totalBudget,
+      });
+      qc.invalidateQueries({ queryKey: ["summary"] });
+      qc.invalidateQueries({ queryKey: ["income"] });
     } catch {
       // Revert on failure
       qc.invalidateQueries({ queryKey: ["incomeSources"] });
@@ -424,9 +425,12 @@ export default function SettingsTab() {
         (sum, s) => sum + (s.monthlyBudget || 0),
         0,
       );
-      setMonthlyIncomeMutation
-        .mutateAsync({ month: currentMonth(), amount: totalBudget })
-        .catch(() => {});
+      await setMonthlyIncomeMutation.mutateAsync({
+        month: currentMonth(),
+        amount: totalBudget,
+      });
+      qc.invalidateQueries({ queryKey: ["summary"] });
+      qc.invalidateQueries({ queryKey: ["income"] });
     } catch {
       // Revert on failure
       qc.invalidateQueries({ queryKey: ["incomeSources"] });

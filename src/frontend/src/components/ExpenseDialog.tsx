@@ -29,7 +29,11 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Category, Expense, MonthlyIncome } from "../backend.d";
-import { useIncomeSources } from "../hooks/useQueries";
+import {
+  useExpenseMetaList,
+  useIncomeSources,
+  useSetExpenseMeta,
+} from "../hooks/useQueries";
 import { useLanguage } from "../i18n/LanguageContext";
 import { todayISO } from "../utils/format";
 import type { IncomeSource } from "../utils/incomeSources";
@@ -119,7 +123,22 @@ export default function ExpenseDialog({
   const dateInputRef = useRef<HTMLInputElement>(null);
   const prefillAppliedRef = useRef(false);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: backendIncomeSources handled intentionally
+  // Load expense metadata (tags + receiptUrl stored separately)
+  const { data: expenseMetaList = [] } = useExpenseMetaList();
+  const setExpenseMetaMutation = useSetExpenseMeta();
+
+  const metaByExpenseId = useMemo(() => {
+    const map = new Map<string, { tags?: string; receiptUrl?: string }>();
+    for (const [id, meta] of expenseMetaList) {
+      map.set(id, {
+        tags: meta.tags ?? undefined,
+        receiptUrl: meta.receiptUrl ?? undefined,
+      });
+    }
+    return map;
+  }, [expenseMetaList]);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: backendIncomeSources and metaByExpenseId handled intentionally
   useEffect(() => {
     if (open) {
       try {
@@ -160,14 +179,19 @@ export default function ExpenseDialog({
         setDate(expense.date);
         setNote(expense.note ?? "");
         setPaymentMethod(expense.paymentMethod ?? "Cash");
-        setRecurring(
-          (expense as typeof expense & { recurring?: boolean }).recurring ??
-            false,
-        );
+        setRecurring(expense.recurring ?? false);
         setRecurringFrequency(
           (expense as typeof expense & { recurringFrequency?: string })
             .recurringFrequency ?? "Monthly",
         );
+        // Load tags and receipt from separate metadata store
+        const existingMeta = metaByExpenseId.get(expense.id);
+        setTags(existingMeta?.tags ?? "");
+        if (existingMeta?.receiptUrl) {
+          setReceiptFile({ name: "receipt", dataUrl: existingMeta.receiptUrl });
+        } else {
+          setReceiptFile(null);
+        }
       } else if (prefill && !prefillAppliedRef.current) {
         prefillAppliedRef.current = true;
         setEntryType("expense");
@@ -290,6 +314,8 @@ export default function ExpenseDialog({
 
     const id = expense?.id ?? crypto.randomUUID();
     const createdAt = expense?.createdAt ?? BigInt(Date.now());
+
+    // Build expense object WITHOUT tags/receiptUrl (stored separately)
     await onSave({
       id,
       amount: parsedAmount,
@@ -298,22 +324,24 @@ export default function ExpenseDialog({
       note: finalNote,
       paymentMethod,
       createdAt,
-      recurring: !expense
-        ? recurring
-        : (expense as Expense & { recurring?: boolean }).recurring,
+      recurring: !expense ? recurring : expense.recurring,
       recurringFrequency:
         !expense && recurring
           ? recurringFrequency
-          : (expense as Expense & { recurringFrequency?: string })
-              .recurringFrequency,
-      tags: tags.trim() || undefined,
-      receiptUrl: receiptFile?.dataUrl || undefined,
-    } as Expense & {
-      recurring?: boolean;
-      recurringFrequency?: string;
-      tags?: string;
-      receiptUrl?: string;
+          : expense?.recurringFrequency,
     });
+
+    // Save tags and receipt as separate metadata
+    const hasMeta = tags.trim() || receiptFile?.dataUrl;
+    if (hasMeta) {
+      setExpenseMetaMutation.mutate({
+        expenseId: id,
+        meta: {
+          tags: tags.trim() || null,
+          receiptUrl: receiptFile?.dataUrl || null,
+        },
+      });
+    }
 
     if (!expense) {
       setAmount("");
