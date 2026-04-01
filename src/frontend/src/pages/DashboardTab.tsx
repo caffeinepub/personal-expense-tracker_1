@@ -853,16 +853,16 @@ export default function DashboardTab({
                       <>
                         {/* Expense / Income tabs */}
                         <div
-                          className="flex gap-1 p-1 rounded-lg bg-muted"
+                          className="flex justify-center gap-6 border-b border-border"
                           data-ocid="dashboard.chart.tab"
                         >
                           <button
                             type="button"
                             onClick={() => setChartTab("expense")}
-                            className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            className={`px-3 pb-2 text-xs font-medium transition-all border-b-2 ${
                               chartTab === "expense"
-                                ? "bg-primary text-primary-foreground shadow-sm"
-                                : "text-muted-foreground hover:text-foreground"
+                                ? "text-primary border-primary"
+                                : "text-muted-foreground hover:text-foreground border-transparent"
                             }`}
                             data-ocid="dashboard.expense.tab"
                           >
@@ -871,10 +871,10 @@ export default function DashboardTab({
                           <button
                             type="button"
                             onClick={() => setChartTab("income")}
-                            className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            className={`px-3 pb-2 text-xs font-medium transition-all border-b-2 ${
                               chartTab === "income"
-                                ? "bg-primary text-primary-foreground shadow-sm"
-                                : "text-muted-foreground hover:text-foreground"
+                                ? "text-primary border-primary"
+                                : "text-muted-foreground hover:text-foreground border-transparent"
                             }`}
                             data-ocid="dashboard.income.tab"
                           >
