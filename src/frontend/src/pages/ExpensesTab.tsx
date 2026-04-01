@@ -8,6 +8,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -35,6 +36,7 @@ import {
   ChevronLeft,
   ChevronRight,
   MoreVertical,
+  Paperclip,
   Pencil,
   Receipt,
   Search,
@@ -1066,9 +1068,59 @@ export default function ExpensesTab({
                                       ).recurringFrequency ?? "Monthly"}
                                     </span>
                                   )}
+                                  {/* Tags chips */}
+                                  {(
+                                    expense as typeof expense & {
+                                      tags?: string;
+                                    }
+                                  ).tags && (
+                                    <div className="flex flex-wrap gap-1 mt-0.5">
+                                      {(
+                                        (
+                                          expense as typeof expense & {
+                                            tags?: string;
+                                          }
+                                        ).tags ?? ""
+                                      )
+                                        .split(",")
+                                        .map((tag) => tag.trim())
+                                        .filter(Boolean)
+                                        .map((tag) => (
+                                          <Badge
+                                            key={tag}
+                                            variant="secondary"
+                                            className="text-[9px] px-1.5 py-0 h-4 font-medium"
+                                          >
+                                            #{tag}
+                                          </Badge>
+                                        ))}
+                                    </div>
+                                  )}
                                 </div>
 
                                 <div className="flex items-center gap-2">
+                                  {(
+                                    expense as typeof expense & {
+                                      receiptUrl?: string;
+                                    }
+                                  ).receiptUrl && (
+                                    <a
+                                      href={
+                                        (
+                                          expense as typeof expense & {
+                                            receiptUrl?: string;
+                                          }
+                                        ).receiptUrl
+                                      }
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-muted-foreground hover:text-primary transition-colors"
+                                      aria-label="View receipt"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <Paperclip className="h-3.5 w-3.5" />
+                                    </a>
+                                  )}
                                   <div className="text-right">
                                     <span className="font-semibold text-sm block">
                                       {formatCurrency(expense.amount, currency)}

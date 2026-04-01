@@ -21,7 +21,7 @@ import {
   X,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -74,6 +74,21 @@ export default function ReportsTab({
   const [quarterPickerOpen, setQuarterPickerOpen] = useState(false);
   const [yearPickerOpen, setYearPickerOpen] = useState(false);
   const [periodType, setPeriodType] = useState<PeriodType>("monthly");
+  const [savingsGoal, setSavingsGoal] = useState<number>(20);
+  const [editingGoal, setEditingGoal] = useState(false);
+  const [goalInput, setGoalInput] = useState("20");
+
+  // Load savings goal from localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem("savingsRateGoal");
+    if (stored) {
+      const parsed = Number.parseFloat(stored);
+      if (!Number.isNaN(parsed)) {
+        setSavingsGoal(parsed);
+        setGoalInput(parsed.toString());
+      }
+    }
+  }, []);
   const { t } = useLanguage();
 
   const { data: summary, isLoading } = useMonthlySummary(month);
@@ -573,7 +588,6 @@ export default function ReportsTab({
                             onChange={(e) => setIncomeInput(e.target.value)}
                             className="h-9 w-32 text-lg font-bold font-display"
                             data-ocid="reports.income.input"
-                            autoFocus
                             onKeyDown={(e) => {
                               if (e.key === "Enter") handleSaveIncome();
                               if (e.key === "Escape") setEditingIncome(false);
@@ -655,9 +669,11 @@ export default function ReportsTab({
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${
                   savingsRate === null
                     ? "bg-muted/40 border-border"
-                    : Number(savingsRate) >= 0
+                    : Number(savingsRate) >= savingsGoal
                       ? "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800/40"
-                      : "bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-800/40"
+                      : Number(savingsRate) >= 0
+                        ? "bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800/40"
+                        : "bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-800/40"
                 }`}
                 data-ocid="reports.savings.card"
               >
@@ -665,18 +681,22 @@ export default function ReportsTab({
                   className={`p-2 rounded-lg ${
                     savingsRate === null
                       ? "bg-muted"
-                      : Number(savingsRate) >= 0
+                      : Number(savingsRate) >= savingsGoal
                         ? "bg-emerald-100 dark:bg-emerald-900/40"
-                        : "bg-red-100 dark:bg-red-900/40"
+                        : Number(savingsRate) >= 0
+                          ? "bg-amber-100 dark:bg-amber-900/40"
+                          : "bg-red-100 dark:bg-red-900/40"
                   }`}
                 >
                   <PiggyBank
                     className={`h-4 w-4 ${
                       savingsRate === null
                         ? "text-muted-foreground"
-                        : Number(savingsRate) >= 0
+                        : Number(savingsRate) >= savingsGoal
                           ? "text-emerald-600 dark:text-emerald-400"
-                          : "text-red-600 dark:text-red-400"
+                          : Number(savingsRate) >= 0
+                            ? "text-amber-600 dark:text-amber-400"
+                            : "text-red-600 dark:text-red-400"
                     }`}
                   />
                 </div>
@@ -688,9 +708,13 @@ export default function ReportsTab({
                     <p className="text-sm font-medium text-muted-foreground mt-0.5">
                       {t("set_income_to_see")}
                     </p>
-                  ) : Number(savingsRate) >= 0 ? (
+                  ) : Number(savingsRate) >= savingsGoal ? (
                     <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300 mt-0.5">
-                      {t("saved_pct", { pct: savingsRate })}
+                      {t("saved_pct", { pct: savingsRate })} ✓ Goal met
+                    </p>
+                  ) : Number(savingsRate) >= 0 ? (
+                    <p className="text-sm font-semibold text-amber-700 dark:text-amber-300 mt-0.5">
+                      {t("saved_pct", { pct: savingsRate })} — below goal
                     </p>
                   ) : (
                     <p className="text-sm font-semibold text-red-700 dark:text-red-400 mt-0.5">
@@ -699,13 +723,66 @@ export default function ReportsTab({
                       })}
                     </p>
                   )}
+                  {/* Inline goal editor */}
+                  <div className="flex items-center gap-1 mt-1">
+                    {editingGoal ? (
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs text-muted-foreground">
+                          Goal:
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={goalInput}
+                          onChange={(e) => setGoalInput(e.target.value)}
+                          onBlur={() => {
+                            const val = Number.parseFloat(goalInput);
+                            if (!Number.isNaN(val) && val >= 0 && val <= 100) {
+                              setSavingsGoal(val);
+                              localStorage.setItem(
+                                "savingsRateGoal",
+                                val.toString(),
+                              );
+                            }
+                            setEditingGoal(false);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") e.currentTarget.blur();
+                            if (e.key === "Escape") {
+                              setGoalInput(savingsGoal.toString());
+                              setEditingGoal(false);
+                            }
+                          }}
+                          className="w-14 text-xs h-6 px-1.5 rounded border border-input bg-background text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+                          data-ocid="reports.savings_goal.input"
+                        />
+                        <span className="text-xs text-muted-foreground">%</span>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setGoalInput(savingsGoal.toString());
+                          setEditingGoal(true);
+                        }}
+                        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                        data-ocid="reports.savings_goal.edit_button"
+                      >
+                        <span>Goal: {savingsGoal}%</span>
+                        <Pencil className="h-2.5 w-2.5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
                 {savingsRate !== null && (
                   <span
                     className={`text-lg font-bold font-display ${
-                      Number(savingsRate) >= 0
+                      Number(savingsRate) >= savingsGoal
                         ? "text-emerald-600 dark:text-emerald-400"
-                        : "text-red-600 dark:text-red-400"
+                        : Number(savingsRate) >= 0
+                          ? "text-amber-600 dark:text-amber-400"
+                          : "text-red-600 dark:text-red-400"
                     }`}
                   >
                     {savingsRate}%

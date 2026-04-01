@@ -19,7 +19,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Calendar, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import {
+  Calendar,
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+  Paperclip,
+  X as XIcon,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Category, Expense, MonthlyIncome } from "../backend.d";
 import { useIncomeSources } from "../hooks/useQueries";
@@ -86,6 +93,11 @@ export default function ExpenseDialog({
   const { data: backendIncomeSources = [] } = useIncomeSources();
   const [incomeSources, setIncomeSources] = useState<IncomeSource[]>([]);
   const [noteDropdownOpen, setNoteDropdownOpen] = useState(false);
+  const [tags, setTags] = useState("");
+  const [receiptFile, setReceiptFile] = useState<{
+    name: string;
+    dataUrl: string;
+  } | null>(null);
   const [selectedDisplayCurrency, setSelectedDisplayCurrency] = useState("");
   const secondaryCurrencies: { code: string; rate: number }[] = (() => {
     try {
@@ -171,6 +183,8 @@ export default function ExpenseDialog({
         }
         setRecurring(false);
         setRecurringFrequency("Monthly");
+        setTags("");
+        setReceiptFile(null);
       } else {
         setEntryType("expense");
         setAmount("");
@@ -185,6 +199,8 @@ export default function ExpenseDialog({
         setPaymentMethod("Cash");
         setRecurring(false);
         setRecurringFrequency("Monthly");
+        setTags("");
+        setReceiptFile(null);
       }
       setErrors({});
     }
@@ -290,11 +306,20 @@ export default function ExpenseDialog({
           ? recurringFrequency
           : (expense as Expense & { recurringFrequency?: string })
               .recurringFrequency,
-    } as Expense & { recurring?: boolean; recurringFrequency?: string });
+      tags: tags.trim() || undefined,
+      receiptUrl: receiptFile?.dataUrl || undefined,
+    } as Expense & {
+      recurring?: boolean;
+      recurringFrequency?: string;
+      tags?: string;
+      receiptUrl?: string;
+    });
 
     if (!expense) {
       setAmount("");
       setNote("");
+      setTags("");
+      setReceiptFile(null);
       setErrors({});
     }
   }
@@ -700,6 +725,92 @@ export default function ExpenseDialog({
                   )}
                 </PopoverContent>
               </Popover>
+            </div>
+          )}
+
+          {/* Tags — both expense and income */}
+          <div className="space-y-1.5">
+            <Label className="text-sm font-medium">
+              Tags{" "}
+              <span className="text-muted-foreground text-xs">(Optional)</span>
+            </Label>
+            <input
+              type="text"
+              data-ocid="expense.tags.input"
+              placeholder="e.g. vacation, work, bills"
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+              className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
+            />
+            {tags.trim() && (
+              <div className="flex flex-wrap gap-1 pt-1">
+                {tags
+                  .split(",")
+                  .map((tag) => tag.trim())
+                  .filter(Boolean)
+                  .map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary/10 text-primary border border-primary/20"
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+              </div>
+            )}
+          </div>
+
+          {/* Receipt Attachment — expense mode only */}
+          {!isIncome && (
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">
+                Attach Receipt{" "}
+                <span className="text-muted-foreground text-xs">
+                  (Optional)
+                </span>
+              </Label>
+              {receiptFile ? (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-muted/30">
+                  <Paperclip className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <span className="text-sm text-foreground truncate flex-1">
+                    {receiptFile.name}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setReceiptFile(null)}
+                    className="text-muted-foreground hover:text-destructive transition-colors"
+                    aria-label="Remove receipt"
+                  >
+                    <XIcon className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <label
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-border bg-muted/20 hover:bg-muted/40 cursor-pointer transition-colors"
+                  data-ocid="expense.receipt.upload_button"
+                >
+                  <Paperclip className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">
+                    Click to attach a receipt image
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = (ev) => {
+                        const dataUrl = ev.target?.result as string;
+                        setReceiptFile({ name: file.name, dataUrl });
+                      };
+                      reader.readAsDataURL(file);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+              )}
             </div>
           )}
 

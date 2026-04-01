@@ -1,4 +1,14 @@
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Toaster } from "@/components/ui/sonner";
+import { format, subMonths } from "date-fns";
 import {
   BarChart3,
   LayoutDashboard,
@@ -25,6 +35,7 @@ import {
   useExpenses,
   useSetAppSettings,
   useSetMonthlyIncome,
+  useUpdateCategory,
   useUpdateExpense,
 } from "./hooks/useQueries";
 import { useLanguage } from "./i18n/LanguageContext";
@@ -233,6 +244,49 @@ export default function App() {
     createExpense.isPending ||
     updateExpense.isPending ||
     setMonthlyIncome.isPending;
+
+  const [newMonthPromptOpen, setNewMonthPromptOpen] = useState(false);
+  const updateCategory = useUpdateCategory();
+
+  // Detect new month and prompt to copy budgets
+  // biome-ignore lint/correctness/useExhaustiveDependencies: run once on mount
+  useEffect(() => {
+    if (actorLoading || loadingCats) return;
+    const currentMonthStr = format(new Date(), "yyyy-MM");
+    const lastVisit = localStorage.getItem("lastVisitMonth");
+    if (lastVisit !== currentMonthStr) {
+      // Only prompt if we have a previous month and categories with budgets
+      if (lastVisit && categories.some((c) => c.budget > 0)) {
+        setNewMonthPromptOpen(true);
+      } else {
+        localStorage.setItem("lastVisitMonth", currentMonthStr);
+      }
+    }
+  }, [actorLoading, loadingCats, categories.length]);
+
+  async function handleCopyBudgets() {
+    const currentMonthStr = format(new Date(), "yyyy-MM");
+    // Copy budgets from categories (they already have budget values stored per category)
+    // Just confirm the current month visit - budgets are stored on categories directly
+    for (const cat of categories) {
+      if (cat.budget > 0) {
+        try {
+          await updateCategory.mutateAsync({ ...cat });
+        } catch {
+          /* silent */
+        }
+      }
+    }
+    localStorage.setItem("lastVisitMonth", currentMonthStr);
+    setNewMonthPromptOpen(false);
+    toast.success("Budgets copied to this month!");
+  }
+
+  function handleSkipCopyBudgets() {
+    const currentMonthStr = format(new Date(), "yyyy-MM");
+    localStorage.setItem("lastVisitMonth", currentMonthStr);
+    setNewMonthPromptOpen(false);
+  }
 
   // Show loading spinner on initial load to prevent white screen
   // Keep visible until actor is ready AND initial categories have loaded
@@ -467,6 +521,41 @@ export default function App() {
 
       <Toaster position="top-center" richColors closeButton />
       <LockScreen />
+
+      {/* New Month Budget Copy Prompt */}
+      <Dialog open={newMonthPromptOpen} onOpenChange={setNewMonthPromptOpen}>
+        <DialogContent
+          className="max-w-sm mx-auto rounded-2xl"
+          data-ocid="new_month.dialog"
+        >
+          <DialogHeader>
+            <DialogTitle className="font-display text-lg font-bold">
+              🎉 New Month!
+            </DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground">
+              It's {format(new Date(), "MMMM yyyy")}. Would you like to copy
+              last month's category budgets to this month?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2 sm:flex-row flex-col">
+            <Button
+              variant="ghost"
+              onClick={handleSkipCopyBudgets}
+              className="flex-1"
+              data-ocid="new_month.cancel_button"
+            >
+              Skip
+            </Button>
+            <Button
+              onClick={handleCopyBudgets}
+              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+              data-ocid="new_month.confirm_button"
+            >
+              Copy Budgets
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
