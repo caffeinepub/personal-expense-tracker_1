@@ -465,35 +465,35 @@ export default function DashboardTab({
               >
                 <div className="rounded-xl border border-border bg-card p-3 shadow-sm flex flex-col gap-1">
                   <div className="flex items-center gap-1">
-                    <ArrowUpCircle className="h-3.5 w-3.5 text-muted-foreground" />
-                    <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                    <ArrowUpCircle className="h-3.5 w-3.5 text-blue-500" />
+                    <p className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground">
                       {t("income")}
                     </p>
                   </div>
-                  <p className="font-display font-bold text-lg leading-tight text-blue-600 dark:text-blue-400 truncate">
+                  <p className="font-display font-bold text-base leading-tight text-blue-600 dark:text-blue-400 truncate">
                     {formatCurrency(totalIncome, currency)}
                   </p>
                 </div>
                 <div className="rounded-xl border border-border bg-card p-3 shadow-sm flex flex-col gap-1">
                   <div className="flex items-center gap-1">
-                    <ArrowDownCircle className="h-3.5 w-3.5 text-muted-foreground" />
-                    <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                    <ArrowDownCircle className="h-3.5 w-3.5 text-red-500" />
+                    <p className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground">
                       {t("expenses")}
                     </p>
                   </div>
-                  <p className="font-display font-bold text-lg leading-tight text-red-600 dark:text-red-400 truncate">
+                  <p className="font-display font-bold text-base leading-tight text-red-600 dark:text-red-400 truncate">
                     {formatCurrency(totalSpent, currency)}
                   </p>
                 </div>
                 <div className="rounded-xl border border-border bg-card p-3 shadow-sm flex flex-col gap-1">
                   <div className="flex items-center gap-1">
-                    <Scale className="h-3.5 w-3.5 text-muted-foreground" />
-                    <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                    <Scale className="h-3.5 w-3.5 text-emerald-500" />
+                    <p className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground">
                       {t("balance")}
                     </p>
                   </div>
                   <p
-                    className={`font-display font-bold text-lg leading-tight truncate ${
+                    className={`font-display font-bold text-base leading-tight truncate ${
                       balance >= 0
                         ? "text-emerald-600 dark:text-emerald-400"
                         : "text-destructive"
@@ -635,7 +635,7 @@ export default function DashboardTab({
                               value={goalInput}
                               onChange={(e) => setGoalInput(e.target.value)}
                               data-ocid="dashboard.savings_goal.input"
-                              className="flex-1 h-8 rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                              className="w-20 h-8 rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                             />
                             <button
                               type="button"

@@ -572,7 +572,7 @@ export default function ReportsTab({
             {/* Income card */}
             <motion.div variants={itemVariants}>
               <Card className="border-0 shadow-sm">
-                <CardContent className="pt-4 pb-4 px-4">
+                <CardContent className="pt-2 pb-2 px-3">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
@@ -645,19 +645,23 @@ export default function ReportsTab({
                   label={t("income")}
                   value={formatCurrency(totalIncome, currency)}
                   icon={<TrendingUp className="h-4 w-4" />}
-                  color="text-positive"
+                  color="text-blue-600 dark:text-blue-400"
                 />
                 <SummaryCard
                   label={t("expenses")}
                   value={formatCurrency(totalExpenses, currency)}
                   icon={<TrendingDown className="h-4 w-4" />}
-                  color="text-negative"
+                  color="text-red-600 dark:text-red-400"
                 />
                 <SummaryCard
                   label={t("balance")}
                   value={formatCurrency(Math.abs(balance), currency)}
                   icon={<Minus className="h-4 w-4" />}
-                  color={isOver ? "text-negative" : "text-positive"}
+                  color={
+                    isOver
+                      ? "text-red-600 dark:text-red-400"
+                      : "text-emerald-600 dark:text-emerald-400"
+                  }
                   prefix={isOver ? "-" : "+"}
                 />
               </div>
@@ -945,10 +949,14 @@ function SummaryCard({
 }) {
   return (
     <Card className="border-0 shadow-sm">
-      <CardContent className="pt-3 pb-3 px-3">
-        <div className={`${color} mb-1`}>{icon}</div>
-        <p className="text-xs text-muted-foreground font-medium">{label}</p>
-        <p className="font-display font-bold text-sm mt-0.5 leading-tight">
+      <CardContent className="pt-2 pb-2 px-2">
+        <p className="text-[14px] uppercase font-medium text-muted-foreground mb-1">
+          {label}
+        </p>
+        <div className={`${color} mb-0.5`}>{icon}</div>
+        <p
+          className={`font-display font-bold text-base mt-0.5 leading-tight ${color}`}
+        >
           {prefix}
           {value}
         </p>
