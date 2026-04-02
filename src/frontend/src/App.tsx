@@ -341,7 +341,7 @@ export default function App() {
         className="
           w-full max-w-[480px] flex flex-col relative
           bg-background
-          h-dvh
+          h-dvh rounded-b-3xl overflow-hidden
           md:min-h-0 md:max-h-[92vh] md:rounded-3xl md:shadow-2xl md:overflow-hidden md:border md:border-border/50
           lg:max-w-[520px]
         "
@@ -428,7 +428,7 @@ export default function App() {
         <nav
           className="
             fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px]
-            backdrop-blur-lg border-t border-border z-40 safe-bottom
+            backdrop-blur-lg border-t border-border z-40 safe-bottom rounded-b-3xl
             lg:max-w-[520px]
           "
           style={{
@@ -445,7 +445,7 @@ export default function App() {
                   type="button"
                   data-ocid={TAB_OCIDS[idx]}
                   onClick={() => setActiveTab(tabId)}
-                  className={`flex flex-col items-center gap-0.5 px-4 py-2 rounded-xl transition-all duration-200 ${
+                  className={`flex flex-col items-center gap-0.5 px-2 py-2 rounded-xl transition-all duration-200 ${
                     isActive
                       ? "text-primary"
                       : "text-muted-foreground hover:text-foreground"

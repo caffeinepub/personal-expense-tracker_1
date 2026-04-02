@@ -950,12 +950,14 @@ function SummaryCard({
   return (
     <Card className="border-0 shadow-sm">
       <CardContent className="pt-2 pb-2 px-2">
-        <p className="text-[14px] uppercase font-medium text-muted-foreground mb-1">
-          {label}
-        </p>
-        <div className={`${color} mb-0.5`}>{icon}</div>
+        <div className={`flex items-center gap-1 mb-1 ${color}`}>
+          {icon}
+          <p className="text-[14px] uppercase font-medium text-muted-foreground leading-none">
+            {label}
+          </p>
+        </div>
         <p
-          className={`font-display font-bold text-base mt-0.5 leading-tight ${color}`}
+          className={`font-display font-bold text-base leading-tight ${color}`}
         >
           {prefix}
           {value}

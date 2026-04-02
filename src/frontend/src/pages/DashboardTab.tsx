@@ -804,34 +804,52 @@ export default function DashboardTab({
             <motion.div variants={itemVariants}>
               <Card className="border-0 shadow-sm">
                 <CardHeader className="pb-0 pt-3 px-4">
-                  <div className="flex justify-center border-b border-border">
-                    <button
-                      type="button"
-                      onClick={() => setDashTab("category")}
-                      className={`px-4 pb-2 text-sm font-medium transition-all border-b-2 -mb-px ${dashTab === "category" ? "text-primary border-primary" : "text-muted-foreground hover:text-foreground border-transparent"}`}
-                      data-ocid="dashboard.category.tab"
-                    >
-                      {t("by_category")}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDashTab("recent")}
-                      className={`flex items-center gap-1.5 px-4 pb-2 text-sm font-medium transition-all border-b-2 -mb-px ${dashTab === "recent" ? "text-primary border-primary" : "text-muted-foreground hover:text-foreground border-transparent"}`}
-                      data-ocid="dashboard.recent.tab"
-                    >
-                      {t("recent_transactions")}
-                      {recentExpenses.length > 0 && (
-                        <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full font-medium">
-                          {recentExpenses.length}
-                        </span>
-                      )}
-                    </button>
+                  <div className="flex items-center justify-between gap-2 p-1">
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setDashTab("category")}
+                        className={`rounded-lg px-4 py-1.5 text-sm font-semibold transition-all shadow-sm ${dashTab === "category" ? "text-white" : "bg-muted text-muted-foreground hover:text-foreground"}`}
+                        style={
+                          dashTab === "category"
+                            ? {
+                                background:
+                                  "linear-gradient(135deg, oklch(0.52 0.17 145), oklch(0.42 0.15 145))",
+                              }
+                            : undefined
+                        }
+                        data-ocid="dashboard.category.tab"
+                      >
+                        {t("by_category")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDashTab("recent")}
+                        className={`flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-sm font-semibold transition-all shadow-sm ${dashTab === "recent" ? "text-white" : "bg-muted text-muted-foreground hover:text-foreground"}`}
+                        style={
+                          dashTab === "recent"
+                            ? {
+                                background:
+                                  "linear-gradient(135deg, oklch(0.52 0.17 145), oklch(0.42 0.15 145))",
+                              }
+                            : undefined
+                        }
+                        data-ocid="dashboard.recent.tab"
+                      >
+                        {t("recent_transactions")}
+                        {recentExpenses.length > 0 && (
+                          <span className="text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full font-medium">
+                            {recentExpenses.length}
+                          </span>
+                        )}
+                      </button>
+                    </div>
                     {dashTab === "recent" && recentExpenses.length > 0 && (
                       <button
                         type="button"
                         onClick={onViewAll}
                         data-ocid="dashboard.view_all.button"
-                        className="ml-2 pb-2 text-xs font-medium text-primary hover:underline self-end"
+                        className="text-xs font-medium text-primary hover:underline"
                       >
                         View All
                       </button>

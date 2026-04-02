@@ -279,11 +279,11 @@ export default function ShoppingListTab({
       <div className="mb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
+            <span className="text-xs font-bold tracking-widest text-muted-foreground uppercase">
               SHOPPING
             </span>
             <span className="text-muted-foreground/40">|</span>
-            <span className="text-sm font-semibold text-foreground">
+            <span className="text-xs font-bold uppercase tracking-widest text-foreground">
               {t("shopping_list")}
             </span>
           </div>
