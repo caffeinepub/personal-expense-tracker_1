@@ -803,44 +803,41 @@ export default function DashboardTab({
             {/* Category + Recent Transactions (tabbed) */}
             <motion.div variants={itemVariants}>
               <Card className="border-0 shadow-sm">
-                <CardHeader className="pb-0 pt-4 px-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex gap-1 p-1 rounded-lg bg-muted flex-1">
-                      <button
-                        type="button"
-                        onClick={() => setDashTab("category")}
-                        className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-colors ${dashTab === "category" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                        data-ocid="dashboard.category.tab"
-                      >
-                        {t("by_category")}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDashTab("recent")}
-                        className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-colors ${dashTab === "recent" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                        data-ocid="dashboard.recent.tab"
-                      >
-                        {t("recent_transactions")}
-                      </button>
-                    </div>
-                    {dashTab === "recent" && recentExpenses.length > 0 && (
-                      <div className="flex items-center gap-2 ml-2">
-                        <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full font-medium">
+                <CardHeader className="pb-0 pt-3 px-4">
+                  <div className="flex justify-center border-b border-border">
+                    <button
+                      type="button"
+                      onClick={() => setDashTab("category")}
+                      className={`px-4 pb-2 text-sm font-medium transition-all border-b-2 -mb-px ${dashTab === "category" ? "text-primary border-primary" : "text-muted-foreground hover:text-foreground border-transparent"}`}
+                      data-ocid="dashboard.category.tab"
+                    >
+                      {t("by_category")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDashTab("recent")}
+                      className={`flex items-center gap-1.5 px-4 pb-2 text-sm font-medium transition-all border-b-2 -mb-px ${dashTab === "recent" ? "text-primary border-primary" : "text-muted-foreground hover:text-foreground border-transparent"}`}
+                      data-ocid="dashboard.recent.tab"
+                    >
+                      {t("recent_transactions")}
+                      {recentExpenses.length > 0 && (
+                        <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full font-medium">
                           {recentExpenses.length}
                         </span>
-                        <button
-                          type="button"
-                          onClick={onViewAll}
-                          data-ocid="dashboard.view_all.button"
-                          className="text-xs font-medium text-primary hover:underline"
-                        >
-                          View All
-                        </button>
-                      </div>
+                      )}
+                    </button>
+                    {dashTab === "recent" && recentExpenses.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={onViewAll}
+                        data-ocid="dashboard.view_all.button"
+                        className="ml-2 pb-2 text-xs font-medium text-primary hover:underline self-end"
+                      >
+                        View All
+                      </button>
                     )}
                   </div>
                 </CardHeader>
-                <Separator />
 
                 {/* By Category Tab */}
                 {dashTab === "category" && (

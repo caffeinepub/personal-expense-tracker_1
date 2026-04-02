@@ -455,7 +455,7 @@ export default function App() {
                 >
                   <div className="relative">
                     <Icon
-                      className={`h-7 w-7 transition-all duration-200 ${
+                      className={`h-6 w-6 transition-all duration-200 ${
                         isActive ? "scale-110" : ""
                       }`}
                     />
@@ -471,7 +471,7 @@ export default function App() {
                       />
                     )}
                   </div>
-                  <span className="text-sm font-medium leading-none mt-0.5">
+                  <span className="text-[14px] font-medium leading-none mt-0.5">
                     {t(TAB_KEYS[idx])}
                   </span>
                 </button>

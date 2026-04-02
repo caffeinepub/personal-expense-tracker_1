@@ -82,10 +82,10 @@ export default function AppHeader({
           {/* Left: App title + subtitle */}
           {showTitle && (
             <div className="flex-1 min-w-0">
-              <h1 className="font-display text-xl font-bold tracking-tight leading-tight text-[#1E2937] dark:text-foreground">
+              <h1 className="font-display text-[24px] font-bold tracking-tight leading-tight text-[#1E2937] dark:text-foreground">
                 PE Tracker
               </h1>
-              <p className="text-xs font-medium text-[#64748B] dark:text-muted-foreground mt-0.5">
+              <p className="text-[14px] font-medium text-[#64748B] dark:text-muted-foreground mt-0.5">
                 Personal Expense Tracker
               </p>
             </div>
@@ -107,7 +107,7 @@ export default function AppHeader({
                 className="text-sm font-medium border border-emerald-300 rounded-md px-2 py-0.5 w-24 text-[#334155] dark:text-foreground bg-background focus:outline-none focus:ring-1 focus:ring-emerald-400"
               />
             ) : (
-              <span className="text-sm font-medium text-[#334155] dark:text-foreground truncate max-w-[80px]">
+              <span className="text-[14px] font-medium text-[#334155] dark:text-foreground truncate max-w-[80px]">
                 {username}
               </span>
             )}
@@ -119,27 +119,27 @@ export default function AppHeader({
                 setNameInput(username);
                 setEditingName(true);
               }}
-              className="h-7 w-7 rounded-full bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors"
+              className="h-9 w-9 rounded-full bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors"
               aria-label="Edit username"
               data-ocid="app.username.edit_button"
             >
-              <Pencil className="h-3.5 w-3.5 text-[#10B981]" />
+              <Pencil className="h-5 w-5 text-[#10B981]" />
             </button>
 
             {/* Theme toggle */}
             <button
               type="button"
               onClick={() => setIsDark((prev) => !prev)}
-              className="h-8 w-8 rounded-xl border border-border/60 bg-background/80 dark:bg-muted/60 flex items-center justify-center hover:bg-muted/60 transition-colors"
+              className="h-9 w-9 rounded-xl border border-border/60 bg-background/80 dark:bg-muted/60 flex items-center justify-center hover:bg-muted/60 transition-colors"
               aria-label={
                 isDark ? t("switch_light_mode") : t("switch_dark_mode")
               }
               data-ocid="app.theme.toggle"
             >
               {isDark ? (
-                <Sun className="h-4 w-4 text-foreground" />
+                <Sun className="h-5 w-5 text-foreground" />
               ) : (
-                <Moon className="h-4 w-4 text-[#334155]" />
+                <Moon className="h-5 w-5 text-[#334155]" />
               )}
             </button>
 
@@ -147,11 +147,11 @@ export default function AppHeader({
             <button
               type="button"
               onClick={() => clear()}
-              className="h-8 w-8 rounded-xl border border-border/60 bg-background/80 dark:bg-muted/60 flex items-center justify-center hover:bg-muted/60 transition-colors"
+              className="h-9 w-9 rounded-xl border border-border/60 bg-background/80 dark:bg-muted/60 flex items-center justify-center hover:bg-muted/60 transition-colors"
               aria-label={t("logout")}
               data-ocid="app.logout.button"
             >
-              <LogOut className="h-4 w-4 text-[#334155] dark:text-foreground" />
+              <LogOut className="h-5 w-5 text-[#334155] dark:text-foreground" />
             </button>
           </div>
         </div>
