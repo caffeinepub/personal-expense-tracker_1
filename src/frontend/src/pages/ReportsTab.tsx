@@ -281,7 +281,7 @@ export default function ReportsTab({
             <span
               className={`text-[10px] font-medium mb-0.5 uppercase tracking-wide ${getLabelClass("monthly")}`}
             >
-              Monthly
+              Month
             </span>
             <div
               className={`flex items-center w-full justify-between rounded-lg px-1.5 py-1.5 h-9 border ${getNavBorderClass("monthly")}`}
@@ -397,7 +397,7 @@ export default function ReportsTab({
                 <span
                   className={`text-[10px] font-medium mb-0.5 uppercase tracking-wide ${getLabelClass("quarterly")}`}
                 >
-                  Quarterly
+                  Quarter
                 </span>
                 <div
                   className={`flex items-center w-full justify-between rounded-lg px-1.5 py-1.5 h-9 border ${getNavBorderClass("quarterly")}`}
@@ -481,7 +481,7 @@ export default function ReportsTab({
                 <span
                   className={`text-[10px] font-medium mb-0.5 uppercase tracking-wide ${getLabelClass("yearly")}`}
                 >
-                  Yearly
+                  Year
                 </span>
                 <div
                   className={`flex items-center w-full justify-between rounded-lg px-1.5 py-1.5 h-9 border ${getNavBorderClass("yearly")}`}

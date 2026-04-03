@@ -27,6 +27,7 @@ import ExpenseDialog from "./components/ExpenseDialog";
 import LockScreen from "./components/LockScreen";
 import { useActor } from "./hooks/useActor";
 import { useCardTheme } from "./hooks/useCardTheme";
+import { useInternetIdentity } from "./hooks/useInternetIdentity";
 import {
   useAppSettings,
   useCategories,
@@ -44,6 +45,7 @@ import ExpensesTab from "./pages/ExpensesTab";
 import ReportsTab from "./pages/ReportsTab";
 import SettingsTab from "./pages/SettingsTab";
 import ShoppingListTab from "./pages/ShoppingListTab";
+import WelcomeScreen from "./pages/WelcomeScreen";
 import { DEFAULT_CATEGORIES } from "./utils/categories";
 import { currentMonth } from "./utils/format";
 
@@ -85,6 +87,8 @@ export default function App() {
   const [month, setMonth] = useState(currentMonth);
   const { theme, themeId, setThemeId } = useCardTheme();
   const { t } = useLanguage();
+  const { identity, isInitializing: iiInitializing } = useInternetIdentity();
+  const isAuthenticated = !!identity && !identity.getPrincipal().isAnonymous();
 
   const { actor, isFetching: actorLoading } = useActor();
   const { data: categories = [], isLoading: loadingCats } = useCategories();
@@ -286,6 +290,37 @@ export default function App() {
     const currentMonthStr = format(new Date(), "yyyy-MM");
     localStorage.setItem("lastVisitMonth", currentMonthStr);
     setNewMonthPromptOpen(false);
+  }
+
+  // Show II initializing spinner
+  if (iiInitializing) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{
+          background:
+            "linear-gradient(160deg, #0a1f0e 0%, #061209 40%, #000000 100%)",
+        }}
+      >
+        <div className="flex flex-col items-center gap-4">
+          <div
+            className="w-12 h-12 rounded-full border-4 border-t-transparent animate-spin"
+            style={{ borderColor: "#10B981 #10B981 transparent transparent" }}
+          />
+          <p
+            className="text-sm font-medium"
+            style={{ color: "rgba(52,211,153,0.7)" }}
+          >
+            Loadingu2026
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show welcome screen if not authenticated
+  if (!isAuthenticated) {
+    return <WelcomeScreen />;
   }
 
   // Show loading spinner on initial load to prevent white screen
