@@ -73,7 +73,9 @@ export default function WelcomeScreen() {
         minHeight: "100svh",
         width: "100%",
         overflow: "hidden",
-        background: "#0A0A0A",
+        // Deep forest green + blue gradient background
+        background:
+          "linear-gradient(160deg, #0B3D2E 0%, #0A2A3D 30%, #071828 60%, #051020 100%)",
       }}
     >
       <style>{KEYFRAMES}</style>
@@ -98,11 +100,11 @@ export default function WelcomeScreen() {
             width: "130%",
             height: "48%",
             background:
-              "linear-gradient(135deg, rgba(0,200,83,0.09) 0%, rgba(0,200,83,0.04) 40%, transparent 70%)",
+              "linear-gradient(135deg, rgba(0,200,83,0.12) 0%, rgba(30,120,200,0.08) 50%, transparent 75%)",
             transform: "skewY(-8deg)",
           }}
         />
-        {/* Top-right accent slash */}
+        {/* Top-right blue accent slash */}
         <div
           style={{
             position: "absolute",
@@ -111,11 +113,11 @@ export default function WelcomeScreen() {
             width: "55%",
             height: "70%",
             background:
-              "linear-gradient(220deg, rgba(0,200,83,0.13) 0%, rgba(0,200,83,0.05) 35%, transparent 60%)",
+              "linear-gradient(220deg, rgba(30,120,255,0.20) 0%, rgba(0,200,83,0.10) 40%, transparent 65%)",
             borderRadius: "0 0 0 60%",
           }}
         />
-        {/* Bottom glow */}
+        {/* Bottom glow — green-to-blue */}
         <div
           style={{
             position: "absolute",
@@ -124,7 +126,7 @@ export default function WelcomeScreen() {
             right: 0,
             height: "35%",
             background:
-              "linear-gradient(to top, rgba(0,200,83,0.06) 0%, transparent 100%)",
+              "linear-gradient(to top, rgba(30,80,200,0.14) 0%, rgba(0,200,83,0.06) 60%, transparent 100%)",
           }}
         />
         {/* Scattered pulse dots */}
@@ -172,26 +174,29 @@ export default function WelcomeScreen() {
             animation: "slide-in 0.7s cubic-bezier(0.22,1,0.36,1) 0.1s both",
           }}
         >
-          {/* Logo badge */}
+          {/* Logo badge — larger, 3D-style */}
           <div
             style={{
-              width: 68,
-              height: 68,
-              borderRadius: 20,
-              background: "linear-gradient(145deg, #0d3320 0%, #072010 100%)",
-              border: "1.5px solid rgba(0,200,83,0.45)",
+              width: 88,
+              height: 88,
+              borderRadius: 24,
+              background:
+                "linear-gradient(145deg, #0d4a2a 0%, #0a2e3a 55%, #061820 100%)",
+              border: "1.5px solid rgba(0,200,83,0.50)",
               boxShadow:
-                "0 0 0 6px rgba(0,200,83,0.06), 0 0 32px rgba(0,200,83,0.22), 0 8px 24px rgba(0,0,0,0.6)",
+                "0 0 0 8px rgba(0,200,83,0.06), 0 0 40px rgba(0,200,83,0.25), 0 12px 36px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -2px 0 rgba(0,0,0,0.4)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              marginBottom: 20,
+              marginBottom: 22,
+              // subtle 3D tilt via perspective transform
+              transform: "perspective(200px) rotateX(6deg) rotateY(-4deg)",
             }}
           >
             <LogoIcon />
           </div>
 
-          {/* Massive headline */}
+          {/* Massive headline — PE and TRACKER in a single row, 3D text */}
           <h1
             style={{
               fontFamily: '"Cabinet Grotesk", "Figtree", sans-serif',
@@ -201,27 +206,67 @@ export default function WelcomeScreen() {
               lineHeight: 0.92,
               margin: 0,
               textAlign: "center",
-              color: "#FFFFFF",
               textTransform: "uppercase",
+              // single row layout
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              gap: "0.25em",
+              // 3D perspective effect on the headline
+              transform: "perspective(400px) rotateX(4deg)",
+              transformOrigin: "center bottom",
             }}
           >
-            PE <span style={{ color: "#00C853" }}>Tracker</span>
+            <span
+              style={{
+                color: "#FFFFFF",
+                textShadow:
+                  "0 2px 0 rgba(0,0,0,0.5), 0 4px 12px rgba(0,0,0,0.3), 0 -1px 0 rgba(255,255,255,0.15)",
+              }}
+            >
+              PE
+            </span>
+            <span
+              style={{
+                color: "#00C853",
+                textShadow:
+                  "0 2px 0 rgba(0,100,40,0.6), 0 4px 16px rgba(0,200,83,0.35), 0 -1px 0 rgba(0,255,100,0.2)",
+              }}
+            >
+              TRACKER
+            </span>
           </h1>
 
-          {/* Tagline */}
+          {/* Tagline — TRACK · BUDGET · WIN uppercase */}
           <p
             style={{
               fontFamily: '"Figtree", sans-serif',
-              fontSize: 15,
-              fontWeight: 600,
-              letterSpacing: "0.12em",
+              fontSize: 13,
+              fontWeight: 700,
+              letterSpacing: "0.18em",
               textTransform: "uppercase",
-              color: "rgba(255,255,255,0.38)",
-              margin: "14px 0 0",
+              color: "rgba(255,255,255,0.50)",
+              margin: "12px 0 0",
               textAlign: "center",
             }}
           >
-            Track · Budget · Win
+            TRACK · BUDGET · WIN
+          </p>
+
+          {/* Sub-tagline */}
+          <p
+            style={{
+              fontFamily: '"Figtree", sans-serif',
+              fontSize: 12,
+              fontWeight: 500,
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              color: "rgba(255,255,255,0.28)",
+              margin: "6px 0 0",
+              textAlign: "center",
+            }}
+          >
+            SIMPLE EXPENSE TRACKING FOR EVERYDAY LIFE.
           </p>
         </div>
 
@@ -253,7 +298,7 @@ export default function WelcomeScreen() {
             animation: "fade-up 0.8s cubic-bezier(0.22,1,0.36,1) 0.55s both",
           }}
         >
-          {/* CTA button */}
+          {/* CTA button — green + blue gradient */}
           <button
             type="button"
             data-ocid="welcome.primary_button"
@@ -267,12 +312,12 @@ export default function WelcomeScreen() {
               cursor: isLoggingIn ? "not-allowed" : "pointer",
               background: isLoggingIn
                 ? "#009940"
-                : "linear-gradient(135deg, #00C853 0%, #00a846 100%)",
+                : "linear-gradient(135deg, #00C853 0%, #00A86B 35%, #0088CC 75%, #0055AA 100%)",
               color: "#fff",
               fontSize: 17,
               fontFamily: '"Cabinet Grotesk", "Figtree", sans-serif',
               fontWeight: 800,
-              letterSpacing: "0.04em",
+              letterSpacing: "0.06em",
               textTransform: "uppercase",
               display: "flex",
               alignItems: "center",
@@ -280,7 +325,7 @@ export default function WelcomeScreen() {
               gap: 10,
               boxShadow: isLoggingIn
                 ? "none"
-                : "0 4px 28px rgba(0,200,83,0.50), 0 2px 8px rgba(0,0,0,0.35)",
+                : "0 4px 28px rgba(0,136,204,0.45), 0 2px 12px rgba(0,200,83,0.30), 0 1px 0 rgba(255,255,255,0.12) inset",
               transition:
                 "transform 0.1s ease, box-shadow 0.15s ease, background 0.2s ease",
               opacity: isLoggingIn ? 0.75 : 1,
@@ -380,7 +425,6 @@ function HeroIllustration() {
   const R = 90;
   const C = 2 * Math.PI * R;
 
-  // pre-compute cumulative offsets
   let cumulative = 0;
   const arcs = ARC_DEFS.map((a) => {
     const dash = C * a.pct;
@@ -413,7 +457,7 @@ function HeroIllustration() {
           height: 240,
           borderRadius: "50%",
           background:
-            "radial-gradient(circle, rgba(0,200,83,0.14) 0%, transparent 70%)",
+            "radial-gradient(circle, rgba(0,200,83,0.18) 0%, rgba(30,100,255,0.10) 50%, transparent 70%)",
           animation: "glow-ring 3s ease-in-out infinite both",
         }}
       />
@@ -557,7 +601,7 @@ function FloatingCard({
         display: "flex",
         alignItems: "center",
         gap: 8,
-        background: "rgba(20,20,20,0.88)",
+        background: "rgba(8,22,32,0.88)",
         border: `1px solid ${color}44`,
         borderRadius: 12,
         padding: "8px 12px",
@@ -615,60 +659,120 @@ function FloatingCard({
 
 // ─── SVG ICONS ────────────────────────────────────────────────────────────────
 
+// Logo icon — larger (46px) with 3D depth layers
 function LogoIcon() {
   return (
     <svg
       aria-hidden="true"
-      width="36"
-      height="36"
-      viewBox="0 0 36 36"
+      width="46"
+      height="46"
+      viewBox="0 0 46 46"
       fill="none"
     >
+      {/* 3D shadow layer — wallet body bottom */}
       <rect
-        x="3"
-        y="11"
-        width="22"
-        height="16"
+        x="4"
+        y="15"
+        width="26"
+        height="18"
+        rx="5"
+        fill="rgba(0,0,0,0.45)"
+        transform="translate(1.5, 2)"
+      />
+      {/* Wallet body */}
+      <rect
+        x="4"
+        y="14"
+        width="26"
+        height="18"
+        rx="5"
+        fill="rgba(0,60,25,0.6)"
+        stroke="#00C853"
+        strokeWidth="1.6"
+      />
+      {/* Wallet flap / top */}
+      <rect
+        x="4"
+        y="10"
+        width="26"
+        height="10"
         rx="4"
-        fill="none"
+        fill="rgba(0,80,30,0.5)"
         stroke="#00C853"
-        strokeWidth="1.8"
+        strokeWidth="1.3"
       />
+      {/* Coin slot highlight */}
       <rect
-        x="3"
-        y="8"
-        width="22"
-        height="8"
+        x="4"
+        y="10"
+        width="26"
+        height="3"
         rx="3"
-        fill="rgba(0,200,83,0.12)"
-        stroke="#00C853"
-        strokeWidth="1.4"
+        fill="rgba(0,200,83,0.10)"
       />
+      {/* Coin circle */}
       <circle
-        cx="21"
-        cy="19"
-        r="2.5"
-        fill="rgba(0,200,83,0.2)"
+        cx="25"
+        cy="23"
+        r="3.2"
+        fill="rgba(0,200,83,0.18)"
         stroke="#00C853"
-        strokeWidth="1.4"
+        strokeWidth="1.5"
+      />
+      {/* 3D bar chart — shadow */}
+      <rect
+        x="32"
+        y="28"
+        width="4.5"
+        height="7"
+        rx="1.5"
+        fill="rgba(0,0,0,0.3)"
+        transform="translate(0.5,1)"
       />
       <rect
-        x="24"
-        y="20"
-        width="4"
+        x="38"
+        y="23"
+        width="4.5"
+        height="12"
+        rx="1.5"
+        fill="rgba(0,0,0,0.3)"
+        transform="translate(0.5,1)"
+      />
+      {/* 3D bar chart — bars */}
+      <rect
+        x="32"
+        y="28"
+        width="4.5"
         height="7"
         rx="1.5"
         fill="#00C853"
         opacity="0.55"
       />
       <rect
-        x="29"
-        y="16"
-        width="4"
-        height="11"
+        x="38"
+        y="23"
+        width="4.5"
+        height="12"
         rx="1.5"
         fill="#00C853"
-        opacity="0.85"
+        opacity="0.90"
+      />
+      {/* Bar chart highlight top edges */}
+      <rect
+        x="32"
+        y="28"
+        width="4.5"
+        height="1.5"
+        rx="1"
+        fill="rgba(255,255,255,0.25)"
+      />
+      <rect
+        x="38"
+        y="23"
+        width="4.5"
+        height="1.5"
+        rx="1"
+        fill="rgba(255,255,255,0.30)"
       />
     </svg>
   );
