@@ -41,10 +41,12 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Globe,
   MoreVertical,
   Paperclip,
   Pencil,
   Receipt,
+  Repeat,
   Search,
   SlidersHorizontal,
   Trash2,
@@ -55,6 +57,8 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import type { Expense } from "../backend.d";
 
+import GlobalSearchSheet from "../components/GlobalSearchSheet";
+import RecurringManagerSheet from "../components/RecurringManagerSheet";
 import {
   useAppSettings,
   useCategories,
@@ -133,6 +137,8 @@ export default function ExpensesTab({
   const [filterDateFrom, setFilterDateFrom] = useState("");
   const [filterDateTo, setFilterDateTo] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
+  const [recurringManagerOpen, setRecurringManagerOpen] = useState(false);
   const [pickerYear, setPickerYear] = useState(() => new Date().getFullYear());
   const [quarterPickerOpen, setQuarterPickerOpen] = useState(false);
   const [yearPickerOpen, setYearPickerOpen] = useState(false);
@@ -323,19 +329,45 @@ export default function ExpensesTab({
     <div className="space-y-4 pb-24">
       <div className="px-4 space-y-4">
         {/* Section label */}
-        <div>
-          <div className="flex items-baseline gap-2">
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              {t("expenses_label")}
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="flex items-baseline gap-2">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                {t("expenses_label")}
+              </p>
+              <span className="text-xs text-muted-foreground/50">|</span>
+              <h2 className="font-display text-xl font-bold tracking-tight">
+                {periodType === "quarterly"
+                  ? `Q${currentQ} ${selectedYear}`
+                  : periodType === "yearly"
+                    ? `${selectedYear}`
+                    : formatMonthYear(month)}
+              </h2>
+            </div>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {t("browse_manage_desc")}
             </p>
-            <span className="text-xs text-muted-foreground/50">|</span>
-            <h2 className="font-display text-xl font-bold tracking-tight">
-              {t("browse_manage")}
-            </h2>
           </div>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {t("browse_manage_desc")}
-          </p>
+          <div className="flex items-center gap-1.5 flex-shrink-0 mt-0.5">
+            <button
+              type="button"
+              className="h-8 px-2.5 gap-1.5 text-xs inline-flex items-center rounded-lg bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-colors font-medium"
+              onClick={() => setRecurringManagerOpen(true)}
+              data-ocid="expenses.recurring.button"
+            >
+              <Repeat className="h-3.5 w-3.5" />
+              Recurring
+            </button>
+            <button
+              type="button"
+              className="h-8 px-2.5 gap-1.5 text-xs inline-flex items-center rounded-lg bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-colors font-medium"
+              onClick={() => setGlobalSearchOpen(true)}
+              data-ocid="expenses.global_search.button"
+            >
+              <Globe className="h-3.5 w-3.5" />
+              Search all
+            </button>
+          </div>
         </div>
 
         {/* Back + Monthly / Quarterly / Yearly navigator row */}
@@ -1250,6 +1282,22 @@ export default function ExpensesTab({
             />
           </DialogContent>
         </Dialog>
+
+        {/* Global Transaction Search */}
+        <GlobalSearchSheet
+          open={globalSearchOpen}
+          onOpenChange={setGlobalSearchOpen}
+          onNavigateToMonth={(m) => {
+            setMonth(m);
+            setPeriodType("monthly");
+          }}
+        />
+
+        {/* Recurring Expense Manager */}
+        <RecurringManagerSheet
+          open={recurringManagerOpen}
+          onOpenChange={setRecurringManagerOpen}
+        />
       </div>
     </div>
   );

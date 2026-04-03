@@ -237,31 +237,31 @@ export default function WelcomeScreen() {
             </span>
           </h1>
 
-          {/* Tagline — TRACK · BUDGET · WIN uppercase */}
+          {/* Primary tagline — PERSONAL EXPENSE TRACKER */}
           <p
             style={{
               fontFamily: '"Figtree", sans-serif',
-              fontSize: 13,
+              fontSize: 16,
               fontWeight: 700,
               letterSpacing: "0.18em",
               textTransform: "uppercase",
-              color: "rgba(255,255,255,0.50)",
+              color: "rgba(255,255,255,0.70)",
               margin: "12px 0 0",
               textAlign: "center",
             }}
           >
-            TRACK · BUDGET · WIN
+            PERSONAL EXPENSE TRACKER
           </p>
 
           {/* Sub-tagline */}
           <p
             style={{
               fontFamily: '"Figtree", sans-serif',
-              fontSize: 12,
+              fontSize: 14,
               fontWeight: 500,
               letterSpacing: "0.06em",
               textTransform: "uppercase",
-              color: "rgba(255,255,255,0.28)",
+              color: "rgba(255,255,255,0.36)",
               margin: "6px 0 0",
               textAlign: "center",
             }}
@@ -314,7 +314,7 @@ export default function WelcomeScreen() {
                 ? "#009940"
                 : "linear-gradient(135deg, #00C853 0%, #00A86B 35%, #0088CC 75%, #0055AA 100%)",
               color: "#fff",
-              fontSize: 17,
+              fontSize: 19,
               fontFamily: '"Cabinet Grotesk", "Figtree", sans-serif',
               fontWeight: 800,
               letterSpacing: "0.06em",

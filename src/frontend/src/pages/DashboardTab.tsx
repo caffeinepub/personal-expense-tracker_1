@@ -43,6 +43,7 @@ import {
 import type { Expense } from "../backend.d";
 
 import BillReminders from "../components/BillReminders";
+import BudgetAlertsCard from "../components/BudgetAlertsCard";
 import ThemePickerDialog from "../components/ThemePickerDialog";
 import type { CardThemeId } from "../hooks/useCardTheme";
 import {
@@ -691,6 +692,17 @@ export default function DashboardTab({
                 </motion.div>
               );
             })()}
+
+            {/* Budget Alerts */}
+            {categories.some((c) => c.budget > 0) && (
+              <motion.div variants={itemVariants}>
+                <BudgetAlertsCard
+                  categories={categories}
+                  expenses={expenses}
+                  currency={currency}
+                />
+              </motion.div>
+            )}
 
             {/* Bill Reminders */}
             <BillReminders onQuickAdd={onQuickAddBill} />
