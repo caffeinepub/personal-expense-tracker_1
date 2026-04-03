@@ -44,11 +44,14 @@ import type { Expense } from "../backend.d";
 
 import BillReminders from "../components/BillReminders";
 import BudgetAlertsCard from "../components/BudgetAlertsCard";
+import DebtTrackerCard from "../components/DebtTrackerCard";
+import SpendingLimitCard from "../components/SpendingLimitCard";
 import ThemePickerDialog from "../components/ThemePickerDialog";
 import type { CardThemeId } from "../hooks/useCardTheme";
 import {
   useAppSettings,
   useCategories,
+  useExpenses,
   useExpensesByMonth,
   useIncomeSources,
   useMonthlySummary,
@@ -145,6 +148,7 @@ export default function DashboardTab({
 
   const { data: expenses = [], isLoading: loadingExpenses } =
     useExpensesByMonth(month);
+  const { data: allExpenses = [] } = useExpenses();
   const { data: summary, isLoading: loadingSummary } = useMonthlySummary(month);
   const prevMonthStr = _prevMonth(month);
   const { data: prevSummary } = useMonthlySummary(prevMonthStr);
@@ -706,6 +710,16 @@ export default function DashboardTab({
 
             {/* Bill Reminders */}
             <BillReminders onQuickAdd={onQuickAddBill} />
+
+            {/* Spending Limits */}
+            <motion.div variants={itemVariants} className="px-4">
+              <SpendingLimitCard allExpenses={allExpenses} />
+            </motion.div>
+
+            {/* Debt / Loan Tracker */}
+            <motion.div variants={itemVariants} className="px-4">
+              <DebtTrackerCard />
+            </motion.div>
 
             {/* DASHBOARD | Income */}
             <motion.div variants={itemVariants} className="px-4 mb-1">

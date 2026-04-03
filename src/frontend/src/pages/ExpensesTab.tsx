@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  BookOpen,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -58,12 +59,14 @@ import { toast } from "sonner";
 import type { Expense } from "../backend.d";
 
 import GlobalSearchSheet from "../components/GlobalSearchSheet";
+import NotesHistorySheet from "../components/NotesHistorySheet";
 import RecurringManagerSheet from "../components/RecurringManagerSheet";
 import {
   useAppSettings,
   useCategories,
   useDeleteExpense,
   useExpenseMetaList,
+  useExpenses,
   useExpensesByMonth,
 } from "../hooks/useQueries";
 import { useLanguage } from "../i18n/LanguageContext";
@@ -139,6 +142,7 @@ export default function ExpensesTab({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
   const [recurringManagerOpen, setRecurringManagerOpen] = useState(false);
+  const [notesHistoryOpen, setNotesHistoryOpen] = useState(false);
   const [pickerYear, setPickerYear] = useState(() => new Date().getFullYear());
   const [quarterPickerOpen, setQuarterPickerOpen] = useState(false);
   const [yearPickerOpen, setYearPickerOpen] = useState(false);
@@ -146,6 +150,7 @@ export default function ExpensesTab({
   const { t } = useLanguage();
 
   const { data: expenses = [], isLoading } = useExpensesByMonth(month);
+  const { data: allExpenses = [] } = useExpenses();
   const { data: categories = [] } = useCategories();
   const { data: settings } = useAppSettings();
   const currency = settings?.currency ?? "USD";
@@ -246,7 +251,7 @@ export default function ExpensesTab({
       (currentQ - 1) * 3 + 2,
     ];
     return qIdxs.flatMap((idx) => allMonthQueries[idx]?.data ?? []);
-    // biome-ignore lint/correctness/useExhaustiveDependencies: intentional
+    // biome-ignore lint/correctness/useExhaustiveDependencies: allMonthQueries is a stable array
   }, [allMonthQueries, currentQ]);
 
   // Yearly aggregation
@@ -366,6 +371,15 @@ export default function ExpensesTab({
             >
               <Globe className="h-3.5 w-3.5" />
               Search all
+            </button>
+            <button
+              type="button"
+              className="h-8 px-2.5 gap-1.5 text-xs inline-flex items-center rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-colors font-medium"
+              onClick={() => setNotesHistoryOpen(true)}
+              data-ocid="expenses.notes_history.open_modal_button"
+            >
+              <BookOpen className="h-3.5 w-3.5" />
+              Notes
             </button>
           </div>
         </div>
@@ -1297,6 +1311,13 @@ export default function ExpensesTab({
         <RecurringManagerSheet
           open={recurringManagerOpen}
           onOpenChange={setRecurringManagerOpen}
+        />
+
+        {/* Notes History */}
+        <NotesHistorySheet
+          open={notesHistoryOpen}
+          onOpenChange={setNotesHistoryOpen}
+          allExpenses={allExpenses}
         />
       </div>
     </div>

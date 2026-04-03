@@ -8,7 +8,6 @@ export interface Expense {
     note: string;
     createdAt: bigint;
     amount: number;
-    // tags and receiptUrl are stored separately via ExpenseMeta
     tags?: string;
     receiptUrl?: string;
     recurring?: boolean;
@@ -30,6 +29,7 @@ export interface Category {
     name: string;
     color: string;
     budget: number;
+    pinned?: boolean | null;
 }
 export interface IncomeSource {
     id: string;
@@ -40,6 +40,8 @@ export interface IncomeSource {
 export interface AppSettings {
     currency: string;
     updatedAt: bigint;
+    dailyLimit?: number | null;
+    weeklyLimit?: number | null;
 }
 export interface ShoppingItem {
     id: string;
@@ -61,6 +63,16 @@ export interface MonthlySummary {
     totalIncome: number;
     categoryBreakdown: CategorySummary[];
 }
+export interface DebtRecord {
+    id: string;
+    description: string;
+    personName: string;
+    amount: number;
+    dueDate?: string | null;
+    direction: string; // "owe" | "owed"
+    status: string;    // "pending" | "paid"
+    createdAt: bigint;
+}
 export type UserRole = { admin: null } | { user: null } | { guest: null };
 export interface _SERVICE {
     _initializeAccessControlWithSecret: ActorMethod<[string], void>;
@@ -78,6 +90,7 @@ export interface _SERVICE {
     getCallerUserProfile: ActorMethod<[], UserProfile | null>;
     getCallerUserRole: ActorMethod<[], UserRole>;
     getCategories: ActorMethod<[], Category[]>;
+    getDebts: ActorMethod<[], DebtRecord[]>;
     getExpenseMetaList: ActorMethod<[], [string, ExpenseMeta][]>;
     getExpenses: ActorMethod<[], Expense[]>;
     getExpensesByCategory: ActorMethod<[string], Expense[]>;
@@ -90,6 +103,7 @@ export interface _SERVICE {
     isCallerAdmin: ActorMethod<[], boolean>;
     resetUserData: ActorMethod<[], void>;
     saveCallerUserProfile: ActorMethod<[UserProfile], void>;
+    saveDebts: ActorMethod<[DebtRecord[]], void>;
     saveIncomeSources: ActorMethod<[IncomeSource[]], void>;
     setAppSettings: ActorMethod<[AppSettings], void>;
     setExpenseMeta: ActorMethod<[string, ExpenseMeta], void>;

@@ -3,6 +3,7 @@ import type { ExpenseMeta } from "../backend";
 import type {
   AppSettings,
   Category,
+  DebtRecord,
   Expense,
   IncomeSource,
   MonthlyIncome,
@@ -419,5 +420,43 @@ export function useDeleteExpenseMeta() {
       return actor.deleteExpenseMeta(expenseId);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["expenseMeta"] }),
+  });
+}
+
+// ─── Debts / Loans ───────────────────────────────────────────────────────────
+
+export function useDebts() {
+  const { actor, isFetching } = useActor();
+  return useQuery<DebtRecord[]>({
+    queryKey: ["debts"],
+    queryFn: async () => {
+      if (!actor) return [];
+      try {
+        return await (actor as any).getDebts();
+      } catch {
+        return [];
+      }
+    },
+    enabled: !!actor && !isFetching,
+    staleTime: 1000 * 60,
+  });
+}
+
+export function useSaveDebts() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (debts: DebtRecord[]) => {
+      if (!actor) throw new Error("No actor");
+      // Optimistic update
+      qc.setQueryData(["debts"], debts);
+      return (actor as any).saveDebts(debts);
+    },
+    onError: () => {
+      qc.invalidateQueries({ queryKey: ["debts"] });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["debts"] });
+    },
   });
 }

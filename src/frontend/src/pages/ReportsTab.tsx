@@ -21,7 +21,18 @@ import {
   X,
 } from "lucide-react";
 import { motion } from "motion/react";
+import type React from "react";
 import { useEffect, useMemo, useState } from "react";
+import {
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { toast } from "sonner";
 
 import {
@@ -77,6 +88,19 @@ export default function ReportsTab({
   const [savingsGoal, setSavingsGoal] = useState<number>(20);
   const [editingGoal, setEditingGoal] = useState(false);
   const [goalInput, setGoalInput] = useState("20");
+  const [isDark, setIsDark] = useState(() =>
+    document.documentElement.classList.contains("dark"),
+  );
+  useEffect(() => {
+    const obs = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    });
+    obs.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => obs.disconnect();
+  }, []);
 
   // Load savings goal from localStorage
   useEffect(() => {
@@ -226,6 +250,36 @@ export default function ReportsTab({
       toast.error(t("failed_update_income"));
     }
   }
+
+  // Spending trend: last 12 months of expenses + income
+  // biome-ignore lint/correctness/useExhaustiveDependencies: allYearlyIncomeData is derived from individual query hooks
+  const trendData = useMemo(() => {
+    const now = new Date();
+    const months: Array<{
+      key: string;
+      label: string;
+      expenses: number;
+      income: number;
+    }> = [];
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const shortLabel = d.toLocaleDateString("en", { month: "short" });
+      const totalExp = allExpenses
+        .filter((e) => e.date.startsWith(key))
+        .reduce((s, e) => s + Number(e.amount), 0);
+      const incEntry = allYearlyIncomeData[d.getMonth()];
+      const incAmt =
+        d.getFullYear() === selectedYear ? (incEntry?.data?.amount ?? 0) : 0;
+      months.push({
+        key,
+        label: shortLabel,
+        expenses: totalExp,
+        income: incAmt,
+      });
+    }
+    return months;
+  }, [allExpenses, selectedYear]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -569,6 +623,113 @@ export default function ReportsTab({
             initial="hidden"
             animate="show"
           >
+            {/* Spending Trend Chart */}
+            <motion.div variants={itemVariants}>
+              <Card
+                className="border-border/50 shadow-sm"
+                data-ocid="reports.trend.card"
+              >
+                <CardHeader className="pb-2 pt-3 px-4">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-primary" />
+                    <h3 className="font-display text-sm font-semibold uppercase tracking-wide">
+                      Spending Trend (12 Months)
+                    </h3>
+                  </div>
+                </CardHeader>
+                <CardContent className="px-2 pb-3 pt-0">
+                  {trendData.every(
+                    (d) => d.expenses === 0 && d.income === 0,
+                  ) ? (
+                    <p className="text-xs text-muted-foreground text-center py-4">
+                      No data yet for the last 12 months
+                    </p>
+                  ) : (
+                    <ResponsiveContainer width="100%" height={160}>
+                      <LineChart
+                        data={trendData}
+                        margin={{ top: 4, right: 8, left: -20, bottom: 0 }}
+                      >
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          stroke={
+                            isDark
+                              ? "rgba(255,255,255,0.08)"
+                              : "rgba(0,0,0,0.07)"
+                          }
+                        />
+                        <XAxis
+                          dataKey="label"
+                          tick={{
+                            fontSize: 9,
+                            fill: isDark ? "#94a3b8" : "#64748b",
+                          }}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <YAxis
+                          tick={{
+                            fontSize: 9,
+                            fill: isDark ? "#94a3b8" : "#64748b",
+                          }}
+                          tickLine={false}
+                          axisLine={false}
+                          tickFormatter={(v: number) =>
+                            v >= 1000
+                              ? `${(v / 1000).toFixed(1)}k`
+                              : String(Math.round(v))
+                          }
+                        />
+                        <RechartsTooltip
+                          formatter={(value: number, name: string) => [
+                            formatCurrency(value, currency),
+                            name === "expenses" ? "Expenses" : "Income",
+                          ]}
+                          contentStyle={{
+                            backgroundColor: isDark ? "#1e293b" : "#fff",
+                            border: `1px solid ${isDark ? "#334155" : "#e2e8f0"}`,
+                            borderRadius: "8px",
+                            fontSize: 11,
+                          }}
+                          labelStyle={{ color: isDark ? "#94a3b8" : "#64748b" }}
+                        />
+                        <Legend
+                          iconType="circle"
+                          iconSize={6}
+                          formatter={(value: string) => (
+                            <span
+                              style={{
+                                fontSize: 10,
+                                color: isDark ? "#94a3b8" : "#64748b",
+                              }}
+                            >
+                              {value === "expenses" ? "Expenses" : "Income"}
+                            </span>
+                          )}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="expenses"
+                          stroke="#ef4444"
+                          strokeWidth={2}
+                          dot={false}
+                          activeDot={{ r: 4 }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="income"
+                          stroke="#10b981"
+                          strokeWidth={2}
+                          dot={false}
+                          activeDot={{ r: 4 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+
             {/* Income card */}
             <motion.div variants={itemVariants}>
               <Card className="border-0 shadow-sm">

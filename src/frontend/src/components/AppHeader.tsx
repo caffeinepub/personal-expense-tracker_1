@@ -59,6 +59,26 @@ export default function AppHeader({
     }
   }, [editingName]);
 
+  // Feature 6: keyboard shortcut D to toggle dark/light mode
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      // Only trigger if no input/textarea is focused
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+      if (e.key === "d" || e.key === "D") {
+        setIsDark((prev) => !prev);
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   function saveName() {
     const trimmed = nameInput.trim() || "Alex Rivera";
     setUsername(trimmed);
@@ -126,22 +146,29 @@ export default function AppHeader({
               <Pencil className="h-5 w-5 text-[#10B981]" />
             </button>
 
-            {/* Theme toggle */}
-            <button
-              type="button"
-              onClick={() => setIsDark((prev) => !prev)}
-              className="h-9 w-9 rounded-xl border border-border/60 bg-background/80 dark:bg-muted/60 flex items-center justify-center hover:bg-muted/60 transition-colors"
-              aria-label={
-                isDark ? t("switch_light_mode") : t("switch_dark_mode")
-              }
-              data-ocid="app.theme.toggle"
-            >
-              {isDark ? (
-                <Sun className="h-5 w-5 text-foreground" />
-              ) : (
-                <Moon className="h-5 w-5 text-[#334155]" />
-              )}
-            </button>
+            {/* Theme toggle — tooltip shows keyboard shortcut */}
+            <div className="relative group">
+              <button
+                type="button"
+                onClick={() => setIsDark((prev) => !prev)}
+                className="h-9 w-9 rounded-xl border border-border/60 bg-background/80 dark:bg-muted/60 flex items-center justify-center hover:bg-muted/60 transition-colors"
+                aria-label={`${
+                  isDark ? t("switch_light_mode") : t("switch_dark_mode")
+                } (D)`}
+                title={"Toggle theme (D)"}
+                data-ocid="app.theme.toggle"
+              >
+                {isDark ? (
+                  <Sun className="h-5 w-5 text-foreground" />
+                ) : (
+                  <Moon className="h-5 w-5 text-[#334155]" />
+                )}
+              </button>
+              {/* Tooltip */}
+              <div className="absolute right-0 top-full mt-1 px-2 py-1 rounded-md bg-popover border border-border text-[10px] text-muted-foreground whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-sm">
+                Toggle theme (D)
+              </div>
+            </div>
 
             {/* Logout */}
             <button

@@ -14,6 +14,7 @@ export const Category = IDL.Record({
   'name' : IDL.Text,
   'color' : IDL.Text,
   'budget' : IDL.Float64,
+  'pinned' : IDL.Opt(IDL.Bool),
 });
 export const Expense = IDL.Record({
   'id' : IDL.Text,
@@ -40,6 +41,8 @@ export const ShoppingItem = IDL.Record({
 export const AppSettings = IDL.Record({
   'updatedAt' : IDL.Int,
   'currency' : IDL.Text,
+  'dailyLimit' : IDL.Opt(IDL.Float64),
+  'weeklyLimit' : IDL.Opt(IDL.Float64),
 });
 export const UserProfile = IDL.Record({ 'name' : IDL.Text });
 export const MonthlyIncome = IDL.Record({
@@ -63,6 +66,16 @@ export const IncomeSource = IDL.Record({
   'color' : IDL.Text,
   'monthlyBudget' : IDL.Float64,
 });
+export const DebtRecord = IDL.Record({
+  'id' : IDL.Text,
+  'description' : IDL.Text,
+  'personName' : IDL.Text,
+  'amount' : IDL.Float64,
+  'dueDate' : IDL.Opt(IDL.Text),
+  'direction' : IDL.Text,
+  'status' : IDL.Text,
+  'createdAt' : IDL.Int,
+});
 
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
@@ -80,6 +93,7 @@ export const idlService = IDL.Service({
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getCategories' : IDL.Func([], [IDL.Vec(Category)], ['query']),
+  'getDebts' : IDL.Func([], [IDL.Vec(DebtRecord)], ['query']),
   'getExpenseMetaList' : IDL.Func([], [IDL.Vec(IDL.Tuple(IDL.Text, ExpenseMeta))], ['query']),
   'getExpenses' : IDL.Func([], [IDL.Vec(Expense)], ['query']),
   'getExpensesByCategory' : IDL.Func([IDL.Text], [IDL.Vec(Expense)], ['query']),
@@ -92,6 +106,7 @@ export const idlService = IDL.Service({
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'resetUserData' : IDL.Func([], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+  'saveDebts' : IDL.Func([IDL.Vec(DebtRecord)], [], []),
   'saveIncomeSources' : IDL.Func([IDL.Vec(IncomeSource)], [], []),
   'setAppSettings' : IDL.Func([AppSettings], [], []),
   'setExpenseMeta' : IDL.Func([IDL.Text, ExpenseMeta], [], []),
@@ -115,6 +130,7 @@ export const idlFactory = ({ IDL }) => {
     'name' : IDL.Text,
     'color' : IDL.Text,
     'budget' : IDL.Float64,
+    'pinned' : IDL.Opt(IDL.Bool),
   });
   const Expense = IDL.Record({
     'id' : IDL.Text,
@@ -141,6 +157,8 @@ export const idlFactory = ({ IDL }) => {
   const AppSettings = IDL.Record({
     'updatedAt' : IDL.Int,
     'currency' : IDL.Text,
+    'dailyLimit' : IDL.Opt(IDL.Float64),
+    'weeklyLimit' : IDL.Opt(IDL.Float64),
   });
   const UserProfile = IDL.Record({ 'name' : IDL.Text });
   const MonthlyIncome = IDL.Record({
@@ -164,6 +182,16 @@ export const idlFactory = ({ IDL }) => {
     'color' : IDL.Text,
     'monthlyBudget' : IDL.Float64,
   });
+  const DebtRecord = IDL.Record({
+    'id' : IDL.Text,
+    'description' : IDL.Text,
+    'personName' : IDL.Text,
+    'amount' : IDL.Float64,
+    'dueDate' : IDL.Opt(IDL.Text),
+    'direction' : IDL.Text,
+    'status' : IDL.Text,
+    'createdAt' : IDL.Int,
+  });
   
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
@@ -181,6 +209,7 @@ export const idlFactory = ({ IDL }) => {
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getCategories' : IDL.Func([], [IDL.Vec(Category)], ['query']),
+    'getDebts' : IDL.Func([], [IDL.Vec(DebtRecord)], ['query']),
     'getExpenseMetaList' : IDL.Func([], [IDL.Vec(IDL.Tuple(IDL.Text, ExpenseMeta))], ['query']),
     'getExpenses' : IDL.Func([], [IDL.Vec(Expense)], ['query']),
     'getExpensesByCategory' : IDL.Func([IDL.Text], [IDL.Vec(Expense)], ['query']),
@@ -193,6 +222,7 @@ export const idlFactory = ({ IDL }) => {
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'resetUserData' : IDL.Func([], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+    'saveDebts' : IDL.Func([IDL.Vec(DebtRecord)], [], []),
     'saveIncomeSources' : IDL.Func([IDL.Vec(IncomeSource)], [], []),
     'setAppSettings' : IDL.Func([AppSettings], [], []),
     'setExpenseMeta' : IDL.Func([IDL.Text, ExpenseMeta], [], []),

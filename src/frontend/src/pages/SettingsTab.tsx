@@ -36,7 +36,9 @@ import {
   ChevronDown,
   CreditCard,
   Download,
+  FileText,
   Fingerprint,
+  Gauge,
   Globe,
   Hash,
   Info,
@@ -48,6 +50,7 @@ import {
   RotateCcw,
   ShieldCheck,
   Smartphone,
+  Star,
   Timer,
   Trash2,
   Upload,
@@ -79,6 +82,7 @@ import { PRESET_COLORS } from "../utils/categories";
 import {
   exportToCSV,
   exportToJSON,
+  exportToPDF,
   parseImportCSV,
   parseImportJSON,
 } from "../utils/export";
@@ -246,6 +250,13 @@ export default function SettingsTab() {
   const [catName, setCatName] = useState("");
   const [catColor, setCatColor] = useState(PRESET_COLORS[0]);
   const [catBudget, setCatBudget] = useState("");
+  const [catPinned, setCatPinned] = useState(false);
+  const [catHexInput, setCatHexInput] = useState(PRESET_COLORS[0]);
+
+  // Spending limits state
+  const [dailyLimitInput, setDailyLimitInput] = useState("");
+  const [weeklyLimitInput, setWeeklyLimitInput] = useState("");
+  const [savingLimits, setSavingLimits] = useState(false);
 
   // Income sources state
   // Income sources come from React Query (backend is source of truth)
@@ -263,6 +274,14 @@ export default function SettingsTab() {
   useEffect(() => {
     if (settings?.currency) setCurrency(settings.currency);
   }, [settings?.currency]);
+
+  // Sync spending limits from settings
+  useEffect(() => {
+    if (settings?.dailyLimit != null)
+      setDailyLimitInput(String(settings.dailyLimit));
+    if (settings?.weeklyLimit != null)
+      setWeeklyLimitInput(String(settings.weeklyLimit));
+  }, [settings?.dailyLimit, settings?.weeklyLimit]);
 
   useEffect(() => {
     if (iiResetPending && isLoginSuccess) {
@@ -295,7 +314,9 @@ export default function SettingsTab() {
     setEditingCategory(null);
     setCatName("");
     setCatColor(PRESET_COLORS[0]);
+    setCatHexInput(PRESET_COLORS[0]);
     setCatBudget("");
+    setCatPinned(false);
     setShowCategoryDialog(true);
   }
 
@@ -303,7 +324,9 @@ export default function SettingsTab() {
     setEditingCategory(cat);
     setCatName(cat.name);
     setCatColor(cat.color);
+    setCatHexInput(cat.color);
     setCatBudget(cat.budget > 0 ? cat.budget.toString() : "");
+    setCatPinned(cat.pinned ?? false);
     setShowCategoryDialog(true);
   }
 
@@ -320,6 +343,7 @@ export default function SettingsTab() {
           name: catName.trim(),
           color: catColor,
           budget: Number.isNaN(budget) ? 0 : budget,
+          pinned: catPinned || null,
         });
         toast.success(t("category_updated"));
       } else {
@@ -328,6 +352,7 @@ export default function SettingsTab() {
           name: catName.trim(),
           color: catColor,
           budget: Number.isNaN(budget) ? 0 : budget,
+          pinned: catPinned || null,
         });
         toast.success(t("category_added"));
       }
@@ -525,6 +550,50 @@ export default function SettingsTab() {
       toast.success(t("export_success"));
     } catch {
       toast.error(t("failed_export"));
+    }
+  }
+
+  async function handleExportPDF() {
+    try {
+      const allExpenses = await exportForCSV.mutateAsync();
+      const months = getExportMonths();
+      const expenses = allExpenses.filter((e) =>
+        months.some((m) => e.date.startsWith(m)),
+      );
+      const periodLabel =
+        exportMode === "month"
+          ? new Date(`${exportMonth}-01`).toLocaleDateString("en", {
+              month: "long",
+              year: "numeric",
+            })
+          : exportMode === "quarter"
+            ? `Q${exportQuarter.q} ${exportQuarter.year}`
+            : String(exportYear);
+      await exportToPDF(expenses, categories, currency, periodLabel, 0);
+      toast.success("PDF exported successfully");
+    } catch {
+      toast.error("Failed to export PDF");
+    }
+  }
+
+  async function handleSaveSpendingLimits() {
+    const daily =
+      dailyLimitInput !== "" ? Number.parseFloat(dailyLimitInput) : null;
+    const weekly =
+      weeklyLimitInput !== "" ? Number.parseFloat(weeklyLimitInput) : null;
+    setSavingLimits(true);
+    try {
+      await setSettings.mutateAsync({
+        currency: settings?.currency ?? currency,
+        updatedAt: BigInt(Date.now()),
+        dailyLimit: daily,
+        weeklyLimit: weekly,
+      });
+      toast.success("Spending limits saved");
+    } catch {
+      toast.error("Failed to save limits");
+    } finally {
+      setSavingLimits(false);
     }
   }
 
@@ -983,7 +1052,7 @@ export default function SettingsTab() {
             <div className="overflow-hidden">
               <CardContent className="px-4 pb-3 pt-1.5">
                 <Tabs value={financialTab} onValueChange={setFinancialTab}>
-                  <TabsList className="w-full grid grid-cols-4 h-9 mb-3">
+                  <TabsList className="w-full grid grid-cols-5 h-9 mb-3">
                     <TabsTrigger
                       value="income"
                       className="text-xs"
@@ -1011,6 +1080,13 @@ export default function SettingsTab() {
                       data-ocid="settings.financial.payment.tab"
                     >
                       Payments
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="limits"
+                      className="text-xs"
+                      data-ocid="settings.financial.limits.tab"
+                    >
+                      Limits
                     </TabsTrigger>
                   </TabsList>
                   <TabsContent value="income" className="mt-0">
@@ -1085,50 +1161,89 @@ export default function SettingsTab() {
                       </p>
                     ) : (
                       <ul className="divide-y divide-amber-100/60 dark:divide-amber-900/20">
-                        {categories.map((cat, i) => (
-                          <li
-                            key={cat.id}
-                            className="flex items-center gap-3 px-1 py-1.5"
-                            data-ocid={`category.item.${i + 1}`}
-                          >
-                            <div
-                              className="w-5 h-5 rounded-full flex-shrink-0 ring-2 ring-offset-2 ring-border"
-                              style={{ backgroundColor: cat.color }}
-                            />
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm">{cat.name}</p>
-                              {cat.budget > 0 && (
-                                <p className="text-xs text-muted-foreground">
-                                  {t("budget_colon_short", {
-                                    amount: String(cat.budget),
-                                  })}
+                        {[...categories]
+                          .sort((a, b) => {
+                            const pa = a.pinned ? 1 : 0;
+                            const pb = b.pinned ? 1 : 0;
+                            if (pb !== pa) return pb - pa;
+                            return a.name.localeCompare(b.name);
+                          })
+                          .map((cat, i) => (
+                            <li
+                              key={cat.id}
+                              className="flex items-center gap-3 px-1 py-1.5"
+                              data-ocid={`category.item.${i + 1}`}
+                            >
+                              <div
+                                className="w-5 h-5 rounded-full flex-shrink-0 ring-2 ring-offset-2 ring-border"
+                                style={{ backgroundColor: cat.color }}
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm">
+                                  {cat.name}
                                 </p>
-                              )}
-                            </div>
-                            <div className="flex gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7"
-                                onClick={() => openEditCategory(cat)}
-                                data-ocid={`category.edit_button.${i + 1}`}
-                                aria-label={`${t("edit")} ${cat.name}`}
-                              >
-                                <Pencil className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 text-destructive hover:text-destructive"
-                                onClick={() => setDeleteCategoryId(cat.id)}
-                                data-ocid={`category.delete_button.${i + 1}`}
-                                aria-label={`${t("delete")} ${cat.name}`}
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </div>
-                          </li>
-                        ))}
+                                {cat.budget > 0 && (
+                                  <p className="text-xs text-muted-foreground">
+                                    {t("budget_colon_short", {
+                                      amount: String(cat.budget),
+                                    })}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="flex gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className={`h-7 w-7 ${cat.pinned ? "text-amber-500 hover:text-amber-600" : "text-muted-foreground hover:text-amber-500"}`}
+                                  onClick={async () => {
+                                    try {
+                                      await updateCategory.mutateAsync({
+                                        ...cat,
+                                        pinned: !cat.pinned || null,
+                                      });
+                                    } catch {
+                                      toast.error("Failed to update pin");
+                                    }
+                                  }}
+                                  data-ocid={`category.toggle.${i + 1}`}
+                                  aria-label={
+                                    cat.pinned
+                                      ? "Unpin category"
+                                      : "Pin category"
+                                  }
+                                  title={
+                                    cat.pinned
+                                      ? "Pinned — click to unpin"
+                                      : "Click to pin to top"
+                                  }
+                                >
+                                  <Star
+                                    className={`h-3.5 w-3.5 ${cat.pinned ? "fill-amber-500" : ""}`}
+                                  />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  onClick={() => openEditCategory(cat)}
+                                  data-ocid={`category.edit_button.${i + 1}`}
+                                  aria-label={`${t("edit")} ${cat.name}`}
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-destructive hover:text-destructive"
+                                  onClick={() => setDeleteCategoryId(cat.id)}
+                                  data-ocid={`category.delete_button.${i + 1}`}
+                                  aria-label={`${t("delete")} ${cat.name}`}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            </li>
+                          ))}
                       </ul>
                     )}
                   </TabsContent>
@@ -1224,6 +1339,67 @@ export default function SettingsTab() {
                         {t("add")}
                       </Button>
                     </div>
+                  </TabsContent>
+                  <TabsContent value="limits" className="mt-0 space-y-4">
+                    <p className="text-xs text-muted-foreground">
+                      Set daily and weekly spending caps. An alert appears on
+                      the Dashboard when you approach or exceed them.
+                    </p>
+                    <div className="space-y-3">
+                      <div className="space-y-1.5">
+                        <Label
+                          htmlFor="daily-limit"
+                          className="flex items-center gap-1.5 text-sm font-medium"
+                        >
+                          <Gauge className="h-3.5 w-3.5 text-amber-500" />
+                          Daily Limit ({currency})
+                        </Label>
+                        <Input
+                          id="daily-limit"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="No limit"
+                          value={dailyLimitInput}
+                          onChange={(e) => setDailyLimitInput(e.target.value)}
+                          className="h-11"
+                          data-ocid="settings.daily_limit.input"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label
+                          htmlFor="weekly-limit"
+                          className="flex items-center gap-1.5 text-sm font-medium"
+                        >
+                          <Gauge className="h-3.5 w-3.5 text-blue-500" />
+                          Weekly Limit ({currency})
+                        </Label>
+                        <Input
+                          id="weekly-limit"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="No limit"
+                          value={weeklyLimitInput}
+                          onChange={(e) => setWeeklyLimitInput(e.target.value)}
+                          className="h-11"
+                          data-ocid="settings.weekly_limit.input"
+                        />
+                      </div>
+                    </div>
+                    <Button
+                      className="w-full h-11 gap-2"
+                      onClick={handleSaveSpendingLimits}
+                      disabled={savingLimits}
+                      data-ocid="settings.limits.save_button"
+                    >
+                      {savingLimits ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Check className="h-4 w-4" />
+                      )}
+                      Save Limits
+                    </Button>
                   </TabsContent>
                 </Tabs>
               </CardContent>
@@ -1387,6 +1563,15 @@ export default function SettingsTab() {
                     <Download className="h-4 w-4" />
                   )}
                   {t("export_json")}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full gap-2 h-11 border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/20"
+                  onClick={handleExportPDF}
+                  data-ocid="settings.export_pdf.button"
+                >
+                  <FileText className="h-4 w-4" />
+                  Export PDF Report
                 </Button>
                 {/* Import section */}
                 <div className="mt-3 pt-3 border-t border-border/50">
@@ -1716,18 +1901,64 @@ export default function SettingsTab() {
             </div>
             <div className="space-y-1.5">
               <Label>{t("color")}</Label>
-              <div className="flex flex-wrap gap-2">
-                {PRESET_COLORS.map((color) => (
+              {/* Hex input + preview */}
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-10 h-10 rounded-lg flex-shrink-0 ring-2 ring-offset-2 ring-border"
+                  style={{ backgroundColor: catColor }}
+                />
+                <Input
+                  value={catHexInput}
+                  maxLength={7}
+                  placeholder="#FF6B6B"
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setCatHexInput(val);
+                    if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+                      setCatColor(val);
+                    }
+                  }}
+                  className="h-10 font-mono text-sm"
+                  data-ocid="category.color_hex.input"
+                />
+              </div>
+              {/* Extended preset grid */}
+              <div className="grid grid-cols-10 gap-1.5">
+                {[
+                  "#FF6B6B",
+                  "#FF8E53",
+                  "#F0C040",
+                  "#4CAF50",
+                  "#4ECDC4",
+                  "#45B7D1",
+                  "#6495ED",
+                  "#9B59B6",
+                  "#DDA0DD",
+                  "#FF69B4",
+                  "#96CEB4",
+                  "#B0B0B0",
+                  "#E67E22",
+                  "#1ABC9C",
+                  "#3498DB",
+                  "#2ECC71",
+                  "#E74C3C",
+                  "#8E44AD",
+                  "#F39C12",
+                  "#16A085",
+                ].map((color) => (
                   <button
                     key={color}
                     type="button"
-                    className={`w-8 h-8 rounded-full transition-transform hover:scale-110 ${
+                    className={`w-7 h-7 rounded-full transition-transform hover:scale-110 ${
                       catColor === color
                         ? "ring-2 ring-ring ring-offset-2 scale-110"
                         : ""
                     }`}
                     style={{ backgroundColor: color }}
-                    onClick={() => setCatColor(color)}
+                    onClick={() => {
+                      setCatColor(color);
+                      setCatHexInput(color);
+                    }}
                     aria-label={`Select color ${color}`}
                   />
                 ))}

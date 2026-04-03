@@ -635,19 +635,29 @@ export default function ExpenseDialog({
                     <SelectValue placeholder={t("category_label")} />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        <div className="flex items-center gap-1.5">
-                          <span
-                            className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: cat.color }}
-                          />
-                          <span className="whitespace-normal break-words">
-                            {cat.name}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
+                    {[...categories]
+                      .sort((a, b) => {
+                        const pa = a.pinned ? 1 : 0;
+                        const pb = b.pinned ? 1 : 0;
+                        if (pb !== pa) return pb - pa;
+                        return a.name.localeCompare(b.name);
+                      })
+                      .map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          <div className="flex items-center gap-1.5">
+                            {cat.pinned && (
+                              <span className="text-amber-500 text-xs">⭐</span>
+                            )}
+                            <span
+                              className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: cat.color }}
+                            />
+                            <span className="whitespace-normal break-words">
+                              {cat.name}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
                 {errors.category && (
