@@ -25,6 +25,7 @@ import type { Expense, MonthlyIncome } from "./backend.d";
 import AppHeader from "./components/AppHeader";
 import ExpenseDialog from "./components/ExpenseDialog";
 import LockScreen from "./components/LockScreen";
+import OnboardingTour from "./components/OnboardingTour";
 import { useActor } from "./hooks/useActor";
 import { useCardTheme } from "./hooks/useCardTheme";
 import { useInternetIdentity } from "./hooks/useInternetIdentity";
@@ -89,6 +90,15 @@ export default function App() {
   const { t } = useLanguage();
   const { identity, isInitializing: iiInitializing } = useInternetIdentity();
   const isAuthenticated = !!identity && !identity.getPrincipal().isAnonymous();
+
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    return !localStorage.getItem("pe_onboarding_done");
+  });
+
+  function handleOnboardingDone() {
+    localStorage.setItem("pe_onboarding_done", "true");
+    setShowOnboarding(false);
+  }
 
   const { actor, isFetching: actorLoading } = useActor();
   const { data: categories = [], isLoading: loadingCats } = useCategories();
@@ -556,6 +566,11 @@ export default function App() {
 
       <Toaster position="top-center" richColors closeButton />
       <LockScreen />
+
+      {/* Onboarding Tour - shown once to new users */}
+      {isAuthenticated && showOnboarding && (
+        <OnboardingTour onDone={handleOnboardingDone} />
+      )}
 
       {/* New Month Budget Copy Prompt */}
       <Dialog open={newMonthPromptOpen} onOpenChange={setNewMonthPromptOpen}>

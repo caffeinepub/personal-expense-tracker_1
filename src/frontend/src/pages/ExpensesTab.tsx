@@ -11,6 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -39,6 +40,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   BookOpen,
+  CheckSquare2,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -51,6 +53,7 @@ import {
   Search,
   Settings2,
   SlidersHorizontal,
+  Square,
   Trash2,
   X,
 } from "lucide-react";
@@ -59,6 +62,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import type { Expense } from "../backend.d";
 
+import { useQueryClient } from "@tanstack/react-query";
 import GlobalSearchSheet from "../components/GlobalSearchSheet";
 import NotesHistorySheet from "../components/NotesHistorySheet";
 import RecurringManagerSheet from "../components/RecurringManagerSheet";
@@ -148,6 +152,9 @@ export default function ExpensesTab({
   const [quarterPickerOpen, setQuarterPickerOpen] = useState(false);
   const [yearPickerOpen, setYearPickerOpen] = useState(false);
   const [periodType, setPeriodType] = useState<PeriodType>("monthly");
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const { t } = useLanguage();
 
   const { data: expenses = [], isLoading } = useExpensesByMonth(month);
@@ -188,6 +195,49 @@ export default function ExpensesTab({
     filterDateTo !== "",
   ].filter(Boolean).length;
   const deleteExpense = useDeleteExpense();
+  const qc = useQueryClient();
+
+  function toggleSelectionMode() {
+    setSelectionMode((v) => !v);
+    setSelectedIds(new Set());
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.size === filtered.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filtered.map((e) => e.id)));
+    }
+  }
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function handleBulkDelete() {
+    const ids = Array.from(selectedIds);
+    let successCount = 0;
+    for (const id of ids) {
+      try {
+        await deleteExpense.mutateAsync(id);
+        successCount++;
+      } catch {
+        /* continue */
+      }
+    }
+    toast.success(
+      `Deleted ${successCount} expense${successCount !== 1 ? "s" : ""}`,
+    );
+    setSelectedIds(new Set());
+    setSelectionMode(false);
+    setBulkDeleteOpen(false);
+    qc.invalidateQueries({ queryKey: ["expenses"] });
+  }
 
   const filtered = useMemo(() => {
     const minAmt = minAmount !== "" ? Number.parseFloat(minAmount) : null;
@@ -328,8 +378,10 @@ export default function ExpensesTab({
   function getNavBorderClass(type: PeriodType) {
     return periodType === type ? "border-transparent" : "border-border";
   }
-  function getLabelClass(type: PeriodType) {
-    return periodType === type ? "text-white" : "text-muted-foreground";
+  function getLabelStyle(type: PeriodType): React.CSSProperties {
+    return periodType === type
+      ? { color: "#ffffff" }
+      : { color: "var(--muted-foreground)" };
   }
   return (
     <div className="space-y-4 pb-24">
@@ -355,45 +407,90 @@ export default function ExpensesTab({
             </p>
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0 mt-0.5">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+            {/* Select / Bulk mode */}
+            {selectionMode ? (
+              <div className="flex items-center gap-1">
                 <button
                   type="button"
-                  className="h-8 px-2.5 gap-1.5 text-xs inline-flex items-center rounded-lg bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-colors font-medium"
-                  data-ocid="expenses.tools.dropdown_menu"
+                  onClick={toggleSelectAll}
+                  className="h-8 px-2.5 text-xs inline-flex items-center gap-1 rounded-lg bg-muted border border-border text-foreground hover:bg-muted/80 transition-colors font-medium"
+                  data-ocid="expenses.select_all.button"
                 >
-                  <Settings2 className="h-3.5 w-3.5" />
-                  Tools
-                  <ChevronDown className="h-3 w-3 opacity-60" />
+                  <CheckSquare2 className="h-3.5 w-3.5" />
+                  All
                 </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-44">
-                <DropdownMenuItem
-                  className="gap-2 text-primary text-xs"
-                  onClick={() => setRecurringManagerOpen(true)}
-                  data-ocid="expenses.tools.recurring.button"
+                {selectedIds.size > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setBulkDeleteOpen(true)}
+                    className="h-8 px-2.5 text-xs inline-flex items-center gap-1 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive hover:bg-destructive/20 transition-colors font-medium"
+                    data-ocid="expenses.bulk_delete.button"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Delete ({selectedIds.size})
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={toggleSelectionMode}
+                  className="h-8 px-2 text-xs inline-flex items-center rounded-lg bg-muted border border-border text-muted-foreground hover:bg-muted/80 transition-colors"
+                  data-ocid="expenses.cancel_select.button"
                 >
-                  <Repeat className="h-3.5 w-3.5" />
-                  Recurring
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="gap-2 text-primary text-xs"
-                  onClick={() => setGlobalSearchOpen(true)}
-                  data-ocid="expenses.tools.search.button"
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={toggleSelectionMode}
+                  className="h-8 px-2.5 gap-1.5 text-xs inline-flex items-center rounded-lg bg-muted border border-border text-muted-foreground hover:bg-muted/80 transition-colors font-medium"
+                  data-ocid="expenses.select.button"
                 >
-                  <Globe className="h-3.5 w-3.5" />
-                  All Search
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="gap-2 text-amber-600 dark:text-amber-400 text-xs"
-                  onClick={() => setNotesHistoryOpen(true)}
-                  data-ocid="expenses.tools.notes.button"
-                >
-                  <BookOpen className="h-3.5 w-3.5" />
-                  Notes
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <Square className="h-3.5 w-3.5" />
+                  Select
+                </button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="h-8 px-2.5 gap-1.5 text-xs inline-flex items-center rounded-lg bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-colors font-medium"
+                      data-ocid="expenses.tools.dropdown_menu"
+                    >
+                      <Settings2 className="h-3.5 w-3.5" />
+                      Tools
+                      <ChevronDown className="h-3 w-3 opacity-60" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-44">
+                    <DropdownMenuItem
+                      className="gap-2 text-primary text-xs"
+                      onClick={() => setRecurringManagerOpen(true)}
+                      data-ocid="expenses.tools.recurring.button"
+                    >
+                      <Repeat className="h-3.5 w-3.5" />
+                      Recurring
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="gap-2 text-primary text-xs"
+                      onClick={() => setGlobalSearchOpen(true)}
+                      data-ocid="expenses.tools.search.button"
+                    >
+                      <Globe className="h-3.5 w-3.5" />
+                      All Search
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="gap-2 text-amber-600 dark:text-amber-400 text-xs"
+                      onClick={() => setNotesHistoryOpen(true)}
+                      data-ocid="expenses.tools.notes.button"
+                    >
+                      <BookOpen className="h-3.5 w-3.5" />
+                      Notes
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            )}
           </div>
         </div>
 
@@ -402,7 +499,8 @@ export default function ExpensesTab({
           {/* Monthly */}
           <div className="flex flex-col items-center flex-1 min-w-[110px]">
             <span
-              className={`text-[10px] font-medium mb-0.5 uppercase tracking-wide ${getLabelClass("monthly")}`}
+              className="text-[10px] font-medium mb-0.5 uppercase tracking-wide"
+              style={getLabelStyle("monthly")}
             >
               Month
             </span>
@@ -413,7 +511,8 @@ export default function ExpensesTab({
               <Button
                 variant="ghost"
                 size="icon"
-                className={`h-6 w-6 flex-shrink-0 ${periodType === "monthly" ? "text-white hover:text-white hover:bg-white/20" : ""}`}
+                className="h-6 w-6 flex-shrink-0"
+                style={periodType === "monthly" ? { color: "#ffffff" } : {}}
                 onClick={() => {
                   setPeriodType("monthly");
                   setMonth(prevMonth(month));
@@ -428,7 +527,8 @@ export default function ExpensesTab({
                     type="button"
                     data-ocid="expenses.month.select"
                     onClick={() => setPeriodType("monthly")}
-                    className={`flex items-center gap-0.5 font-semibold text-xs hover:opacity-80 transition-colors flex-1 justify-center ${periodType === "monthly" ? "text-white" : "hover:text-primary"}`}
+                    className="flex items-center gap-0.5 font-semibold text-xs hover:opacity-80 transition-colors flex-1 justify-center"
+                    style={periodType === "monthly" ? { color: "#ffffff" } : {}}
                   >
                     {formatMonthYear(month)}
                     <ChevronDown className="h-3 w-3 opacity-70" />
@@ -483,7 +583,8 @@ export default function ExpensesTab({
               <Button
                 variant="ghost"
                 size="icon"
-                className={`h-6 w-6 flex-shrink-0 ${periodType === "monthly" ? "text-white hover:text-white hover:bg-white/20" : ""}`}
+                className="h-6 w-6 flex-shrink-0"
+                style={periodType === "monthly" ? { color: "#ffffff" } : {}}
                 onClick={() => {
                   setPeriodType("monthly");
                   setMonth(nextMonth(month));
@@ -518,7 +619,8 @@ export default function ExpensesTab({
             return (
               <div className="flex flex-col items-center flex-1 min-w-[110px]">
                 <span
-                  className={`text-[10px] font-medium mb-0.5 uppercase tracking-wide ${getLabelClass("quarterly")}`}
+                  className="text-[10px] font-medium mb-0.5 uppercase tracking-wide"
+                  style={getLabelStyle("quarterly")}
                 >
                   Quarter
                 </span>
@@ -529,7 +631,10 @@ export default function ExpensesTab({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className={`h-6 w-6 flex-shrink-0 ${periodType === "quarterly" ? "text-white hover:text-white hover:bg-white/20" : ""}`}
+                    className="h-6 w-6 flex-shrink-0"
+                    style={
+                      periodType === "quarterly" ? { color: "#ffffff" } : {}
+                    }
                     onClick={prevQ}
                     aria-label="Previous quarter"
                   >
@@ -544,7 +649,10 @@ export default function ExpensesTab({
                         type="button"
                         data-ocid="expenses.quarter.select"
                         onClick={() => setPeriodType("quarterly")}
-                        className={`flex items-center gap-0.5 font-semibold text-xs hover:opacity-80 transition-colors flex-1 justify-center ${periodType === "quarterly" ? "text-white" : "hover:text-primary"}`}
+                        className="flex items-center gap-0.5 font-semibold text-xs hover:opacity-80 transition-colors flex-1 justify-center"
+                        style={
+                          periodType === "quarterly" ? { color: "#ffffff" } : {}
+                        }
                       >
                         Q{currentQ} {selectedYear}
                         <ChevronDown className="h-3 w-3 opacity-70" />
@@ -580,7 +688,10 @@ export default function ExpensesTab({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className={`h-6 w-6 flex-shrink-0 ${periodType === "quarterly" ? "text-white hover:text-white hover:bg-white/20" : ""}`}
+                    className="h-6 w-6 flex-shrink-0"
+                    style={
+                      periodType === "quarterly" ? { color: "#ffffff" } : {}
+                    }
                     onClick={nextQ}
                     disabled={isLastQ}
                     aria-label="Next quarter"
@@ -602,7 +713,8 @@ export default function ExpensesTab({
             return (
               <div className="flex flex-col items-center flex-1 min-w-[110px]">
                 <span
-                  className={`text-[10px] font-medium mb-0.5 uppercase tracking-wide ${getLabelClass("yearly")}`}
+                  className="text-[10px] font-medium mb-0.5 uppercase tracking-wide"
+                  style={getLabelStyle("yearly")}
                 >
                   Year
                 </span>
@@ -613,7 +725,8 @@ export default function ExpensesTab({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className={`h-6 w-6 flex-shrink-0 ${periodType === "yearly" ? "text-white hover:text-white hover:bg-white/20" : ""}`}
+                    className="h-6 w-6 flex-shrink-0"
+                    style={periodType === "yearly" ? { color: "#ffffff" } : {}}
                     onClick={() => {
                       setPeriodType("yearly");
                       setMonth(`${selectedYear - 1}-01`);
@@ -631,7 +744,10 @@ export default function ExpensesTab({
                         type="button"
                         data-ocid="expenses.year.select"
                         onClick={() => setPeriodType("yearly")}
-                        className={`flex items-center gap-0.5 font-semibold text-xs hover:opacity-80 transition-colors flex-1 justify-center ${periodType === "yearly" ? "text-white" : "hover:text-primary"}`}
+                        className="flex items-center gap-0.5 font-semibold text-xs hover:opacity-80 transition-colors flex-1 justify-center"
+                        style={
+                          periodType === "yearly" ? { color: "#ffffff" } : {}
+                        }
                       >
                         {selectedYear}
                         <ChevronDown className="h-3 w-3 opacity-70" />
@@ -667,7 +783,8 @@ export default function ExpensesTab({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className={`h-6 w-6 flex-shrink-0 ${periodType === "yearly" ? "text-white hover:text-white hover:bg-white/20" : ""}`}
+                    className="h-6 w-6 flex-shrink-0"
+                    style={periodType === "yearly" ? { color: "#ffffff" } : {}}
                     onClick={() => {
                       setPeriodType("yearly");
                       setMonth(`${selectedYear + 1}-01`);
@@ -1093,9 +1210,27 @@ export default function ExpensesTab({
                                 animate={{ opacity: 1, x: 0 }}
                                 exit={{ opacity: 0, height: 0 }}
                                 transition={{ duration: 0.2, delay: i * 0.04 }}
-                                className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0"
+                                className={`flex items-center gap-3 px-4 py-3 border-b border-border last:border-0 transition-colors ${selectionMode && selectedIds.has(expense.id) ? "bg-primary/5" : ""}`}
                                 data-ocid={`expense.item.${globalIndex}`}
+                                onClick={
+                                  selectionMode
+                                    ? () => toggleSelect(expense.id)
+                                    : undefined
+                                }
+                                style={
+                                  selectionMode ? { cursor: "pointer" } : {}
+                                }
                               >
+                                {selectionMode && (
+                                  <Checkbox
+                                    checked={selectedIds.has(expense.id)}
+                                    onCheckedChange={() =>
+                                      toggleSelect(expense.id)
+                                    }
+                                    className="flex-shrink-0 h-4 w-4"
+                                    data-ocid={`expense.checkbox.${globalIndex}`}
+                                  />
+                                )}
                                 <div
                                   className="w-3 h-3 rounded-full flex-shrink-0"
                                   style={{
@@ -1332,6 +1467,38 @@ export default function ExpensesTab({
           onOpenChange={setNotesHistoryOpen}
           allExpenses={allExpenses}
         />
+
+        {/* Bulk Delete Confirmation */}
+        <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+          <AlertDialogContent
+            className="max-w-sm"
+            data-ocid="expenses.bulk_delete.dialog"
+          >
+            <AlertDialogHeader>
+              <AlertDialogTitle className="font-display">
+                Delete {selectedIds.size} Expense
+                {selectedIds.size !== 1 ? "s" : ""}?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete {selectedIds.size} selected expense
+                {selectedIds.size !== 1 ? "s" : ""}. This action cannot be
+                undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel data-ocid="expenses.bulk_delete.cancel_button">
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleBulkDelete}
+                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                data-ocid="expenses.bulk_delete.confirm_button"
+              >
+                Delete All
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

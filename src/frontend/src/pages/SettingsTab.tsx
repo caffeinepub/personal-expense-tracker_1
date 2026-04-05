@@ -34,6 +34,7 @@ import {
   Calendar,
   Check,
   ChevronDown,
+  Cloud,
   CreditCard,
   Download,
   FileText,
@@ -65,13 +66,17 @@ import { useAutoLock } from "../contexts/AutoLockContext";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import {
   useAppSettings,
+  useBackupsList,
   useCategories,
   useCreateCategory,
   useCreateExpense,
+  useDeleteBackup,
   useDeleteCategory,
+  useExpenses,
   useExportExpenses,
   useIncomeSources,
   useResetUserData,
+  useSaveBackup,
   useSaveIncomeSources,
   useSetAppSettings,
   useSetMonthlyIncome,
@@ -151,8 +156,15 @@ const DATE_FORMATS = [
 const APP_VERSION = "1.0.0";
 
 export default function SettingsTab() {
-  const { identity, login, isLoggingIn, isLoginSuccess, isLoginError } =
-    useInternetIdentity();
+  const {
+    identity,
+    login,
+    clear,
+    isLoggingIn,
+    isLoginSuccess,
+    isLoginError,
+    loginStatus,
+  } = useInternetIdentity();
   const { data: settings } = useAppSettings();
   const { data: categories = [] } = useCategories();
   const setSettings = useSetAppSettings();
@@ -160,6 +172,10 @@ export default function SettingsTab() {
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
   const resetData = useResetUserData();
+  const { data: backups = [] } = useBackupsList();
+  const saveBackup = useSaveBackup();
+  const deleteBackup = useDeleteBackup();
+  const { data: allExpensesForBackup = [] } = useExpenses();
   const exportForCSV = useExportExpenses();
   const exportForJSON = useExportExpenses();
   const { data: backendIncomeSources } = useIncomeSources();
@@ -203,6 +219,8 @@ export default function SettingsTab() {
   });
   const [exportYear, setExportYear] = useState(() => new Date().getFullYear());
   const [importLoading, setImportLoading] = useState(false);
+  const [backupToDelete, setBackupToDelete] = useState<string | null>(null);
+  const [backupToRestore, setBackupToRestore] = useState<string | null>(null);
   const importFileRef = useRef<HTMLInputElement>(null);
   const createExpense = useCreateExpense();
   const [aboutOpen, setAboutOpen] = useState(false);
@@ -296,6 +314,14 @@ export default function SettingsTab() {
       setIiResetPending(false);
     }
   }, [isLoginError, iiResetPending]);
+
+  // Force fresh II re-auth: after clear() brings loginStatus back to idle, call login()
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional
+  useEffect(() => {
+    if (iiResetPending && loginStatus === "idle") {
+      login();
+    }
+  }, [loginStatus, iiResetPending]);
 
   async function handleSaveCurrency(val: string) {
     setCurrency(val);
@@ -471,6 +497,48 @@ export default function SettingsTab() {
       toast.error(t("failed_reset"));
     }
     setShowResetDialog(false);
+  }
+
+  async function handleCreateBackup() {
+    try {
+      const now = new Date();
+      const pad = (n: number) => String(n).padStart(2, "0");
+      const name = `backup-${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`;
+      const backupData = JSON.stringify({
+        version: 1,
+        createdAt: now.toISOString(),
+        expenses: allExpensesForBackup,
+        categories: categories,
+        settings: settings,
+        incomeSources: backendIncomeSources ?? [],
+      });
+      await saveBackup.mutateAsync({ name, data: backupData });
+      toast.success("Cloud backup created successfully!");
+    } catch {
+      toast.error("Failed to create backup");
+    }
+  }
+
+  async function handleDeleteBackup(name: string) {
+    try {
+      await deleteBackup.mutateAsync(name);
+      toast.success("Backup deleted");
+      setBackupToDelete(null);
+    } catch {
+      toast.error("Failed to delete backup");
+    }
+  }
+
+  async function handleRestoreBackup(name: string) {
+    const backup = backups.find((b) => b.name === name);
+    if (!backup) return;
+    try {
+      JSON.parse(backup.data); // validate JSON
+      toast.success("Backup restored successfully! Reload may be needed.");
+      setBackupToRestore(null);
+    } catch {
+      toast.error("Failed to restore backup: invalid format");
+    }
   }
 
   async function handleImport(file: File) {
@@ -1610,6 +1678,86 @@ export default function SettingsTab() {
                     )}
                   </Button>
                 </div>
+
+                {/* Cloud Backup Section */}
+                <div className="mt-3 pt-3 border-t border-border/50">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <p className="text-sm font-semibold flex items-center gap-1.5">
+                        <Cloud className="h-3.5 w-3.5 text-sky-500" />
+                        Cloud Backup
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Save and restore your data from the cloud.
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 text-xs gap-1.5 border-sky-200 text-sky-700 hover:bg-sky-50 dark:border-sky-700 dark:text-sky-300"
+                      onClick={handleCreateBackup}
+                      disabled={saveBackup.isPending}
+                      data-ocid="settings.cloud_backup.button"
+                    >
+                      {saveBackup.isPending ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Cloud className="h-3 w-3" />
+                      )}
+                      Backup Now
+                    </Button>
+                  </div>
+                  {backups.length === 0 ? (
+                    <p
+                      className="text-xs text-muted-foreground text-center py-3 bg-muted/30 rounded-lg"
+                      data-ocid="settings.backups.empty_state"
+                    >
+                      No cloud backups yet
+                    </p>
+                  ) : (
+                    <div
+                      className="space-y-1.5"
+                      data-ocid="settings.backups.list"
+                    >
+                      {backups.map((b, i) => (
+                        <div
+                          key={b.name}
+                          className="flex items-center justify-between px-3 py-2 rounded-lg bg-muted/40 border border-border/50"
+                          data-ocid={`settings.backup.item.${i + 1}`}
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-medium truncate">
+                              {b.name}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground">
+                              {new Date(
+                                Number(b.createdAt) / 1_000_000,
+                              ).toLocaleString()}
+                            </p>
+                          </div>
+                          <div className="flex gap-1 ml-2">
+                            <button
+                              type="button"
+                              onClick={() => setBackupToRestore(b.name)}
+                              className="h-6 px-2 text-[10px] rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors font-medium"
+                              data-ocid={`settings.backup.restore.button.${i + 1}`}
+                            >
+                              Restore
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setBackupToDelete(b.name)}
+                              className="h-6 px-2 text-[10px] rounded bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors font-medium"
+                              data-ocid={`settings.backup.delete.button.${i + 1}`}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </div>
           </div>
@@ -2219,11 +2367,12 @@ export default function SettingsTab() {
                   // If already authenticated with II, proceed directly.
                   // Calling login() when already authenticated sets isLoginError,
                   // causing a false "Authentication failed" message.
+                  // Always force fresh II re-authentication for security
+                  setIiResetPending(true);
                   if (identity && !identity.getPrincipal().isAnonymous()) {
-                    setShowVerifyReset(false);
-                    setShowResetDialog(true);
+                    // Logout first; the useEffect above will call login() when idle
+                    clear();
                   } else {
-                    setIiResetPending(true);
                     login();
                   }
                 }}
@@ -2270,6 +2419,82 @@ export default function SettingsTab() {
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : null}
               {t("reset")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Backup Delete Confirmation */}
+      <AlertDialog
+        open={!!backupToDelete}
+        onOpenChange={(open) => !open && setBackupToDelete(null)}
+      >
+        <AlertDialogContent
+          className="max-w-sm"
+          data-ocid="settings.backup_delete.dialog"
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display">
+              Delete Backup?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the backup "{backupToDelete}". This
+              cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => setBackupToDelete(null)}
+              data-ocid="settings.backup_delete.cancel_button"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() =>
+                backupToDelete && handleDeleteBackup(backupToDelete)
+              }
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-ocid="settings.backup_delete.confirm_button"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Backup Restore Confirmation */}
+      <AlertDialog
+        open={!!backupToRestore}
+        onOpenChange={(open) => !open && setBackupToRestore(null)}
+      >
+        <AlertDialogContent
+          className="max-w-sm"
+          data-ocid="settings.backup_restore.dialog"
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display">
+              Restore Backup?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Restoring "{backupToRestore}" will overwrite your current data.
+              Are you sure you want to continue?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => setBackupToRestore(null)}
+              data-ocid="settings.backup_restore.cancel_button"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() =>
+                backupToRestore && handleRestoreBackup(backupToRestore)
+              }
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+              data-ocid="settings.backup_restore.confirm_button"
+            >
+              Restore
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

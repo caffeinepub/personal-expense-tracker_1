@@ -99,6 +99,12 @@ actor {
     createdAt : Int;
   };
 
+  public type BackupRecord = {
+    name : Text;
+    data : Text;
+    createdAt : Int;
+  };
+
   // CategoryInternal is kept WITHOUT pinned to preserve stable variable compatibility.
   // pinned is stored separately in categoryPinnedByUser.
   type CategoryInternal = {
@@ -129,6 +135,8 @@ actor {
   let userSpendingLimits = Map.empty<Principal, SpendingLimits>();
   // Debt/loan tracker records per user.
   let userDebts = Map.empty<Principal, Map.Map<Text, DebtRecord>>();
+  // Cloud backup records per user.
+  let userBackups = Map.empty<Principal, Map.Map<Text, BackupRecord>>();
 
   // Helper: get or create user data
   func getOrCreateUserData(caller : Principal) : UserData {
@@ -546,4 +554,33 @@ actor {
       data.shoppingItems.remove(itemId);
     };
   };
+
+  // Cloud Backup
+  public shared ({ caller }) func saveBackup(name : Text, data : Text) : async () {
+    let backupsMap = switch (userBackups.get(caller)) {
+      case (?m) { m };
+      case (null) {
+        let m = Map.empty<Text, BackupRecord>();
+        userBackups.add(caller, m);
+        m;
+      };
+    };
+    let record : BackupRecord = { name = name; data = data; createdAt = Time.now() };
+    backupsMap.add(name, record);
+  };
+
+  public query ({ caller }) func getBackupsList() : async [BackupRecord] {
+    switch (userBackups.get(caller)) {
+      case (?m) { m.values().toArray() };
+      case (null) { [] };
+    };
+  };
+
+  public shared ({ caller }) func deleteBackup(name : Text) : async () {
+    switch (userBackups.get(caller)) {
+      case (?m) { m.remove(name) };
+      case (null) {};
+    };
+  };
+
 };

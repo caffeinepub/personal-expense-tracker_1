@@ -460,3 +460,46 @@ export function useSaveDebts() {
     },
   });
 }
+
+// ─── Cloud Backups ───────────────────────────────────────────────────────────
+
+export function useBackupsList() {
+  const { actor, isFetching } = useActor();
+  return useQuery({
+    queryKey: ["backupsList"],
+    queryFn: async () => {
+      if (!actor) return [];
+      try {
+        return await actor.getBackupsList();
+      } catch {
+        return [];
+      }
+    },
+    enabled: !!actor && !isFetching,
+    staleTime: 1000 * 60,
+  });
+}
+
+export function useSaveBackup() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ name, data }: { name: string; data: string }) => {
+      if (!actor) throw new Error("No actor");
+      return actor.saveBackup(name, data);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["backupsList"] }),
+  });
+}
+
+export function useDeleteBackup() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) => {
+      if (!actor) throw new Error("No actor");
+      return actor.deleteBackup(name);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["backupsList"] }),
+  });
+}

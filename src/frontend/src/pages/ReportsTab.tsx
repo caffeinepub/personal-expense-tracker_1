@@ -298,8 +298,10 @@ export default function ReportsTab({
   function getNavBorderClass(type: PeriodType) {
     return periodType === type ? "border-transparent" : "border-border";
   }
-  function getLabelClass(type: PeriodType) {
-    return periodType === type ? "text-white" : "text-muted-foreground";
+  function getLabelStyle(type: PeriodType): React.CSSProperties {
+    return periodType === type
+      ? { color: "#ffffff" }
+      : { color: "var(--muted-foreground)" };
   }
   // Period label for header
   const periodLabel =
@@ -333,7 +335,8 @@ export default function ReportsTab({
           {/* Monthly */}
           <div className="flex flex-col items-center flex-1 min-w-[110px]">
             <span
-              className={`text-[10px] font-medium mb-0.5 uppercase tracking-wide ${getLabelClass("monthly")}`}
+              className="text-[10px] font-medium mb-0.5 uppercase tracking-wide"
+              style={getLabelStyle("monthly")}
             >
               Month
             </span>
@@ -344,7 +347,8 @@ export default function ReportsTab({
               <Button
                 variant="ghost"
                 size="icon"
-                className={`h-6 w-6 flex-shrink-0 ${periodType === "monthly" ? "text-white hover:text-white hover:bg-white/20" : ""}`}
+                className="h-6 w-6 flex-shrink-0"
+                style={periodType === "monthly" ? { color: "#ffffff" } : {}}
                 onClick={() => {
                   setPeriodType("monthly");
                   setMonth(prevMonth(month));
@@ -359,7 +363,8 @@ export default function ReportsTab({
                     type="button"
                     data-ocid="reports.month.select"
                     onClick={() => setPeriodType("monthly")}
-                    className={`flex items-center gap-0.5 font-semibold text-xs hover:opacity-80 transition-colors flex-1 justify-center ${periodType === "monthly" ? "text-white" : "hover:text-primary"}`}
+                    className="flex items-center gap-0.5 font-semibold text-xs hover:opacity-80 transition-colors flex-1 justify-center"
+                    style={periodType === "monthly" ? { color: "#ffffff" } : {}}
                   >
                     {formatMonthYear(month)}
                     <ChevronDown className="h-3 w-3 opacity-70" />
@@ -414,7 +419,8 @@ export default function ReportsTab({
               <Button
                 variant="ghost"
                 size="icon"
-                className={`h-6 w-6 flex-shrink-0 ${periodType === "monthly" ? "text-white hover:text-white hover:bg-white/20" : ""}`}
+                className="h-6 w-6 flex-shrink-0"
+                style={periodType === "monthly" ? { color: "#ffffff" } : {}}
                 onClick={() => {
                   setPeriodType("monthly");
                   setMonth(nextMonth(month));
@@ -449,7 +455,8 @@ export default function ReportsTab({
             return (
               <div className="flex flex-col items-center flex-1 min-w-[110px]">
                 <span
-                  className={`text-[10px] font-medium mb-0.5 uppercase tracking-wide ${getLabelClass("quarterly")}`}
+                  className="text-[10px] font-medium mb-0.5 uppercase tracking-wide"
+                  style={getLabelStyle("quarterly")}
                 >
                   Quarter
                 </span>
@@ -460,7 +467,10 @@ export default function ReportsTab({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className={`h-6 w-6 flex-shrink-0 ${periodType === "quarterly" ? "text-white hover:text-white hover:bg-white/20" : ""}`}
+                    className="h-6 w-6 flex-shrink-0"
+                    style={
+                      periodType === "quarterly" ? { color: "#ffffff" } : {}
+                    }
                     onClick={prevQ}
                     aria-label="Previous quarter"
                   >
@@ -475,7 +485,10 @@ export default function ReportsTab({
                         type="button"
                         data-ocid="reports.quarter.select"
                         onClick={() => setPeriodType("quarterly")}
-                        className={`flex items-center gap-0.5 font-semibold text-xs hover:opacity-80 transition-colors flex-1 justify-center ${periodType === "quarterly" ? "text-white" : "hover:text-primary"}`}
+                        className="flex items-center gap-0.5 font-semibold text-xs hover:opacity-80 transition-colors flex-1 justify-center"
+                        style={
+                          periodType === "quarterly" ? { color: "#ffffff" } : {}
+                        }
                       >
                         Q{currentQ} {selectedYear}
                         <ChevronDown className="h-3 w-3 opacity-70" />
@@ -511,7 +524,10 @@ export default function ReportsTab({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className={`h-6 w-6 flex-shrink-0 ${periodType === "quarterly" ? "text-white hover:text-white hover:bg-white/20" : ""}`}
+                    className="h-6 w-6 flex-shrink-0"
+                    style={
+                      periodType === "quarterly" ? { color: "#ffffff" } : {}
+                    }
                     onClick={nextQ}
                     disabled={isLastQ}
                     aria-label="Next quarter"
@@ -533,7 +549,8 @@ export default function ReportsTab({
             return (
               <div className="flex flex-col items-center flex-1 min-w-[110px]">
                 <span
-                  className={`text-[10px] font-medium mb-0.5 uppercase tracking-wide ${getLabelClass("yearly")}`}
+                  className="text-[10px] font-medium mb-0.5 uppercase tracking-wide"
+                  style={getLabelStyle("yearly")}
                 >
                   Year
                 </span>
@@ -544,7 +561,8 @@ export default function ReportsTab({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className={`h-6 w-6 flex-shrink-0 ${periodType === "yearly" ? "text-white hover:text-white hover:bg-white/20" : ""}`}
+                    className="h-6 w-6 flex-shrink-0"
+                    style={periodType === "yearly" ? { color: "#ffffff" } : {}}
                     onClick={() => {
                       setPeriodType("yearly");
                       setMonth(`${selectedYear - 1}-01`);
@@ -562,7 +580,10 @@ export default function ReportsTab({
                         type="button"
                         data-ocid="reports.year.select"
                         onClick={() => setPeriodType("yearly")}
-                        className={`flex items-center gap-0.5 font-semibold text-xs hover:opacity-80 transition-colors flex-1 justify-center ${periodType === "yearly" ? "text-white" : "hover:text-primary"}`}
+                        className="flex items-center gap-0.5 font-semibold text-xs hover:opacity-80 transition-colors flex-1 justify-center"
+                        style={
+                          periodType === "yearly" ? { color: "#ffffff" } : {}
+                        }
                       >
                         {selectedYear}
                         <ChevronDown className="h-3 w-3 opacity-70" />
@@ -598,7 +619,8 @@ export default function ReportsTab({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className={`h-6 w-6 flex-shrink-0 ${periodType === "yearly" ? "text-white hover:text-white hover:bg-white/20" : ""}`}
+                    className="h-6 w-6 flex-shrink-0"
+                    style={periodType === "yearly" ? { color: "#ffffff" } : {}}
                     onClick={() => {
                       setPeriodType("yearly");
                       setMonth(`${selectedYear + 1}-01`);

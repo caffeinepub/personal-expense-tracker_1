@@ -160,6 +160,11 @@ export interface DebtRecord {
     status: string;
     createdAt: bigint;
 }
+export interface BackupRecord {
+    name: string;
+    data: string;
+    createdAt: bigint;
+}
 export enum UserRole {
     admin = "admin",
     user = "user",
@@ -203,6 +208,9 @@ export interface backendInterface {
     updateShoppingItem(item: ShoppingItem): Promise<void>;
     getDebts(): Promise<Array<DebtRecord>>;
     saveDebts(debts: Array<DebtRecord>): Promise<void>;
+    saveBackup(name: string, data: string): Promise<void>;
+    getBackupsList(): Promise<Array<BackupRecord>>;
+    deleteBackup(name: string): Promise<void>;
 }
 import type { AppSettings as _AppSettings, IncomeSource as _IncomeSource, MonthlyIncome as _MonthlyIncome, ShoppingItem as _ShoppingItem, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
@@ -710,6 +718,48 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await (this.actor as any).saveDebts(candidDebts);
+            return result;
+        }
+    }
+    async saveBackup(name: string, data: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await (this.actor as any).saveBackup(name, data);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await (this.actor as any).saveBackup(name, data);
+            return result;
+        }
+    }
+    async getBackupsList(): Promise<Array<BackupRecord>> {
+        if (this.processError) {
+            try {
+                const result = await (this.actor as any).getBackupsList();
+                return result.map((r: any) => ({ name: r.name, data: r.data, createdAt: r.createdAt }));
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await (this.actor as any).getBackupsList();
+            return result.map((r: any) => ({ name: r.name, data: r.data, createdAt: r.createdAt }));
+        }
+    }
+    async deleteBackup(name: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await (this.actor as any).deleteBackup(name);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await (this.actor as any).deleteBackup(name);
             return result;
         }
     }

@@ -79,6 +79,12 @@ export const DebtRecord = IDL.Record({
   'createdAt' : IDL.Int,
 });
 
+export const BackupRecord = IDL.Record({
+  'name' : IDL.Text,
+  'data' : IDL.Text,
+  'createdAt' : IDL.Int,
+});
+
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
@@ -86,6 +92,7 @@ export const idlService = IDL.Service({
   'createCategory' : IDL.Func([Category], [], []),
   'createExpense' : IDL.Func([Expense], [], []),
   'createShoppingItem' : IDL.Func([ShoppingItem], [], []),
+  'deleteBackup' : IDL.Func([IDL.Text], [], []),
   'deleteCategory' : IDL.Func([IDL.Text], [], []),
   'deleteExpense' : IDL.Func([IDL.Text], [], []),
   'deleteExpenseMeta' : IDL.Func([IDL.Text], [], []),
@@ -94,6 +101,7 @@ export const idlService = IDL.Service({
   'getAppSettings' : IDL.Func([], [IDL.Opt(AppSettings)], ['query']),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+  'getBackupsList' : IDL.Func([], [IDL.Vec(BackupRecord)], ['query']),
   'getCategories' : IDL.Func([], [IDL.Vec(Category)], ['query']),
   'getDebts' : IDL.Func([], [IDL.Vec(DebtRecord)], ['query']),
   'getExpenseMetaList' : IDL.Func([], [IDL.Vec(IDL.Tuple(IDL.Text, ExpenseMeta))], ['query']),
@@ -107,6 +115,7 @@ export const idlService = IDL.Service({
   'getUserProfile' : IDL.Func([IDL.Principal], [IDL.Opt(UserProfile)], ['query']),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'resetUserData' : IDL.Func([], [], []),
+  'saveBackup' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'saveDebts' : IDL.Func([IDL.Vec(DebtRecord)], [], []),
   'saveIncomeSources' : IDL.Func([IDL.Vec(IncomeSource)], [], []),
@@ -196,6 +205,11 @@ export const idlFactory = ({ IDL }) => {
     'status' : IDL.Text,
     'createdAt' : IDL.Int,
   });
+  const BackupRecord = IDL.Record({
+    'name' : IDL.Text,
+    'data' : IDL.Text,
+    'createdAt' : IDL.Int,
+  });
 
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
@@ -204,6 +218,7 @@ export const idlFactory = ({ IDL }) => {
     'createCategory' : IDL.Func([Category], [], []),
     'createExpense' : IDL.Func([Expense], [], []),
     'createShoppingItem' : IDL.Func([ShoppingItem], [], []),
+    'deleteBackup' : IDL.Func([IDL.Text], [], []),
     'deleteCategory' : IDL.Func([IDL.Text], [], []),
     'deleteExpense' : IDL.Func([IDL.Text], [], []),
     'deleteExpenseMeta' : IDL.Func([IDL.Text], [], []),
@@ -212,6 +227,7 @@ export const idlFactory = ({ IDL }) => {
     'getAppSettings' : IDL.Func([], [IDL.Opt(AppSettings)], ['query']),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+    'getBackupsList' : IDL.Func([], [IDL.Vec(BackupRecord)], ['query']),
     'getCategories' : IDL.Func([], [IDL.Vec(Category)], ['query']),
     'getDebts' : IDL.Func([], [IDL.Vec(DebtRecord)], ['query']),
     'getExpenseMetaList' : IDL.Func([], [IDL.Vec(IDL.Tuple(IDL.Text, ExpenseMeta))], ['query']),
@@ -225,6 +241,7 @@ export const idlFactory = ({ IDL }) => {
     'getUserProfile' : IDL.Func([IDL.Principal], [IDL.Opt(UserProfile)], ['query']),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'resetUserData' : IDL.Func([], [], []),
+    'saveBackup' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'saveDebts' : IDL.Func([IDL.Vec(DebtRecord)], [], []),
     'saveIncomeSources' : IDL.Func([IDL.Vec(IncomeSource)], [], []),

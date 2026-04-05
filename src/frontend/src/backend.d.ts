@@ -73,6 +73,11 @@ export interface DebtRecord {
     status: string;    // "pending" | "paid"
     createdAt: bigint;
 }
+export interface BackupRecord {
+    name: string;
+    data: string;
+    createdAt: bigint;
+}
 export type UserRole = { admin: null } | { user: null } | { guest: null };
 export interface _SERVICE {
     _initializeAccessControlWithSecret: ActorMethod<[string], void>;

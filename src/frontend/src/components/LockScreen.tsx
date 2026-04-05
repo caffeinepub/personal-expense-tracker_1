@@ -8,8 +8,15 @@ import { useInternetIdentity } from "../hooks/useInternetIdentity";
 export default function LockScreen() {
   const { isLocked, unlock, unlockWithII, hasPin, pinLength } = useAutoLock();
   // identity is used to detect if user is already authenticated with II
-  const { identity, login, isLoggingIn, isLoginSuccess, isLoginError } =
-    useInternetIdentity();
+  const {
+    identity,
+    login,
+    clear,
+    isLoggingIn,
+    isLoginSuccess,
+    isLoginError,
+    loginStatus,
+  } = useInternetIdentity();
   const [iiPending, setIiPending] = useState(false);
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
@@ -123,20 +130,24 @@ export default function LockScreen() {
     }
   }, [isLoginError, iiPending]);
 
+  // Force fresh II login: if already authenticated, clear session first then login
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional
+  useEffect(() => {
+    if (iiPending && loginStatus === "idle") {
+      login();
+    }
+  }, [loginStatus, iiPending]);
+
   function handleIIUnlock() {
     setError("");
-
-    // If the user already has a valid Internet Identity session, unlock directly.
-    // Calling login() when already authenticated causes the hook to set isLoginError
-    // ("User is already authenticated"), which incorrectly shows "Authentication failed".
-    if (identity && !identity.getPrincipal().isAnonymous()) {
-      unlockWithII();
-      return;
-    }
-
-    // No active session — trigger a fresh II login
     setIiPending(true);
-    login();
+    // Always force a fresh II authentication for security
+    if (identity && !identity.getPrincipal().isAnonymous()) {
+      // Logout first; the effect above will call login() when status returns to idle
+      clear();
+    } else {
+      login();
+    }
   }
 
   function handleDigit(digit: string) {

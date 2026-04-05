@@ -76,6 +76,11 @@ export interface DebtRecord {
   'status' : string,
   'createdAt' : bigint,
 }
+export interface BackupRecord {
+  'name' : string,
+  'data' : string,
+  'createdAt' : bigint,
+}
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
   { 'guest' : null };
@@ -86,6 +91,7 @@ export interface _SERVICE {
   'createCategory' : ActorMethod<[Category], undefined>,
   'createExpense' : ActorMethod<[Expense], undefined>,
   'createShoppingItem' : ActorMethod<[ShoppingItem], undefined>,
+  'deleteBackup' : ActorMethod<[string], undefined>,
   'deleteCategory' : ActorMethod<[string], undefined>,
   'deleteExpense' : ActorMethod<[string], undefined>,
   'deleteExpenseMeta' : ActorMethod<[string], undefined>,
@@ -94,6 +100,7 @@ export interface _SERVICE {
   'getAppSettings' : ActorMethod<[], [] | [AppSettings]>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
+  'getBackupsList' : ActorMethod<[], Array<BackupRecord>>,
   'getCategories' : ActorMethod<[], Array<Category>>,
   'getDebts' : ActorMethod<[], Array<DebtRecord>>,
   'getExpenseMetaList' : ActorMethod<[], Array<[string, ExpenseMeta]>>,
@@ -107,6 +114,7 @@ export interface _SERVICE {
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'resetUserData' : ActorMethod<[], void>,
+  'saveBackup' : ActorMethod<[string, string], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'saveDebts' : ActorMethod<[Array<DebtRecord>], undefined>,
   'saveIncomeSources' : ActorMethod<[Array<IncomeSource>], undefined>,
