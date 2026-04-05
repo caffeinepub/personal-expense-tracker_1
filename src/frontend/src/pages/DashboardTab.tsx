@@ -11,22 +11,25 @@ import {
   ArrowDownCircle,
   ArrowUpCircle,
   BarChart2,
+  Bell,
   CalendarDays,
   Check,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  CreditCard,
   Minus,
   MoreVertical,
   Pencil,
   PieChart as PieChartIcon,
   Scale,
+  Shield,
   Target,
   TrendingDown,
   TrendingUp,
   Wallet,
 } from "lucide-react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -158,6 +161,9 @@ export default function DashboardTab({
 
   const [themeDialogOpen, setThemeDialogOpen] = useState(false);
   const [incomeOpen, setIncomeOpen] = useState(false);
+  const [budgetAlertsOpen, setBudgetAlertsOpen] = useState(true);
+  const [debtTrackerOpen, setDebtTrackerOpen] = useState(false);
+  const [spendingLimitsOpen, setSpendingLimitsOpen] = useState(true);
   const [savingsGoal, setSavingsGoal] = useState<number>(() => {
     const v = localStorage.getItem("pe_savings_goal");
     return v ? Number(v) : 0;
@@ -697,29 +703,8 @@ export default function DashboardTab({
               );
             })()}
 
-            {/* Budget Alerts */}
-            {categories.some((c) => c.budget > 0) && (
-              <motion.div variants={itemVariants}>
-                <BudgetAlertsCard
-                  categories={categories}
-                  expenses={expenses}
-                  currency={currency}
-                />
-              </motion.div>
-            )}
-
             {/* Bill Reminders */}
             <BillReminders onQuickAdd={onQuickAddBill} />
-
-            {/* Spending Limits */}
-            <motion.div variants={itemVariants} className="px-4">
-              <SpendingLimitCard allExpenses={allExpenses} />
-            </motion.div>
-
-            {/* Debt / Loan Tracker */}
-            <motion.div variants={itemVariants} className="px-4">
-              <DebtTrackerCard />
-            </motion.div>
 
             {/* DASHBOARD | Income */}
             <motion.div variants={itemVariants} className="px-4 mb-1">
@@ -823,6 +808,138 @@ export default function DashboardTab({
                     )}
                   </div>
                 </div>
+              </div>
+            </motion.div>
+
+            {/* Debt / Loan Tracker — collapsible, default closed */}
+            <motion.div variants={itemVariants} className="px-4">
+              <div className="border border-border/50 rounded-xl overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setDebtTrackerOpen((v) => !v)}
+                  className="w-full flex items-center justify-between px-4 py-3 transition-colors"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, #1e3a5f 0%, #0f3460 50%, #16213e 100%)",
+                  }}
+                  data-ocid="dashboard.debt_tracker.toggle"
+                >
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4 text-blue-300" />
+                    <span className="text-sm font-semibold text-white">
+                      Debt / Loan Tracker
+                    </span>
+                  </div>
+                  <ChevronDown
+                    className={`h-4 w-4 text-blue-200 transition-transform duration-200 ${debtTrackerOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+                <AnimatePresence initial={false}>
+                  {debtTrackerOpen && (
+                    <motion.div
+                      key="debt-tracker-content"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.25 }}
+                      style={{ overflow: "hidden" }}
+                    >
+                      <div className="p-3 pt-0">
+                        <DebtTrackerCard />
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </motion.div>
+
+            {/* Budget Alerts — collapsible, default open */}
+            {categories.some((c) => c.budget > 0) && (
+              <motion.div variants={itemVariants} className="px-4">
+                <div className="border border-border/50 rounded-xl overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setBudgetAlertsOpen((v) => !v)}
+                    className="w-full flex items-center justify-between px-4 py-3 transition-colors"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, #78350f 0%, #92400e 50%, #78350f 100%)",
+                    }}
+                    data-ocid="dashboard.budget_alerts.toggle"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Bell className="h-4 w-4 text-amber-300" />
+                      <span className="text-sm font-semibold text-white">
+                        Budget Alerts
+                      </span>
+                    </div>
+                    <ChevronDown
+                      className={`h-4 w-4 text-amber-200 transition-transform duration-200 ${budgetAlertsOpen ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                  <AnimatePresence initial={false}>
+                    {budgetAlertsOpen && (
+                      <motion.div
+                        key="budget-alerts-content"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25 }}
+                        style={{ overflow: "hidden" }}
+                      >
+                        <div className="p-3 pt-0">
+                          <BudgetAlertsCard
+                            categories={categories}
+                            expenses={expenses}
+                            currency={currency}
+                          />
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Spending Limits — collapsible with colored header */}
+            <motion.div variants={itemVariants} className="px-4">
+              <div className="border border-border/50 rounded-xl overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setSpendingLimitsOpen((v) => !v)}
+                  className="w-full flex items-center justify-between px-4 py-3 transition-colors"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, #312e81 0%, #4c1d95 50%, #3b0764 100%)",
+                  }}
+                  data-ocid="dashboard.spending_limits.toggle"
+                >
+                  <div className="flex items-center gap-2">
+                    <Shield className="h-4 w-4 text-purple-300" />
+                    <span className="text-sm font-semibold text-white">
+                      Spending Limits
+                    </span>
+                  </div>
+                  <ChevronDown
+                    className={`h-4 w-4 text-purple-200 transition-transform duration-200 ${spendingLimitsOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+                <AnimatePresence initial={false}>
+                  {spendingLimitsOpen && (
+                    <motion.div
+                      key="spending-limits-content"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.25 }}
+                      style={{ overflow: "hidden" }}
+                    >
+                      <div className="p-3">
+                        <SpendingLimitCard allExpenses={allExpenses} />
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </motion.div>
 

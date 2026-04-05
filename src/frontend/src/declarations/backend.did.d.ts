@@ -10,12 +10,18 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
-export interface AppSettings { 'updatedAt' : bigint, 'currency' : string }
+export interface AppSettings {
+  'updatedAt' : bigint,
+  'currency' : string,
+  'dailyLimit' : [] | [number],
+  'weeklyLimit' : [] | [number],
+}
 export interface Category {
   'id' : string,
   'name' : string,
   'color' : string,
   'budget' : number,
+  'pinned' : [] | [boolean],
 }
 export interface CategorySummary {
   'categoryId' : string,
@@ -30,8 +36,15 @@ export interface Expense {
   'note' : string,
   'createdAt' : bigint,
   'amount' : number,
+  'recurring' : [] | [boolean],
+  'recurringFrequency' : [] | [string],
+}
+export interface ExpenseMeta {
+  'tags' : [] | [string],
+  'receiptUrl' : [] | [string],
 }
 export interface MonthlyIncome { 'month' : string, 'amount' : number }
+export interface UserProfile { 'name' : string }
 export interface MonthlySummary {
   'month' : string,
   'categoryBreakdown' : Array<CategorySummary>,
@@ -53,7 +66,16 @@ export interface IncomeSource {
   'color' : string,
   'monthlyBudget' : number,
 }
-export interface UserProfile { 'name' : string }
+export interface DebtRecord {
+  'id' : string,
+  'description' : string,
+  'personName' : string,
+  'amount' : number,
+  'dueDate' : [] | [string],
+  'direction' : string,
+  'status' : string,
+  'createdAt' : bigint,
+}
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
   { 'guest' : null };
@@ -66,25 +88,30 @@ export interface _SERVICE {
   'createShoppingItem' : ActorMethod<[ShoppingItem], undefined>,
   'deleteCategory' : ActorMethod<[string], undefined>,
   'deleteExpense' : ActorMethod<[string], undefined>,
+  'deleteExpenseMeta' : ActorMethod<[string], undefined>,
   'deleteShoppingItem' : ActorMethod<[string], undefined>,
   'exportExpenses' : ActorMethod<[], Array<Expense>>,
   'getAppSettings' : ActorMethod<[], [] | [AppSettings]>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getCategories' : ActorMethod<[], Array<Category>>,
+  'getDebts' : ActorMethod<[], Array<DebtRecord>>,
+  'getExpenseMetaList' : ActorMethod<[], Array<[string, ExpenseMeta]>>,
   'getExpenses' : ActorMethod<[], Array<Expense>>,
   'getExpensesByCategory' : ActorMethod<[string], Array<Expense>>,
   'getExpensesByMonth' : ActorMethod<[string], Array<Expense>>,
-  'getMonthlyIncome' : ActorMethod<[string], [] | [MonthlyIncome]>,
   'getIncomeSourcesList' : ActorMethod<[], Array<IncomeSource>>,
+  'getMonthlyIncome' : ActorMethod<[string], [] | [MonthlyIncome]>,
   'getMonthlySummary' : ActorMethod<[string], MonthlySummary>,
   'getShoppingItems' : ActorMethod<[], Array<ShoppingItem>>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
-  'resetUserData' : ActorMethod<[], undefined>,
+  'resetUserData' : ActorMethod<[], void>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'saveDebts' : ActorMethod<[Array<DebtRecord>], undefined>,
   'saveIncomeSources' : ActorMethod<[Array<IncomeSource>], undefined>,
   'setAppSettings' : ActorMethod<[AppSettings], undefined>,
+  'setExpenseMeta' : ActorMethod<[string, ExpenseMeta], undefined>,
   'setMonthlyIncome' : ActorMethod<[MonthlyIncome], undefined>,
   'toggleShoppingItemBought' : ActorMethod<[string, boolean], undefined>,
   'updateCategory' : ActorMethod<[Category], undefined>,

@@ -92,6 +92,8 @@ export class ExternalBlob {
 export interface AppSettings {
     updatedAt: bigint;
     currency: string;
+    dailyLimit?: number | null;
+    weeklyLimit?: number | null;
 }
 export interface ShoppingItem {
     id: string;
@@ -121,6 +123,8 @@ export interface Expense {
     note: string;
     createdAt: bigint;
     amount: number;
+    recurring?: boolean | null;
+    recurringFrequency?: string | null;
 }
 export interface MonthlyIncome {
     month: string;
@@ -134,6 +138,7 @@ export interface Category {
     name: string;
     color: string;
     budget: number;
+    pinned?: boolean | null;
 }
 export interface IncomeSource {
     id: string;
@@ -144,6 +149,16 @@ export interface IncomeSource {
 export interface ExpenseMeta {
     tags: string | null;
     receiptUrl: string | null;
+}
+export interface DebtRecord {
+    id: string;
+    description: string;
+    personName: string;
+    amount: number;
+    dueDate?: string | null;
+    direction: string;
+    status: string;
+    createdAt: bigint;
 }
 export enum UserRole {
     admin = "admin",
@@ -186,6 +201,8 @@ export interface backendInterface {
     updateCategory(category: Category): Promise<void>;
     updateExpense(expense: Expense): Promise<void>;
     updateShoppingItem(item: ShoppingItem): Promise<void>;
+    getDebts(): Promise<Array<DebtRecord>>;
+    saveDebts(debts: Array<DebtRecord>): Promise<void>;
 }
 import type { AppSettings as _AppSettings, IncomeSource as _IncomeSource, MonthlyIncome as _MonthlyIncome, ShoppingItem as _ShoppingItem, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
@@ -233,30 +250,32 @@ export class Backend implements backendInterface {
         }
     }
     async createCategory(arg0: Category): Promise<void> {
+        const candidCat = toCandidCategory(arg0);
         if (this.processError) {
             try {
-                const result = await this.actor.createCategory(arg0);
+                const result = await this.actor.createCategory(candidCat);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.createCategory(arg0);
+            const result = await this.actor.createCategory(candidCat);
             return result;
         }
     }
     async createExpense(arg0: Expense): Promise<void> {
+        const candidExpense = toCandidExpense(arg0);
         if (this.processError) {
             try {
-                const result = await this.actor.createExpense(arg0);
+                const result = await this.actor.createExpense(candidExpense);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.createExpense(arg0);
+            const result = await this.actor.createExpense(candidExpense);
             return result;
         }
     }
@@ -320,28 +339,30 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.exportExpenses();
-                return result;
+                return result.map(fromCandidExpense);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.exportExpenses();
-            return result;
+            return result.map(fromCandidExpense);
         }
     }
     async getAppSettings(): Promise<AppSettings | null> {
         if (this.processError) {
             try {
                 const result = await this.actor.getAppSettings();
-                return from_candid_opt_n5(this._uploadFile, this._downloadFile, result);
+                const raw = result.length === 0 ? null : result[0];
+                return raw ? fromCandidAppSettings(raw) : null;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getAppSettings();
-            return from_candid_opt_n5(this._uploadFile, this._downloadFile, result);
+            const raw = result.length === 0 ? null : result[0];
+            return raw ? fromCandidAppSettings(raw) : null;
         }
     }
     async getCallerUserProfile(): Promise<UserProfile | null> {
@@ -376,56 +397,56 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.getCategories();
-                return result;
+                return result.map(fromCandidCategory);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getCategories();
-            return result;
+            return result.map(fromCandidCategory);
         }
     }
     async getExpenses(): Promise<Array<Expense>> {
         if (this.processError) {
             try {
                 const result = await this.actor.getExpenses();
-                return result;
+                return result.map(fromCandidExpense);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getExpenses();
-            return result;
+            return result.map(fromCandidExpense);
         }
     }
     async getExpensesByCategory(arg0: string): Promise<Array<Expense>> {
         if (this.processError) {
             try {
                 const result = await this.actor.getExpensesByCategory(arg0);
-                return result;
+                return result.map(fromCandidExpense);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getExpensesByCategory(arg0);
-            return result;
+            return result.map(fromCandidExpense);
         }
     }
     async getExpensesByMonth(arg0: string): Promise<Array<Expense>> {
         if (this.processError) {
             try {
                 const result = await this.actor.getExpensesByMonth(arg0);
-                return result;
+                return result.map(fromCandidExpense);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getExpensesByMonth(arg0);
-            return result;
+            return result.map(fromCandidExpense);
         }
     }
     async getMonthlyIncome(arg0: string): Promise<MonthlyIncome | null> {
@@ -527,16 +548,17 @@ export class Backend implements backendInterface {
         }
     }
     async setAppSettings(arg0: AppSettings): Promise<void> {
+        const candidSettings = toCandidAppSettings(arg0);
         if (this.processError) {
             try {
-                const result = await this.actor.setAppSettings(arg0);
+                const result = await this.actor.setAppSettings(candidSettings);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.setAppSettings(arg0);
+            const result = await this.actor.setAppSettings(candidSettings);
             return result;
         }
     }
@@ -619,30 +641,32 @@ export class Backend implements backendInterface {
         }
     }
     async updateCategory(arg0: Category): Promise<void> {
+        const candidCat = toCandidCategory(arg0);
         if (this.processError) {
             try {
-                const result = await this.actor.updateCategory(arg0);
+                const result = await this.actor.updateCategory(candidCat);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.updateCategory(arg0);
+            const result = await this.actor.updateCategory(candidCat);
             return result;
         }
     }
     async updateExpense(arg0: Expense): Promise<void> {
+        const candidExpense = toCandidExpense(arg0);
         if (this.processError) {
             try {
-                const result = await this.actor.updateExpense(arg0);
+                const result = await this.actor.updateExpense(candidExpense);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.updateExpense(arg0);
+            const result = await this.actor.updateExpense(candidExpense);
             return result;
         }
     }
@@ -660,7 +684,130 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async getDebts(): Promise<Array<DebtRecord>> {
+        if (this.processError) {
+            try {
+                const result = await (this.actor as any).getDebts();
+                return (result as Array<any>).map(fromCandidDebtRecord);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await (this.actor as any).getDebts();
+            return (result as Array<any>).map(fromCandidDebtRecord);
+        }
+    }
+    async saveDebts(arg0: Array<DebtRecord>): Promise<void> {
+        const candidDebts = arg0.map(toCandidDebtRecord);
+        if (this.processError) {
+            try {
+                const result = await (this.actor as any).saveDebts(candidDebts);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await (this.actor as any).saveDebts(candidDebts);
+            return result;
+        }
+    }
 }
+// ── Candid helper functions ──────────────────────────────────────────────────
+
+function toCandidExpense(e: Expense): any {
+    return {
+        id: e.id,
+        categoryId: e.categoryId,
+        paymentMethod: e.paymentMethod,
+        date: e.date,
+        note: e.note,
+        createdAt: e.createdAt,
+        amount: e.amount,
+        recurring: e.recurring != null ? [e.recurring] : [],
+        recurringFrequency: e.recurringFrequency != null ? [e.recurringFrequency] : [],
+    };
+}
+
+function fromCandidExpense(e: any): Expense {
+    return {
+        id: e.id,
+        categoryId: e.categoryId,
+        paymentMethod: e.paymentMethod,
+        date: e.date,
+        note: e.note,
+        createdAt: e.createdAt,
+        amount: e.amount,
+        recurring: e.recurring && e.recurring.length > 0 ? e.recurring[0] : undefined,
+        recurringFrequency: e.recurringFrequency && e.recurringFrequency.length > 0 ? e.recurringFrequency[0] : undefined,
+    };
+}
+
+function toCandidCategory(c: Category): any {
+    return {
+        id: c.id,
+        name: c.name,
+        color: c.color,
+        budget: c.budget,
+        pinned: c.pinned != null ? [c.pinned] : [],
+    };
+}
+
+function fromCandidCategory(c: any): Category {
+    return {
+        id: c.id,
+        name: c.name,
+        color: c.color,
+        budget: c.budget,
+        pinned: c.pinned && c.pinned.length > 0 ? c.pinned[0] : null,
+    };
+}
+
+function toCandidAppSettings(s: AppSettings): any {
+    return {
+        updatedAt: s.updatedAt,
+        currency: s.currency,
+        dailyLimit: s.dailyLimit != null ? [s.dailyLimit] : [],
+        weeklyLimit: s.weeklyLimit != null ? [s.weeklyLimit] : [],
+    };
+}
+
+function fromCandidAppSettings(s: any): AppSettings {
+    return {
+        updatedAt: s.updatedAt,
+        currency: s.currency,
+        dailyLimit: s.dailyLimit && s.dailyLimit.length > 0 ? s.dailyLimit[0] : null,
+        weeklyLimit: s.weeklyLimit && s.weeklyLimit.length > 0 ? s.weeklyLimit[0] : null,
+    };
+}
+
+function toCandidDebtRecord(d: DebtRecord): any {
+    return {
+        id: d.id,
+        description: d.description,
+        personName: d.personName,
+        amount: d.amount,
+        dueDate: d.dueDate != null ? [d.dueDate] : [],
+        direction: d.direction,
+        status: d.status,
+        createdAt: d.createdAt,
+    };
+}
+
+function fromCandidDebtRecord(d: any): DebtRecord {
+    return {
+        id: d.id,
+        description: d.description,
+        personName: d.personName,
+        amount: d.amount,
+        dueDate: d.dueDate && d.dueDate.length > 0 ? d.dueDate[0] : null,
+        direction: d.direction,
+        status: d.status,
+        createdAt: d.createdAt,
+    };
+}
+
 function from_candid_ShoppingItem_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _ShoppingItem): ShoppingItem {
     return from_candid_record_n12(_uploadFile, _downloadFile, value);
 }

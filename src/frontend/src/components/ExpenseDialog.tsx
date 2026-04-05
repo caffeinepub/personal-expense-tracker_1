@@ -179,7 +179,7 @@ export default function ExpenseDialog({
         setDate(expense.date);
         setNote(expense.note ?? "");
         setPaymentMethod(expense.paymentMethod ?? "Cash");
-        setRecurring(expense.recurring ?? false);
+        setRecurring(expense.recurring ?? true);
         setRecurringFrequency(
           (expense as typeof expense & { recurringFrequency?: string })
             .recurringFrequency ?? "Monthly",
@@ -205,7 +205,7 @@ export default function ExpenseDialog({
         } else {
           setDate(todayISO());
         }
-        setRecurring(false);
+        setRecurring(true);
         setRecurringFrequency("Monthly");
         setTags("");
         setReceiptFile(null);
@@ -221,7 +221,7 @@ export default function ExpenseDialog({
         }
         setNote("");
         setPaymentMethod("Cash");
-        setRecurring(false);
+        setRecurring(true);
         setRecurringFrequency("Monthly");
         setTags("");
         setReceiptFile(null);
@@ -324,11 +324,8 @@ export default function ExpenseDialog({
       note: finalNote,
       paymentMethod,
       createdAt,
-      recurring: !expense ? recurring : expense.recurring,
-      recurringFrequency:
-        !expense && recurring
-          ? recurringFrequency
-          : expense?.recurringFrequency,
+      recurring: recurring,
+      recurringFrequency: recurring ? recurringFrequency : undefined,
     });
 
     // Save tags and receipt as separate metadata
@@ -852,8 +849,8 @@ export default function ExpenseDialog({
             </div>
           )}
 
-          {/* Recurring — new expenses only, not income, not editing */}
-          {!isIncome && !isEditing && (
+          {/* Recurring — expense mode only (both add and edit) */}
+          {!isIncome && (
             <div className="space-y-2">
               <button
                 type="button"

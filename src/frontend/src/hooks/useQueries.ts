@@ -71,8 +71,8 @@ export function useExpenses() {
   const { actor, isFetching } = useActor();
   return useQuery<Expense[]>({
     queryKey: ["expenses"],
-    queryFn: async () => {
-      if (!actor) return [];
+    queryFn: async (): Promise<Expense[]> => {
+      if (!actor) return [] as Expense[];
       return actor.getExpenses();
     },
     enabled: !!actor && !isFetching,
@@ -432,7 +432,7 @@ export function useDebts() {
     queryFn: async () => {
       if (!actor) return [];
       try {
-        return await (actor as any).getDebts();
+        return await actor.getDebts();
       } catch {
         return [];
       }
@@ -450,7 +450,7 @@ export function useSaveDebts() {
       if (!actor) throw new Error("No actor");
       // Optimistic update
       qc.setQueryData(["debts"], debts);
-      return (actor as any).saveDebts(debts);
+      return actor.saveDebts(debts);
     },
     onError: () => {
       qc.invalidateQueries({ queryKey: ["debts"] });

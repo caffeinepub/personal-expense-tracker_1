@@ -24,6 +24,8 @@ export const Expense = IDL.Record({
   'note' : IDL.Text,
   'createdAt' : IDL.Int,
   'amount' : IDL.Float64,
+  'recurring' : IDL.Opt(IDL.Bool),
+  'recurringFrequency' : IDL.Opt(IDL.Text),
 });
 export const ExpenseMeta = IDL.Record({
   'tags' : IDL.Opt(IDL.Text),
@@ -140,6 +142,8 @@ export const idlFactory = ({ IDL }) => {
     'note' : IDL.Text,
     'createdAt' : IDL.Int,
     'amount' : IDL.Float64,
+    'recurring' : IDL.Opt(IDL.Bool),
+    'recurringFrequency' : IDL.Opt(IDL.Text),
   });
   const ExpenseMeta = IDL.Record({
     'tags' : IDL.Opt(IDL.Text),
@@ -192,7 +196,7 @@ export const idlFactory = ({ IDL }) => {
     'status' : IDL.Text,
     'createdAt' : IDL.Int,
   });
-  
+
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),

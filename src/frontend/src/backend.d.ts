@@ -10,8 +10,8 @@ export interface Expense {
     amount: number;
     tags?: string;
     receiptUrl?: string;
-    recurring?: boolean;
-    recurringFrequency?: string;
+    recurring?: boolean | null;
+    recurringFrequency?: string | null;
 }
 export interface ExpenseMeta {
     tags: string | null;

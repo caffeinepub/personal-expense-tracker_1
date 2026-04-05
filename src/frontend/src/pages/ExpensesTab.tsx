@@ -49,6 +49,7 @@ import {
   Receipt,
   Repeat,
   Search,
+  Settings2,
   SlidersHorizontal,
   Trash2,
   X,
@@ -354,33 +355,45 @@ export default function ExpensesTab({
             </p>
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0 mt-0.5">
-            <button
-              type="button"
-              className="h-8 px-2.5 gap-1.5 text-xs inline-flex items-center rounded-lg bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-colors font-medium"
-              onClick={() => setRecurringManagerOpen(true)}
-              data-ocid="expenses.recurring.button"
-            >
-              <Repeat className="h-3.5 w-3.5" />
-              Recurring
-            </button>
-            <button
-              type="button"
-              className="h-8 px-2.5 gap-1.5 text-xs inline-flex items-center rounded-lg bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-colors font-medium"
-              onClick={() => setGlobalSearchOpen(true)}
-              data-ocid="expenses.global_search.button"
-            >
-              <Globe className="h-3.5 w-3.5" />
-              Search all
-            </button>
-            <button
-              type="button"
-              className="h-8 px-2.5 gap-1.5 text-xs inline-flex items-center rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-colors font-medium"
-              onClick={() => setNotesHistoryOpen(true)}
-              data-ocid="expenses.notes_history.open_modal_button"
-            >
-              <BookOpen className="h-3.5 w-3.5" />
-              Notes
-            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="h-8 px-2.5 gap-1.5 text-xs inline-flex items-center rounded-lg bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-colors font-medium"
+                  data-ocid="expenses.tools.dropdown_menu"
+                >
+                  <Settings2 className="h-3.5 w-3.5" />
+                  Tools
+                  <ChevronDown className="h-3 w-3 opacity-60" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuItem
+                  className="gap-2 text-primary text-xs"
+                  onClick={() => setRecurringManagerOpen(true)}
+                  data-ocid="expenses.tools.recurring.button"
+                >
+                  <Repeat className="h-3.5 w-3.5" />
+                  Recurring
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="gap-2 text-primary text-xs"
+                  onClick={() => setGlobalSearchOpen(true)}
+                  data-ocid="expenses.tools.search.button"
+                >
+                  <Globe className="h-3.5 w-3.5" />
+                  All Search
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="gap-2 text-amber-600 dark:text-amber-400 text-xs"
+                  onClick={() => setNotesHistoryOpen(true)}
+                  data-ocid="expenses.tools.notes.button"
+                >
+                  <BookOpen className="h-3.5 w-3.5" />
+                  Notes
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 

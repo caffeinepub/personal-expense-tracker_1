@@ -35,9 +35,11 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
+  Loader2,
   MoreVertical,
   Pencil,
   Plus,
+  Receipt,
   ShoppingCart,
   Trash2,
   X,
@@ -46,7 +48,11 @@ import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import type { ShoppingItem } from "../backend.d";
-import { useAppSettings, useCategories } from "../hooks/useQueries";
+import {
+  useAppSettings,
+  useCategories,
+  useCreateExpense,
+} from "../hooks/useQueries";
 import {
   useClearBoughtShoppingItems,
   useCreateShoppingItem,
@@ -159,6 +165,19 @@ export default function ShoppingListTab({
   const [editDate, setEditDate] = useState("");
   const [editNameError, setEditNameError] = useState(false);
 
+  // Log as expense mini-prompt state
+  const [logExpensePrompt, setLogExpensePrompt] = useState<ShoppingItem | null>(
+    null,
+  );
+  const [logExpenseOpen, setLogExpenseOpen] = useState(false);
+  const [logExpenseData, setLogExpenseData] = useState<{
+    categoryId: string;
+    note: string;
+    amount: string;
+    date: string;
+  } | null>(null);
+  const createExpense = useCreateExpense();
+
   // Collapsed groups state: absence of key = collapsed (default)
   const [collapsedGroups, setCollapsedGroups] = useState<
     Record<string, boolean>
@@ -267,9 +286,14 @@ export default function ShoppingListTab({
 
   function handleToggle(id: string) {
     const item = items.find((i) => i.id === id);
-    toggleItemBought.mutate({ id, bought: !(item?.bought ?? false) });
-    if (item && !item.bought) {
-      toast.success(t("item_bought"));
+    if (!item) return;
+    if (!item.bought) {
+      // Marking as bought → toggle first, then show mini-prompt
+      toggleItemBought.mutate({ id, bought: true });
+      setLogExpensePrompt(item);
+    } else {
+      // Unchecking — just toggle back
+      toggleItemBought.mutate({ id, bought: false });
     }
   }
 
@@ -840,6 +864,182 @@ export default function ShoppingListTab({
               <span className="text-destructive font-semibold">*</span> Required
               field
             </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Mini-prompt: "Log as expense now?" */}
+      <Dialog
+        open={!!logExpensePrompt}
+        onOpenChange={(open) => {
+          if (!open) setLogExpensePrompt(null);
+        }}
+      >
+        <DialogContent
+          className="max-w-xs mx-auto rounded-2xl"
+          data-ocid="shopping.log_expense_prompt.dialog"
+        >
+          <DialogHeader>
+            <DialogTitle className="text-base">Log as expense?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Add &ldquo;{logExpensePrompt?.name}&rdquo; as an expense now?
+          </p>
+          <div className="grid grid-cols-2 gap-3 pt-2">
+            <Button
+              variant="outline"
+              data-ocid="shopping.log_expense_prompt.cancel_button"
+              onClick={() => setLogExpensePrompt(null)}
+            >
+              Skip
+            </Button>
+            <Button
+              data-ocid="shopping.log_expense_prompt.confirm_button"
+              onClick={() => {
+                if (!logExpensePrompt) return;
+                setLogExpenseData({
+                  categoryId:
+                    logExpensePrompt.category ?? categories[0]?.id ?? "",
+                  note: logExpensePrompt.name,
+                  amount:
+                    logExpensePrompt.estimatedPrice != null
+                      ? String(logExpensePrompt.estimatedPrice)
+                      : "",
+                  date: new Date().toISOString().substring(0, 10),
+                });
+                setLogExpensePrompt(null);
+                setLogExpenseOpen(true);
+              }}
+            >
+              Yes, log it
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Quick Log Expense Dialog */}
+      <Dialog open={logExpenseOpen} onOpenChange={setLogExpenseOpen}>
+        <DialogContent
+          className="max-w-sm mx-auto rounded-2xl"
+          data-ocid="shopping.quick_log_expense.dialog"
+        >
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Receipt className="h-4 w-4 text-primary" />
+              Quick Log Expense
+            </DialogTitle>
+          </DialogHeader>
+          {logExpenseData && (
+            <div className="space-y-3 py-1">
+              <div className="space-y-1.5">
+                <Label>Amount</Label>
+                <Input
+                  data-ocid="shopping.quick_log.amount.input"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={logExpenseData.amount}
+                  onChange={(e) =>
+                    setLogExpenseData((d) =>
+                      d ? { ...d, amount: e.target.value } : d,
+                    )
+                  }
+                  className="h-10"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Category</Label>
+                <Select
+                  value={logExpenseData.categoryId}
+                  onValueChange={(v) =>
+                    setLogExpenseData((d) => (d ? { ...d, categoryId: v } : d))
+                  }
+                >
+                  <SelectTrigger
+                    data-ocid="shopping.quick_log.category.select"
+                    className="h-10"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Note</Label>
+                <Input
+                  data-ocid="shopping.quick_log.note.input"
+                  value={logExpenseData.note}
+                  onChange={(e) =>
+                    setLogExpenseData((d) =>
+                      d ? { ...d, note: e.target.value } : d,
+                    )
+                  }
+                  className="h-10"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Date</Label>
+                <input
+                  type="date"
+                  value={logExpenseData.date}
+                  onChange={(e) =>
+                    setLogExpenseData((d) =>
+                      d ? { ...d, date: e.target.value } : d,
+                    )
+                  }
+                  className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-3 pt-2">
+            <Button
+              variant="outline"
+              data-ocid="shopping.quick_log.cancel_button"
+              onClick={() => setLogExpenseOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              data-ocid="shopping.quick_log.submit_button"
+              disabled={createExpense.isPending}
+              onClick={async () => {
+                if (!logExpenseData) return;
+                const amt = Number.parseFloat(logExpenseData.amount);
+                if (Number.isNaN(amt) || amt <= 0) {
+                  toast.error("Enter a valid amount");
+                  return;
+                }
+                try {
+                  await createExpense.mutateAsync({
+                    id: crypto.randomUUID(),
+                    categoryId: logExpenseData.categoryId,
+                    paymentMethod: "Cash",
+                    date: logExpenseData.date,
+                    note: logExpenseData.note,
+                    amount: amt,
+                    createdAt: BigInt(Date.now() * 1_000_000),
+                  });
+                  toast.success("Expense logged");
+                  setLogExpenseOpen(false);
+                  setLogExpenseData(null);
+                } catch {
+                  toast.error("Failed to log expense");
+                }
+              }}
+            >
+              {createExpense.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Log Expense"
+              )}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

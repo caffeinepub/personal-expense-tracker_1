@@ -1,15 +1,16 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+// ============================================================
+// CRITICAL: LanguageProvider and AutoLockProvider are
+// permanently anchored here. DO NOT remove or move them.
+// Removing these providers causes translation failures and
+// app crashes. This file is never regenerated during builds.
+// ============================================================
 import ReactDOM from "react-dom/client";
 import App from "./App";
-import { InternetIdentityProvider } from "./hooks/useInternetIdentity";
-import "./index.css";
 import { AutoLockProvider } from "./contexts/AutoLockContext";
-// ============================================================
-// PERMANENT PROVIDERS — DO NOT REMOVE OR REORDER
-// LanguageProvider and AutoLockProvider MUST wrap the entire app.
-// Removing them causes white screens and translation failures.
-// ============================================================
+import { InternetIdentityProvider } from "./hooks/useInternetIdentity";
 import { LanguageProvider } from "./i18n/LanguageContext";
+import "./index.css";
 
 BigInt.prototype.toJSON = function () {
   return this.toString();
@@ -24,8 +25,9 @@ declare global {
 const queryClient = new QueryClient();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  // PERMANENT: LanguageProvider and AutoLockProvider must always wrap the entire app
+  // ── DO NOT REMOVE LanguageProvider ──────────────────────
   <LanguageProvider>
+    {/* ── DO NOT REMOVE AutoLockProvider ─────────────────── */}
     <AutoLockProvider>
       <QueryClientProvider client={queryClient}>
         <InternetIdentityProvider>
