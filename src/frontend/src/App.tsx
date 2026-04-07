@@ -23,6 +23,7 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import AppHeader from "./components/AppHeader";
+import ErrorBoundary from "./components/ErrorBoundary";
 import ExpenseDialog from "./components/ExpenseDialog";
 import LockScreen from "./components/LockScreen";
 import OnboardingTour from "./components/OnboardingTour";
@@ -321,7 +322,7 @@ export default function App() {
             className="text-sm font-medium"
             style={{ color: "rgba(52,211,153,0.7)" }}
           >
-            Loadingu2026
+            Loading…
           </p>
         </div>
       </div>
@@ -397,76 +398,88 @@ export default function App() {
           className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 pb-16
             md:pb-20"
         >
-          <AnimatePresence mode="wait">
-            {activeTab === "dashboard" && (
-              <motion.div
-                key="dashboard"
-                variants={tabVariants}
-                initial="hidden"
-                animate="show"
-                exit="exit"
-              >
-                <DashboardTab
-                  onEditExpense={openEditExpense}
-                  onViewAll={() => setActiveTab("expenses")}
-                  month={month}
-                  setMonth={setMonth}
-                  theme={theme}
-                  themeId={themeId}
-                  setThemeId={setThemeId}
-                  onQuickAddBill={handleQuickAddBill}
-                />
-              </motion.div>
-            )}
-            {activeTab === "expenses" && (
-              <motion.div
-                key="expenses"
-                variants={tabVariants}
-                initial="hidden"
-                animate="show"
-                exit="exit"
-              >
-                <ExpensesTab
-                  onEditExpense={openEditExpense}
-                  month={month}
-                  setMonth={setMonth}
-                />
-              </motion.div>
-            )}
-            {activeTab === "reports" && (
-              <motion.div
-                key="reports"
-                variants={tabVariants}
-                initial="hidden"
-                animate="show"
-                exit="exit"
-              >
-                <ReportsTab month={month} setMonth={setMonth} />
-              </motion.div>
-            )}
-            {activeTab === "shopping" && (
-              <motion.div
-                key="shopping"
-                variants={tabVariants}
-                initial="hidden"
-                animate="show"
-                exit="exit"
-              >
-                <ShoppingListTab month={month} setMonth={setMonth} />
-              </motion.div>
-            )}
-            {activeTab === "settings" && (
-              <motion.div
-                key="settings"
-                variants={tabVariants}
-                initial="hidden"
-                animate="show"
-                exit="exit"
-              >
-                <SettingsTab />
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <ErrorBoundary>
+            <AnimatePresence mode="wait">
+              {activeTab === "dashboard" && (
+                <motion.div
+                  key="dashboard"
+                  variants={tabVariants}
+                  initial="hidden"
+                  animate="show"
+                  exit="exit"
+                >
+                  <ErrorBoundary tabName="Dashboard">
+                    <DashboardTab
+                      onEditExpense={openEditExpense}
+                      onViewAll={() => setActiveTab("expenses")}
+                      month={month}
+                      setMonth={setMonth}
+                      theme={theme}
+                      themeId={themeId}
+                      setThemeId={setThemeId}
+                      onQuickAddBill={handleQuickAddBill}
+                    />
+                  </ErrorBoundary>
+                </motion.div>
+              )}
+              {activeTab === "expenses" && (
+                <motion.div
+                  key="expenses"
+                  variants={tabVariants}
+                  initial="hidden"
+                  animate="show"
+                  exit="exit"
+                >
+                  <ErrorBoundary tabName="Expenses">
+                    <ExpensesTab
+                      onEditExpense={openEditExpense}
+                      month={month}
+                      setMonth={setMonth}
+                    />
+                  </ErrorBoundary>
+                </motion.div>
+              )}
+              {activeTab === "reports" && (
+                <motion.div
+                  key="reports"
+                  variants={tabVariants}
+                  initial="hidden"
+                  animate="show"
+                  exit="exit"
+                >
+                  <ErrorBoundary tabName="Reports">
+                    <ReportsTab month={month} setMonth={setMonth} />
+                  </ErrorBoundary>
+                </motion.div>
+              )}
+              {activeTab === "shopping" && (
+                <motion.div
+                  key="shopping"
+                  variants={tabVariants}
+                  initial="hidden"
+                  animate="show"
+                  exit="exit"
+                >
+                  <ErrorBoundary tabName="Shopping">
+                    <ShoppingListTab month={month} setMonth={setMonth} />
+                  </ErrorBoundary>
+                </motion.div>
+              )}
+              {activeTab === "settings" && (
+                <motion.div
+                  key="settings"
+                  variants={tabVariants}
+                  initial="hidden"
+                  animate="show"
+                  exit="exit"
+                >
+                  <ErrorBoundary tabName="Settings">
+                    <SettingsTab />
+                  </ErrorBoundary>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </ErrorBoundary>
         </main>
 
         {/* Bottom navigation — sticky to app card on md+, fixed to viewport on mobile */}

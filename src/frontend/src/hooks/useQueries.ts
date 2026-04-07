@@ -387,7 +387,15 @@ export function useExpenseMetaList() {
     queryFn: async () => {
       if (!actor) return [];
       try {
-        return await actor.getExpenseMetaList();
+        const result = await actor.getExpenseMetaList();
+        // Defensive: ensure we always return a valid array of [string, ExpenseMeta] tuples
+        if (!Array.isArray(result)) return [];
+        return result.filter(
+          (item) =>
+            Array.isArray(item) &&
+            item.length >= 2 &&
+            typeof item[0] === "string",
+        ) as [string, ExpenseMeta][];
       } catch {
         return [];
       }

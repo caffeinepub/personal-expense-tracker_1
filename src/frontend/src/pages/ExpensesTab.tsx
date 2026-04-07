@@ -165,11 +165,33 @@ export default function ExpensesTab({
   const { data: expenseMetaList = [] } = useExpenseMetaList();
   const metaByExpenseId = useMemo(() => {
     const map = new Map<string, { tags?: string[]; receiptUrl?: string }>();
-    for (const [id, meta] of expenseMetaList) {
-      map.set(id, {
-        tags: meta.tags ?? undefined,
-        receiptUrl: meta.receiptUrl ?? undefined,
-      });
+    const safeList = Array.isArray(expenseMetaList) ? expenseMetaList : [];
+    for (const item of safeList) {
+      try {
+        if (!Array.isArray(item) || item.length < 2) continue;
+        const [id, meta] = item;
+        if (typeof id !== "string" || !meta) continue;
+        // tags may come back as a comma-separated string from backend or as string[]
+        let tagsArr: string[] | undefined;
+        const rawTags = meta.tags as unknown;
+        if (Array.isArray(rawTags)) {
+          tagsArr = (rawTags as string[]).filter(
+            (t) => typeof t === "string" && t.length > 0,
+          );
+        } else if (typeof rawTags === "string" && rawTags.length > 0) {
+          tagsArr = rawTags
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean);
+        }
+        map.set(id, {
+          tags: tagsArr,
+          receiptUrl:
+            typeof meta.receiptUrl === "string" ? meta.receiptUrl : undefined,
+        });
+      } catch {
+        // skip malformed entries
+      }
     }
     return map;
   }, [expenseMetaList]);
@@ -1315,7 +1337,10 @@ export default function ExpensesTab({
                                   )}
                                   <div className="text-right">
                                     <span className="font-semibold text-sm block">
-                                      {formatCurrency(expense.amount, currency)}
+                                      {formatCurrency(
+                                        Number(expense.amount),
+                                        currency,
+                                      )}
                                     </span>
                                     {(() => {
                                       const match = expense.note?.match(
