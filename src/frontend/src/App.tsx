@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Toaster } from "@/components/ui/sonner";
+import { useInternetIdentity } from "@caffeineai/core-infrastructure";
 import { format, subMonths } from "date-fns";
 import {
   BarChart3,
@@ -21,14 +22,11 @@ import { AnimatePresence, motion } from "motion/react";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import type { Expense, MonthlyIncome } from "./backend.d";
 import AppHeader from "./components/AppHeader";
 import ExpenseDialog from "./components/ExpenseDialog";
 import LockScreen from "./components/LockScreen";
 import OnboardingTour from "./components/OnboardingTour";
-import { useActor } from "./hooks/useActor";
 import { useCardTheme } from "./hooks/useCardTheme";
-import { useInternetIdentity } from "./hooks/useInternetIdentity";
 import {
   useAppSettings,
   useCategories,
@@ -40,6 +38,7 @@ import {
   useUpdateCategory,
   useUpdateExpense,
 } from "./hooks/useQueries";
+import { useTypedActor } from "./hooks/useTypedActor";
 import { useLanguage } from "./i18n/LanguageContext";
 import DashboardTab from "./pages/DashboardTab";
 import ExpensesTab from "./pages/ExpensesTab";
@@ -47,6 +46,7 @@ import ReportsTab from "./pages/ReportsTab";
 import SettingsTab from "./pages/SettingsTab";
 import ShoppingListTab from "./pages/ShoppingListTab";
 import WelcomeScreen from "./pages/WelcomeScreen";
+import type { Expense, MonthlyIncome } from "./types";
 import { DEFAULT_CATEGORIES } from "./utils/categories";
 import { currentMonth } from "./utils/format";
 
@@ -100,7 +100,7 @@ export default function App() {
     setShowOnboarding(false);
   }
 
-  const { actor, isFetching: actorLoading } = useActor();
+  const { actor, isFetching: actorLoading } = useTypedActor();
   const { data: categories = [], isLoading: loadingCats } = useCategories();
   const { data: settings } = useAppSettings();
   const createCategory = useCreateCategory();

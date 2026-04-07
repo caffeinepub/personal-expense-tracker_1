@@ -7,13 +7,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Search, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { Expense } from "../backend.d";
 import {
   useAppSettings,
   useCategories,
   useExpenseMetaList,
   useExpenses,
 } from "../hooks/useQueries";
+import type { Expense } from "../types";
 import { getCategoryById } from "../utils/categories";
 import { formatCurrency, formatDate } from "../utils/format";
 
@@ -54,7 +54,7 @@ export default function GlobalSearchSheet({
   }, [query]);
 
   const metaByExpenseId = useMemo(() => {
-    const map = new Map<string, { tags?: string; receiptUrl?: string }>();
+    const map = new Map<string, { tags?: string[]; receiptUrl?: string }>();
     for (const [id, meta] of expenseMetaList) {
       map.set(id, {
         tags: meta.tags ?? undefined,
@@ -70,13 +70,16 @@ export default function GlobalSearchSheet({
     return allExpenses
       .filter((e: Expense) => {
         const catName = getCategoryById(categories, e.categoryId)?.name ?? "";
-        const tags = metaByExpenseId.get(e.id)?.tags ?? e.tags ?? "";
+        const tagArr = metaByExpenseId.get(e.id)?.tags ?? e.tags ?? [];
+        const tagsStr = (Array.isArray(tagArr) ? tagArr : [tagArr])
+          .join(" ")
+          .toLowerCase();
         return (
           e.note?.toLowerCase().includes(q) ||
           catName.toLowerCase().includes(q) ||
           String(e.amount).includes(q) ||
           e.paymentMethod?.toLowerCase().includes(q) ||
-          tags.toLowerCase().includes(q)
+          tagsStr.includes(q)
         );
       })
       .sort(
@@ -175,8 +178,9 @@ export default function GlobalSearchSheet({
               </p>
               {results.map((expense: Expense, idx: number) => {
                 const cat = getCategoryById(categories, expense.categoryId);
-                const tags =
-                  metaByExpenseId.get(expense.id)?.tags ?? expense.tags ?? "";
+                const tagArr =
+                  metaByExpenseId.get(expense.id)?.tags ?? expense.tags ?? [];
+                const tags = Array.isArray(tagArr) ? tagArr : [];
                 return (
                   <button
                     key={expense.id}
@@ -212,12 +216,10 @@ export default function GlobalSearchSheet({
                           {formatDate(expense.date)}
                         </span>
                       </div>
-                      {tags && (
+                      {tags.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-1">
                           {tags
-                            .split(",")
                             .slice(0, 3)
-                            .map((tag) => tag.trim())
                             .filter(Boolean)
                             .map((tag) => (
                               <span

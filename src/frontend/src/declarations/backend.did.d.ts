@@ -11,22 +11,37 @@ import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
 export interface AppSettings {
+  'dailyLimit' : [] | [number],
   'updatedAt' : bigint,
   'currency' : string,
-  'dailyLimit' : [] | [number],
   'weeklyLimit' : [] | [number],
+}
+export interface BackupRecord {
+  'data' : string,
+  'name' : string,
+  'createdAt' : bigint,
 }
 export interface Category {
   'id' : string,
   'name' : string,
   'color' : string,
-  'budget' : number,
   'pinned' : [] | [boolean],
+  'budget' : number,
 }
 export interface CategorySummary {
   'categoryId' : string,
   'total' : number,
   'categoryName' : string,
+}
+export interface DebtRecord {
+  'id' : string,
+  'status' : string,
+  'direction' : string,
+  'createdAt' : bigint,
+  'dueDate' : [] | [string],
+  'description' : string,
+  'personName' : string,
+  'amount' : number,
 }
 export interface Expense {
   'id' : string,
@@ -36,15 +51,18 @@ export interface Expense {
   'note' : string,
   'createdAt' : bigint,
   'amount' : number,
-  'recurring' : [] | [boolean],
-  'recurringFrequency' : [] | [string],
 }
 export interface ExpenseMeta {
-  'tags' : [] | [string],
   'receiptUrl' : [] | [string],
+  'tags' : [] | [string],
+}
+export interface IncomeSource {
+  'id' : string,
+  'monthlyBudget' : number,
+  'name' : string,
+  'color' : string,
 }
 export interface MonthlyIncome { 'month' : string, 'amount' : number }
-export interface UserProfile { 'name' : string }
 export interface MonthlySummary {
   'month' : string,
   'categoryBreakdown' : Array<CategorySummary>,
@@ -60,32 +78,12 @@ export interface ShoppingItem {
   'bought' : boolean,
   'category' : string,
 }
-export interface IncomeSource {
-  'id' : string,
-  'name' : string,
-  'color' : string,
-  'monthlyBudget' : number,
-}
-export interface DebtRecord {
-  'id' : string,
-  'description' : string,
-  'personName' : string,
-  'amount' : number,
-  'dueDate' : [] | [string],
-  'direction' : string,
-  'status' : string,
-  'createdAt' : bigint,
-}
-export interface BackupRecord {
-  'name' : string,
-  'data' : string,
-  'createdAt' : bigint,
-}
+export interface UserProfile { 'name' : string }
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
   { 'guest' : null };
 export interface _SERVICE {
-  '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
+  '_initializeAccessControl' : ActorMethod<[], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'clearBoughtShoppingItems' : ActorMethod<[], undefined>,
   'createCategory' : ActorMethod<[Category], undefined>,
@@ -98,9 +96,9 @@ export interface _SERVICE {
   'deleteShoppingItem' : ActorMethod<[string], undefined>,
   'exportExpenses' : ActorMethod<[], Array<Expense>>,
   'getAppSettings' : ActorMethod<[], [] | [AppSettings]>,
+  'getBackupsList' : ActorMethod<[], Array<BackupRecord>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
-  'getBackupsList' : ActorMethod<[], Array<BackupRecord>>,
   'getCategories' : ActorMethod<[], Array<Category>>,
   'getDebts' : ActorMethod<[], Array<DebtRecord>>,
   'getExpenseMetaList' : ActorMethod<[], Array<[string, ExpenseMeta]>>,
@@ -113,7 +111,7 @@ export interface _SERVICE {
   'getShoppingItems' : ActorMethod<[], Array<ShoppingItem>>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
-  'resetUserData' : ActorMethod<[], void>,
+  'resetUserData' : ActorMethod<[], undefined>,
   'saveBackup' : ActorMethod<[string, string], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'saveDebts' : ActorMethod<[Array<DebtRecord>], undefined>,

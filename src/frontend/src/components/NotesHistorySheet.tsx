@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { BookOpen, Copy, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import type { Expense } from "../backend.d";
+import type { Expense } from "../types";
 
 interface NotesHistorySheetProps {
   open: boolean;

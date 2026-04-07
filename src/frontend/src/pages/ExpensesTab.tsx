@@ -60,7 +60,7 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import type { Expense } from "../backend.d";
+import type { Expense } from "../types";
 
 import { useQueryClient } from "@tanstack/react-query";
 import GlobalSearchSheet from "../components/GlobalSearchSheet";
@@ -164,7 +164,7 @@ export default function ExpensesTab({
   const currency = settings?.currency ?? "USD";
   const { data: expenseMetaList = [] } = useExpenseMetaList();
   const metaByExpenseId = useMemo(() => {
-    const map = new Map<string, { tags?: string; receiptUrl?: string }>();
+    const map = new Map<string, { tags?: string[]; receiptUrl?: string }>();
     for (const [id, meta] of expenseMetaList) {
       map.set(id, {
         tags: meta.tags ?? undefined,
@@ -1273,14 +1273,13 @@ export default function ExpensesTab({
                                     </span>
                                   )}
                                   {/* Tags chips */}
-                                  {metaByExpenseId.get(expense.id)?.tags && (
+                                  {(metaByExpenseId.get(expense.id)?.tags ?? [])
+                                    .length > 0 && (
                                     <div className="flex flex-wrap gap-1 mt-0.5">
                                       {(
                                         metaByExpenseId.get(expense.id)?.tags ??
-                                        ""
+                                        []
                                       )
-                                        .split(",")
-                                        .map((tag) => tag.trim())
                                         .filter(Boolean)
                                         .map((tag) => (
                                           <Badge

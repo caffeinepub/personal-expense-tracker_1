@@ -1,0 +1,119 @@
+// Version: 1.0.0
+type AppSettingsInternal__128638833 = {currency : Text; updatedAt : Int};
+type BackupRecord__367907023 = {createdAt : Int; data : Text; name : Text};
+type CategoryInternal__681036671 =
+  {budget : Float; color : Text; createdAt : Int; id : Text; name : Text};
+type Data__791452850<K, V> =
+  {var count : Nat__490723111; kvs : [var ?(K, V)]};
+type DebtRecord__160370225 =
+  {
+    amount : Float;
+    createdAt : Int;
+    description : Text;
+    direction : Text;
+    dueDate : ?Text;
+    id : Text;
+    personName : Text;
+    status : Text
+  };
+type ExpenseMeta__231834047 = {receiptUrl : ?Text; tags : ?Text};
+type Expense__25862281 =
+  {
+    amount : Float;
+    categoryId : Text;
+    createdAt : Int;
+    date : Text;
+    id : Text;
+    note : Text;
+    paymentMethod : Text
+  };
+type IncomeSource__961602321 =
+  {color : Text; id : Text; monthlyBudget : Float; name : Text};
+type Internal__8484328<K, V> =
+  {children : [var ?Node__46230540<K, V>]; data : Data__791452850<K, V>};
+type Leaf__809889148<K, V> = {data : Data__791452850<K, V>};
+type Map__158565046<K, V> = Map__297112838<K, V>;
+type Map__297112838<K, V> =
+  {var root : Node__46230540<K, V>; var size : Nat__490723111};
+type Map__605269027<K, V> = Map__158565046<K, V>;
+type MonthlyIncome__754408572 = {amount : Float; month : Text};
+type Nat__490723111 = Nat__920180692;
+type Nat__920180692 = Nat;
+type Node__46230540<K, V> =
+  {#internal : Internal__8484328<K, V>; #leaf : Leaf__809889148<K, V>};
+type ShoppingItem__130214270 =
+  {
+    bought : Bool;
+    category : Text;
+    createdAt : Int;
+    date : ?Text;
+    estimatedPrice : ?Float;
+    id : Text;
+    name : Text
+  };
+type SpendingLimits__92965224 = {dailyLimit : ?Float; weeklyLimit : ?Float};
+type UserData__498200022 =
+  {
+    var categories : Map__605269027<Text, CategoryInternal__681036671>;
+    var expenses : Map__605269027<Text, Expense__25862281>;
+    var initialized : Bool;
+    var monthlyIncome : Map__605269027<Text, MonthlyIncome__754408572>;
+    var settings : ?AppSettingsInternal__128638833;
+    var shoppingItems : Map__605269027<Text, ShoppingItem__130214270>
+  };
+type UserProfile__491224006 = {name : Text};
+type UserRole__1054455867 = {#admin; #guest; #user};
+actor {
+  stable accessControlState :
+    {
+      var adminAssigned : Bool;
+      userRoles : Map__605269027<Principal, UserRole__1054455867>
+    };
+  stable categoryPinnedByUser :
+    {
+      var root : Node__46230540<Principal, Map__605269027<Text, Bool>>;
+      var size : Nat__490723111
+    };
+  stable expenseMetaByUser :
+    {
+      var root :
+        Node__46230540<Principal,
+                        Map__605269027<Text, ExpenseMeta__231834047>>;
+      var size : Nat__490723111
+    };
+  stable userBackups :
+    {
+      var root :
+        Node__46230540<Principal,
+                        Map__605269027<Text, BackupRecord__367907023>>;
+      var size : Nat__490723111
+    };
+  stable userData :
+    {
+      var root : Node__46230540<Principal, UserData__498200022>;
+      var size : Nat__490723111
+    };
+  stable userDebts :
+    {
+      var root :
+        Node__46230540<Principal, Map__605269027<Text, DebtRecord__160370225>>;
+      var size : Nat__490723111
+    };
+  stable userIncomeSources :
+    {
+      var root :
+        Node__46230540<Principal,
+                        Map__605269027<Text, IncomeSource__961602321>>;
+      var size : Nat__490723111
+    };
+  stable userProfiles :
+    {
+      var root : Node__46230540<Principal, UserProfile__491224006>;
+      var size : Nat__490723111
+    };
+  stable userSpendingLimits :
+    {
+      var root : Node__46230540<Principal, SpendingLimits__92965224>;
+      var size : Nat__490723111
+    }
+};

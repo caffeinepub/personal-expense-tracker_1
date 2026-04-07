@@ -28,13 +28,13 @@ import {
   X as XIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Category, Expense, MonthlyIncome } from "../backend.d";
 import {
   useExpenseMetaList,
   useIncomeSources,
   useSetExpenseMeta,
 } from "../hooks/useQueries";
 import { useLanguage } from "../i18n/LanguageContext";
+import type { Category, Expense, MonthlyIncome } from "../types";
 import { todayISO } from "../utils/format";
 import type { IncomeSource } from "../utils/incomeSources";
 
@@ -128,7 +128,7 @@ export default function ExpenseDialog({
   const setExpenseMetaMutation = useSetExpenseMeta();
 
   const metaByExpenseId = useMemo(() => {
-    const map = new Map<string, { tags?: string; receiptUrl?: string }>();
+    const map = new Map<string, { tags?: string[]; receiptUrl?: string }>();
     for (const [id, meta] of expenseMetaList) {
       map.set(id, {
         tags: meta.tags ?? undefined,
@@ -186,7 +186,7 @@ export default function ExpenseDialog({
         );
         // Load tags and receipt from separate metadata store
         const existingMeta = metaByExpenseId.get(expense.id);
-        setTags(existingMeta?.tags ?? "");
+        setTags(existingMeta?.tags ? existingMeta.tags.join(", ") : "");
         if (existingMeta?.receiptUrl) {
           setReceiptFile({ name: "receipt", dataUrl: existingMeta.receiptUrl });
         } else {
@@ -334,8 +334,14 @@ export default function ExpenseDialog({
       setExpenseMetaMutation.mutate({
         expenseId: id,
         meta: {
-          tags: tags.trim() || null,
-          receiptUrl: receiptFile?.dataUrl || null,
+          tags: tags.trim()
+            ? tags
+                .trim()
+                .split(",")
+                .map((t) => t.trim())
+                .filter(Boolean)
+            : undefined,
+          receiptUrl: receiptFile?.dataUrl || undefined,
         },
       });
     }

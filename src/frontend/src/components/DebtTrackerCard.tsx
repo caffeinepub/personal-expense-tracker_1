@@ -27,8 +27,8 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import type { DebtRecord } from "../backend.d";
 import { useAppSettings, useDebts, useSaveDebts } from "../hooks/useQueries";
+import type { DebtRecord } from "../types";
 import { formatCurrency } from "../utils/format";
 
 export default function DebtTrackerCard() {
@@ -78,7 +78,7 @@ export default function DebtTrackerCard() {
         personName: personName.trim(),
         description: description.trim(),
         amount: parsedAmount,
-        dueDate: dueDate || null,
+        dueDate: dueDate || undefined,
         direction,
         status: "pending",
         createdAt: BigInt(Date.now() * 1_000_000),
@@ -97,7 +97,7 @@ export default function DebtTrackerCard() {
 
   async function handleMarkPaid(id: string) {
     const updated = debts.map((d) =>
-      d.id === id ? { ...d, status: "paid" } : d,
+      d.id === id ? { ...d, status: "settled" as const } : d,
     );
     try {
       await saveDebts.mutateAsync(updated);
@@ -179,7 +179,7 @@ export default function DebtTrackerCard() {
                 <li
                   key={debt.id}
                   className={`rounded-xl px-3 py-2.5 border ${
-                    debt.status === "paid"
+                    debt.status === "settled"
                       ? "opacity-50 bg-muted/40 border-border/30"
                       : debt.direction === "owe"
                         ? "bg-red-50/60 dark:bg-red-950/20 border-red-100/80 dark:border-red-900/30"
@@ -203,7 +203,7 @@ export default function DebtTrackerCard() {
                         >
                           {debt.direction === "owe" ? "I Owe" : "Owes Me"}
                         </Badge>
-                        {debt.status === "paid" && (
+                        {debt.status === "settled" && (
                           <Badge
                             variant="outline"
                             className="text-[10px] px-1.5 py-0 h-4 border-muted-foreground/30 text-muted-foreground"

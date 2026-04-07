@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertTriangle, CheckCircle, Shield } from "lucide-react";
-import type { Expense } from "../backend.d";
 import { useAppSettings } from "../hooks/useQueries";
+import type { Expense } from "../types";
 import { formatCurrency } from "../utils/format";
 
 interface SpendingLimitCardProps {

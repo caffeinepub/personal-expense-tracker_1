@@ -43,7 +43,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { Expense } from "../backend.d";
+import type { Expense } from "../types";
 
 import BillReminders from "../components/BillReminders";
 import BudgetAlertsCard from "../components/BudgetAlertsCard";
@@ -1062,6 +1062,7 @@ export default function DashboardTab({
                                 <div
                                   data-ocid="dashboard.donut_chart.canvas_target"
                                   style={{ height: 220 }}
+                                  className="relative"
                                 >
                                   <ResponsiveContainer
                                     width="100%"
@@ -1098,6 +1099,30 @@ export default function DashboardTab({
                                       />
                                     </PieChart>
                                   </ResponsiveContainer>
+                                  {/* Center label overlay */}
+                                  <div
+                                    className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"
+                                    aria-hidden="true"
+                                  >
+                                    <span
+                                      className="text-[10px] font-semibold uppercase tracking-wider"
+                                      style={{
+                                        color: isDark
+                                          ? "rgba(241,245,249,0.65)"
+                                          : "rgba(51,65,85,0.65)",
+                                      }}
+                                    >
+                                      Total Spent
+                                    </span>
+                                    <span
+                                      className="text-sm font-bold leading-tight mt-0.5"
+                                      style={{
+                                        color: isDark ? "#f1f5f9" : "#1e2937",
+                                      }}
+                                    >
+                                      {formatCurrency(totalSpent, currency)}
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
                             )}
@@ -1221,7 +1246,10 @@ export default function DashboardTab({
                                     >
                                       <BarChart2 className="h-4 w-4" />
                                     </button>
-                                    <div style={{ height: 220 }}>
+                                    <div
+                                      style={{ height: 220 }}
+                                      className="relative"
+                                    >
                                       <ResponsiveContainer
                                         width="100%"
                                         height="100%"
@@ -1257,6 +1285,38 @@ export default function DashboardTab({
                                           />
                                         </PieChart>
                                       </ResponsiveContainer>
+                                      {/* Center label overlay */}
+                                      <div
+                                        className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"
+                                        aria-hidden="true"
+                                      >
+                                        <span
+                                          className="text-[10px] font-semibold uppercase tracking-wider"
+                                          style={{
+                                            color: isDark
+                                              ? "rgba(241,245,249,0.65)"
+                                              : "rgba(51,65,85,0.65)",
+                                          }}
+                                        >
+                                          Total Income
+                                        </span>
+                                        <span
+                                          className="text-sm font-bold leading-tight mt-0.5"
+                                          style={{
+                                            color: isDark
+                                              ? "#f1f5f9"
+                                              : "#1e2937",
+                                          }}
+                                        >
+                                          {formatCurrency(
+                                            chartDataIncome.reduce(
+                                              (s, d) => s + d.value,
+                                              0,
+                                            ),
+                                            currency,
+                                          )}
+                                        </span>
+                                      </div>
                                     </div>
                                   </div>
                                 )}

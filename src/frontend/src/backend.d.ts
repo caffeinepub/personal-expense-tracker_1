@@ -1,5 +1,60 @@
-export type ActorMethod<Args extends unknown[], Return> = (...args: Args) => Promise<Return>;
-
+import type { Principal } from "@icp-sdk/core/principal";
+export interface Some<T> {
+    __kind__: "Some";
+    value: T;
+}
+export interface None {
+    __kind__: "None";
+}
+export type Option<T> = Some<T> | None;
+export interface Category {
+    id: string;
+    name: string;
+    color: string;
+    pinned?: boolean;
+    budget: number;
+}
+export interface IncomeSource {
+    id: string;
+    monthlyBudget: number;
+    name: string;
+    color: string;
+}
+export interface BackupRecord {
+    data: string;
+    name: string;
+    createdAt: bigint;
+}
+export interface ShoppingItem {
+    id: string;
+    estimatedPrice?: number;
+    date?: string;
+    name: string;
+    createdAt: bigint;
+    bought: boolean;
+    category: string;
+}
+export interface AppSettings {
+    dailyLimit?: number;
+    updatedAt: bigint;
+    currency: string;
+    weeklyLimit?: number;
+}
+export interface ExpenseMeta {
+    receiptUrl?: string;
+    tags?: string;
+}
+export interface CategorySummary {
+    categoryId: string;
+    total: number;
+    categoryName: string;
+}
+export interface MonthlySummary {
+    month: string;
+    categoryBreakdown: Array<CategorySummary>;
+    totalIncome: number;
+    totalExpenses: number;
+}
 export interface Expense {
     id: string;
     categoryId: string;
@@ -8,14 +63,6 @@ export interface Expense {
     note: string;
     createdAt: bigint;
     amount: number;
-    tags?: string;
-    receiptUrl?: string;
-    recurring?: boolean | null;
-    recurringFrequency?: string | null;
-}
-export interface ExpenseMeta {
-    tags: string | null;
-    receiptUrl: string | null;
 }
 export interface MonthlyIncome {
     month: string;
@@ -24,99 +71,59 @@ export interface MonthlyIncome {
 export interface UserProfile {
     name: string;
 }
-export interface Category {
-    id: string;
-    name: string;
-    color: string;
-    budget: number;
-    pinned?: boolean | null;
-}
-export interface IncomeSource {
-    id: string;
-    name: string;
-    color: string;
-    monthlyBudget: number;
-}
-export interface AppSettings {
-    currency: string;
-    updatedAt: bigint;
-    dailyLimit?: number | null;
-    weeklyLimit?: number | null;
-}
-export interface ShoppingItem {
-    id: string;
-    name: string;
-    category: string;
-    estimatedPrice?: number;
-    bought: boolean;
-    createdAt: bigint;
-    date?: string;
-}
-export interface CategorySummary {
-    categoryId: string;
-    categoryName: string;
-    total: number;
-}
-export interface MonthlySummary {
-    month: string;
-    totalExpenses: number;
-    totalIncome: number;
-    categoryBreakdown: CategorySummary[];
-}
 export interface DebtRecord {
     id: string;
+    status: string;
+    direction: string;
+    createdAt: bigint;
+    dueDate?: string;
     description: string;
     personName: string;
     amount: number;
-    dueDate?: string | null;
-    direction: string; // "owe" | "owed"
-    status: string;    // "pending" | "paid"
-    createdAt: bigint;
 }
-export interface BackupRecord {
-    name: string;
-    data: string;
-    createdAt: bigint;
+export enum UserRole {
+    admin = "admin",
+    user = "user",
+    guest = "guest"
 }
-export type UserRole = { admin: null } | { user: null } | { guest: null };
-export interface _SERVICE {
-    _initializeAccessControlWithSecret: ActorMethod<[string], void>;
-    assignCallerUserRole: ActorMethod<[Principal, UserRole], void>;
-    clearBoughtShoppingItems: ActorMethod<[], void>;
-    createCategory: ActorMethod<[Category], void>;
-    createExpense: ActorMethod<[Expense], void>;
-    createShoppingItem: ActorMethod<[ShoppingItem], void>;
-    deleteCategory: ActorMethod<[string], void>;
-    deleteExpense: ActorMethod<[string], void>;
-    deleteExpenseMeta: ActorMethod<[string], void>;
-    deleteShoppingItem: ActorMethod<[string], void>;
-    exportExpenses: ActorMethod<[], Expense[]>;
-    getAppSettings: ActorMethod<[], AppSettings | null>;
-    getCallerUserProfile: ActorMethod<[], UserProfile | null>;
-    getCallerUserRole: ActorMethod<[], UserRole>;
-    getCategories: ActorMethod<[], Category[]>;
-    getDebts: ActorMethod<[], DebtRecord[]>;
-    getExpenseMetaList: ActorMethod<[], [string, ExpenseMeta][]>;
-    getExpenses: ActorMethod<[], Expense[]>;
-    getExpensesByCategory: ActorMethod<[string], Expense[]>;
-    getExpensesByMonth: ActorMethod<[string], Expense[]>;
-    getIncomeSourcesList: ActorMethod<[], IncomeSource[]>;
-    getMonthlyIncome: ActorMethod<[string], MonthlyIncome | null>;
-    getMonthlySummary: ActorMethod<[string], MonthlySummary>;
-    getShoppingItems: ActorMethod<[], ShoppingItem[]>;
-    getUserProfile: ActorMethod<[Principal], UserProfile | null>;
-    isCallerAdmin: ActorMethod<[], boolean>;
-    resetUserData: ActorMethod<[], void>;
-    saveCallerUserProfile: ActorMethod<[UserProfile], void>;
-    saveDebts: ActorMethod<[DebtRecord[]], void>;
-    saveIncomeSources: ActorMethod<[IncomeSource[]], void>;
-    setAppSettings: ActorMethod<[AppSettings], void>;
-    setExpenseMeta: ActorMethod<[string, ExpenseMeta], void>;
-    setMonthlyIncome: ActorMethod<[MonthlyIncome], void>;
-    toggleShoppingItemBought: ActorMethod<[string, boolean], void>;
-    updateCategory: ActorMethod<[Category], void>;
-    updateExpense: ActorMethod<[Expense], void>;
-    updateShoppingItem: ActorMethod<[ShoppingItem], void>;
+export interface backendInterface {
+    assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
+    clearBoughtShoppingItems(): Promise<void>;
+    createCategory(category: Category): Promise<void>;
+    createExpense(expense: Expense): Promise<void>;
+    createShoppingItem(item: ShoppingItem): Promise<void>;
+    deleteBackup(name: string): Promise<void>;
+    deleteCategory(categoryId: string): Promise<void>;
+    deleteExpense(expenseId: string): Promise<void>;
+    deleteExpenseMeta(expenseId: string): Promise<void>;
+    deleteShoppingItem(itemId: string): Promise<void>;
+    exportExpenses(): Promise<Array<Expense>>;
+    getAppSettings(): Promise<AppSettings | null>;
+    getBackupsList(): Promise<Array<BackupRecord>>;
+    getCallerUserProfile(): Promise<UserProfile | null>;
+    getCallerUserRole(): Promise<UserRole>;
+    getCategories(): Promise<Array<Category>>;
+    getDebts(): Promise<Array<DebtRecord>>;
+    getExpenseMetaList(): Promise<Array<[string, ExpenseMeta]>>;
+    getExpenses(): Promise<Array<Expense>>;
+    getExpensesByCategory(categoryId: string): Promise<Array<Expense>>;
+    getExpensesByMonth(month: string): Promise<Array<Expense>>;
+    getIncomeSourcesList(): Promise<Array<IncomeSource>>;
+    getMonthlyIncome(month: string): Promise<MonthlyIncome | null>;
+    getMonthlySummary(month: string): Promise<MonthlySummary>;
+    getShoppingItems(): Promise<Array<ShoppingItem>>;
+    getUserProfile(user: Principal): Promise<UserProfile | null>;
+    isCallerAdmin(): Promise<boolean>;
+    resetUserData(): Promise<void>;
+    saveBackup(name: string, data: string): Promise<void>;
+    saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    saveDebts(debts: Array<DebtRecord>): Promise<void>;
+    saveIncomeSources(sources: Array<IncomeSource>): Promise<void>;
+    setAppSettings(settings: AppSettings): Promise<void>;
+    setExpenseMeta(expenseId: string, meta: ExpenseMeta): Promise<void>;
+    setMonthlyIncome(income: MonthlyIncome): Promise<void>;
+    toggleShoppingItemBought(itemId: string, bought: boolean): Promise<void>;
+    updateCategory(category: Category): Promise<void>;
+    updateExpense(expense: Expense): Promise<void>;
+    updateShoppingItem(item: ShoppingItem): Promise<void>;
 }
-
-type Principal = { toString(): string };

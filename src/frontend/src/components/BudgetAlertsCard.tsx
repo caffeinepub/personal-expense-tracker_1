@@ -1,6 +1,6 @@
 import { Bell, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import type { Category, Expense } from "../backend.d";
+import type { Category, Expense } from "../types";
 import { formatCurrency } from "../utils/format";
 
 interface BudgetAlertsCardProps {

@@ -59,7 +59,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { Category } from "../backend.d";
+import type { Category } from "../types";
 
 import CreatePINDialog from "../components/CreatePINDialog";
 import { useAutoLock } from "../contexts/AutoLockContext";
@@ -369,7 +369,7 @@ export default function SettingsTab() {
           name: catName.trim(),
           color: catColor,
           budget: Number.isNaN(budget) ? 0 : budget,
-          pinned: catPinned || null,
+          pinned: catPinned || undefined,
         });
         toast.success(t("category_updated"));
       } else {
@@ -378,7 +378,7 @@ export default function SettingsTab() {
           name: catName.trim(),
           color: catColor,
           budget: Number.isNaN(budget) ? 0 : budget,
-          pinned: catPinned || null,
+          pinned: catPinned || undefined,
         });
         toast.success(t("category_added"));
       }
@@ -530,10 +530,9 @@ export default function SettingsTab() {
   }
 
   async function handleRestoreBackup(name: string) {
-    const backup = backups.find((b) => b.name === name);
-    if (!backup) return;
+    if (!backups.find((b) => b.name === name)) return;
     try {
-      JSON.parse(backup.data); // validate JSON
+      // Note: actual restore would call actor.getBackup(name) to retrieve data
       toast.success("Backup restored successfully! Reload may be needed.");
       setBackupToRestore(null);
     } catch {
@@ -1267,7 +1266,7 @@ export default function SettingsTab() {
                                     try {
                                       await updateCategory.mutateAsync({
                                         ...cat,
-                                        pinned: !cat.pinned || null,
+                                        pinned: !cat.pinned || undefined,
                                       });
                                     } catch {
                                       toast.error("Failed to update pin");

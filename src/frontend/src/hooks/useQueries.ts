@@ -1,20 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { ExpenseMeta } from "../backend";
 import type {
   AppSettings,
   Category,
   DebtRecord,
   Expense,
+  ExpenseMeta,
   IncomeSource,
   MonthlyIncome,
+  MonthlySummary,
   ShoppingItem,
-} from "../backend.d";
-import { useActor } from "./useActor";
+} from "../types";
+import { useTypedActor } from "./useTypedActor";
 
 // ─── Categories ─────────────────────────────────────────────────────────────
 
 export function useCategories() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useTypedActor();
   return useQuery<Category[]>({
     queryKey: ["categories"],
     queryFn: async () => {
@@ -27,7 +28,7 @@ export function useCategories() {
 }
 
 export function useCreateCategory() {
-  const { actor } = useActor();
+  const { actor } = useTypedActor();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (category: Category) => {
@@ -39,7 +40,7 @@ export function useCreateCategory() {
 }
 
 export function useUpdateCategory() {
-  const { actor } = useActor();
+  const { actor } = useTypedActor();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (category: Category) => {
@@ -51,7 +52,7 @@ export function useUpdateCategory() {
 }
 
 export function useDeleteCategory() {
-  const { actor } = useActor();
+  const { actor } = useTypedActor();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (categoryId: string) => {
@@ -68,7 +69,7 @@ export function useDeleteCategory() {
 // ─── Expenses ────────────────────────────────────────────────────────────────
 
 export function useExpenses() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useTypedActor();
   return useQuery<Expense[]>({
     queryKey: ["expenses"],
     queryFn: async (): Promise<Expense[]> => {
@@ -81,7 +82,7 @@ export function useExpenses() {
 }
 
 export function useExpensesByMonth(month: string) {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useTypedActor();
   return useQuery<Expense[]>({
     queryKey: ["expenses", "month", month],
     queryFn: async () => {
@@ -94,7 +95,7 @@ export function useExpensesByMonth(month: string) {
 }
 
 export function useCreateExpense() {
-  const { actor } = useActor();
+  const { actor } = useTypedActor();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (expense: Expense) => {
@@ -109,7 +110,7 @@ export function useCreateExpense() {
 }
 
 export function useUpdateExpense() {
-  const { actor } = useActor();
+  const { actor } = useTypedActor();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (expense: Expense) => {
@@ -124,7 +125,7 @@ export function useUpdateExpense() {
 }
 
 export function useDeleteExpense() {
-  const { actor } = useActor();
+  const { actor } = useTypedActor();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (expenseId: string) => {
@@ -145,11 +146,11 @@ export function useDeleteExpense() {
 }
 
 export function useExportExpenses() {
-  const { actor } = useActor();
-  return useMutation({
-    mutationFn: () => {
+  const { actor } = useTypedActor();
+  return useMutation<Expense[]>({
+    mutationFn: async () => {
       if (!actor) throw new Error("No actor");
-      return actor.exportExpenses();
+      return actor.exportExpenses() as Promise<Expense[]>;
     },
   });
 }
@@ -157,7 +158,7 @@ export function useExportExpenses() {
 // ─── Monthly Income ──────────────────────────────────────────────────────────
 
 export function useMonthlyIncome(month: string) {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useTypedActor();
   return useQuery<MonthlyIncome | null>({
     queryKey: ["income", month],
     queryFn: async () => {
@@ -170,7 +171,7 @@ export function useMonthlyIncome(month: string) {
 }
 
 export function useSetMonthlyIncome() {
-  const { actor } = useActor();
+  const { actor } = useTypedActor();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (income: MonthlyIncome) => {
@@ -187,8 +188,8 @@ export function useSetMonthlyIncome() {
 // ─── Monthly Summary ─────────────────────────────────────────────────────────
 
 export function useMonthlySummary(month: string) {
-  const { actor, isFetching } = useActor();
-  return useQuery({
+  const { actor, isFetching } = useTypedActor();
+  return useQuery<MonthlySummary | null>({
     queryKey: ["summary", month],
     queryFn: async () => {
       if (!actor) return null;
@@ -202,7 +203,7 @@ export function useMonthlySummary(month: string) {
 // ─── App Settings ────────────────────────────────────────────────────────────
 
 export function useAppSettings() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useTypedActor();
   return useQuery<AppSettings | null>({
     queryKey: ["settings"],
     queryFn: async () => {
@@ -215,7 +216,7 @@ export function useAppSettings() {
 }
 
 export function useSetAppSettings() {
-  const { actor } = useActor();
+  const { actor } = useTypedActor();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (settings: AppSettings) => {
@@ -229,7 +230,7 @@ export function useSetAppSettings() {
 // ─── Reset Data ──────────────────────────────────────────────────────────────
 
 export function useResetUserData() {
-  const { actor } = useActor();
+  const { actor } = useTypedActor();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: () => {
@@ -245,7 +246,7 @@ export function useResetUserData() {
 // ─── Shopping Items ──────────────────────────────────────────────────────────
 
 export function useShoppingItems() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useTypedActor();
   return useQuery<ShoppingItem[]>({
     queryKey: ["shopping"],
     queryFn: async () => {
@@ -258,7 +259,7 @@ export function useShoppingItems() {
 }
 
 export function useCreateShoppingItem() {
-  const { actor } = useActor();
+  const { actor } = useTypedActor();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (item: ShoppingItem) => {
@@ -270,7 +271,7 @@ export function useCreateShoppingItem() {
 }
 
 export function useUpdateShoppingItem() {
-  const { actor } = useActor();
+  const { actor } = useTypedActor();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (item: ShoppingItem) => {
@@ -282,7 +283,7 @@ export function useUpdateShoppingItem() {
 }
 
 export function useDeleteShoppingItem() {
-  const { actor } = useActor();
+  const { actor } = useTypedActor();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (itemId: string) => {
@@ -294,7 +295,7 @@ export function useDeleteShoppingItem() {
 }
 
 export function useClearBoughtShoppingItems() {
-  const { actor } = useActor();
+  const { actor } = useTypedActor();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: () => {
@@ -306,7 +307,7 @@ export function useClearBoughtShoppingItems() {
 }
 
 export function useToggleShoppingItemBought() {
-  const { actor } = useActor();
+  const { actor } = useTypedActor();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, bought }: { id: string; bought: boolean }) => {
@@ -320,7 +321,7 @@ export function useToggleShoppingItemBought() {
 // ─── Income Sources ──────────────────────────────────────────────────────────
 
 export function useIncomeSources() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useTypedActor();
   return useQuery<IncomeSource[]>({
     queryKey: ["incomeSources"],
     queryFn: async () => {
@@ -337,7 +338,7 @@ export function useIncomeSources() {
 }
 
 export function useSaveIncomeSources() {
-  const { actor } = useActor();
+  const { actor } = useTypedActor();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (sources: IncomeSource[]) => {
@@ -353,7 +354,7 @@ export function useSaveIncomeSources() {
 // ─── User Profile ─────────────────────────────────────────────────────────────
 
 export function useUserProfile() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useTypedActor();
   return useQuery<{ name: string } | null>({
     queryKey: ["userProfile"],
     queryFn: async () => {
@@ -366,7 +367,7 @@ export function useUserProfile() {
 }
 
 export function useSaveUserProfile() {
-  const { actor } = useActor();
+  const { actor } = useTypedActor();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (profile: { name: string }) => {
@@ -380,7 +381,7 @@ export function useSaveUserProfile() {
 // ─── Expense Metadata (tags + receiptUrl stored separately) ─────────────────
 
 export function useExpenseMetaList() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useTypedActor();
   return useQuery<[string, ExpenseMeta][]>({
     queryKey: ["expenseMeta"],
     queryFn: async () => {
@@ -397,7 +398,7 @@ export function useExpenseMetaList() {
 }
 
 export function useSetExpenseMeta() {
-  const { actor } = useActor();
+  const { actor } = useTypedActor();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({
@@ -412,7 +413,7 @@ export function useSetExpenseMeta() {
 }
 
 export function useDeleteExpenseMeta() {
-  const { actor } = useActor();
+  const { actor } = useTypedActor();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (expenseId: string) => {
@@ -426,7 +427,7 @@ export function useDeleteExpenseMeta() {
 // ─── Debts / Loans ───────────────────────────────────────────────────────────
 
 export function useDebts() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useTypedActor();
   return useQuery<DebtRecord[]>({
     queryKey: ["debts"],
     queryFn: async () => {
@@ -443,7 +444,7 @@ export function useDebts() {
 }
 
 export function useSaveDebts() {
-  const { actor } = useActor();
+  const { actor } = useTypedActor();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (debts: DebtRecord[]) => {
@@ -464,7 +465,7 @@ export function useSaveDebts() {
 // ─── Cloud Backups ───────────────────────────────────────────────────────────
 
 export function useBackupsList() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useTypedActor();
   return useQuery({
     queryKey: ["backupsList"],
     queryFn: async () => {
@@ -481,7 +482,7 @@ export function useBackupsList() {
 }
 
 export function useSaveBackup() {
-  const { actor } = useActor();
+  const { actor } = useTypedActor();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ name, data }: { name: string; data: string }) => {
@@ -493,7 +494,7 @@ export function useSaveBackup() {
 }
 
 export function useDeleteBackup() {
-  const { actor } = useActor();
+  const { actor } = useTypedActor();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (name: string) => {

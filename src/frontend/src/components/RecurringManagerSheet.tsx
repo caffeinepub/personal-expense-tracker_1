@@ -17,13 +17,13 @@ import {
 import { Repeat, Trash2, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import type { Expense } from "../backend.d";
 import {
   useAppSettings,
   useCategories,
   useDeleteExpense,
   useExpenses,
 } from "../hooks/useQueries";
+import type { Expense } from "../types";
 import { getCategoryById } from "../utils/categories";
 import { formatCurrency } from "../utils/format";
 

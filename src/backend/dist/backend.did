@@ -1,0 +1,134 @@
+type UserRole = 
+ variant {
+   admin;
+   guest;
+   user;
+ };
+type UserProfile = record {name: text;};
+type ShoppingItem = 
+ record {
+   bought: bool;
+   category: text;
+   createdAt: int;
+   date: opt text;
+   estimatedPrice: opt float64;
+   id: text;
+   name: text;
+ };
+type MonthlySummary = 
+ record {
+   categoryBreakdown: vec CategorySummary;
+   month: text;
+   totalExpenses: float64;
+   totalIncome: float64;
+ };
+type MonthlyIncome = 
+ record {
+   amount: float64;
+   month: text;
+ };
+type IncomeSource = 
+ record {
+   color: text;
+   id: text;
+   monthlyBudget: float64;
+   name: text;
+ };
+type ExpenseMeta = 
+ record {
+   receiptUrl: opt text;
+   tags: opt text;
+ };
+type Expense = 
+ record {
+   amount: float64;
+   categoryId: text;
+   createdAt: int;
+   date: text;
+   id: text;
+   note: text;
+   paymentMethod: text;
+ };
+type DebtRecord = 
+ record {
+   amount: float64;
+   createdAt: int;
+   description: text;
+   direction: text;
+   dueDate: opt text;
+   id: text;
+   personName: text;
+   status: text;
+ };
+type CategorySummary = 
+ record {
+   categoryId: text;
+   categoryName: text;
+   total: float64;
+ };
+type Category = 
+ record {
+   budget: float64;
+   color: text;
+   id: text;
+   name: text;
+   pinned: opt bool;
+ };
+type BackupRecord = 
+ record {
+   createdAt: int;
+   data: text;
+   name: text;
+ };
+type AppSettings = 
+ record {
+   currency: text;
+   dailyLimit: opt float64;
+   updatedAt: int;
+   weeklyLimit: opt float64;
+ };
+service : {
+  _initializeAccessControl: () -> ();
+  assignCallerUserRole: (user: principal, role: UserRole) -> ();
+  clearBoughtShoppingItems: () -> ();
+  createCategory: (category: Category) -> ();
+  createExpense: (expense: Expense) -> ();
+  createShoppingItem: (item: ShoppingItem) -> ();
+  deleteBackup: (name: text) -> ();
+  deleteCategory: (categoryId: text) -> ();
+  deleteExpense: (expenseId: text) -> ();
+  deleteExpenseMeta: (expenseId: text) -> ();
+  deleteShoppingItem: (itemId: text) -> ();
+  exportExpenses: () -> (vec Expense) query;
+  getAppSettings: () -> (opt AppSettings) query;
+  getBackupsList: () -> (vec BackupRecord) query;
+  getCallerUserProfile: () -> (opt UserProfile) query;
+  getCallerUserRole: () -> (UserRole) query;
+  getCategories: () -> (vec Category) query;
+  getDebts: () -> (vec DebtRecord) query;
+  getExpenseMetaList: () -> (vec record {
+                                   text;
+                                   ExpenseMeta;
+                                 }) query;
+  getExpenses: () -> (vec Expense) query;
+  getExpensesByCategory: (categoryId: text) -> (vec Expense) query;
+  getExpensesByMonth: (month: text) -> (vec Expense) query;
+  getIncomeSourcesList: () -> (vec IncomeSource) query;
+  getMonthlyIncome: (month: text) -> (opt MonthlyIncome) query;
+  getMonthlySummary: (month: text) -> (MonthlySummary) query;
+  getShoppingItems: () -> (vec ShoppingItem) query;
+  getUserProfile: (user: principal) -> (opt UserProfile) query;
+  isCallerAdmin: () -> (bool) query;
+  resetUserData: () -> ();
+  saveBackup: (name: text, data: text) -> ();
+  saveCallerUserProfile: (profile: UserProfile) -> ();
+  saveDebts: (debts: vec DebtRecord) -> ();
+  saveIncomeSources: (sources: vec IncomeSource) -> ();
+  setAppSettings: (settings: AppSettings) -> ();
+  setExpenseMeta: (expenseId: text, meta: ExpenseMeta) -> ();
+  setMonthlyIncome: (income: MonthlyIncome) -> ();
+  toggleShoppingItemBought: (itemId: text, bought: bool) -> ();
+  updateCategory: (category: Category) -> ();
+  updateExpense: (expense: Expense) -> ();
+  updateShoppingItem: (item: ShoppingItem) -> ();
+}
