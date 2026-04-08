@@ -43,11 +43,12 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { Expense } from "../types";
+import type { Expense } from "../backend.d";
 
 import BillReminders from "../components/BillReminders";
 import BudgetAlertsCard from "../components/BudgetAlertsCard";
 import DebtTrackerCard from "../components/DebtTrackerCard";
+import NetWorthCard from "../components/NetWorthCard";
 import SpendingLimitCard from "../components/SpendingLimitCard";
 import ThemePickerDialog from "../components/ThemePickerDialog";
 import type { CardThemeId } from "../hooks/useCardTheme";
@@ -853,6 +854,11 @@ export default function DashboardTab({
               </div>
             </motion.div>
 
+            {/* Net Worth Tracker — collapsible, default closed */}
+            <motion.div variants={itemVariants} className="px-4">
+              <NetWorthCard currency={currency} />
+            </motion.div>
+
             {/* Budget Alerts — collapsible, default open */}
             {categories.some((c) => c.budget > 0) && (
               <motion.div variants={itemVariants} className="px-4">
@@ -1043,85 +1049,112 @@ export default function DashboardTab({
                         {/* Expense tab charts */}
                         {chartTab === "expense" && (
                           <>
-                            {/* Donut Chart */}
+                            {/* Donut Chart — always horizontal split */}
                             {chartView === "donut" && (
-                              <div className="relative">
-                                <button
-                                  type="button"
-                                  data-ocid="dashboard.chart_toggle.toggle"
-                                  onClick={() =>
-                                    setChartView((v) =>
-                                      v === "donut" ? "bar" : "donut",
-                                    )
-                                  }
-                                  className="absolute top-2 right-2 z-10 h-8 w-8 flex items-center justify-center rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
-                                  aria-label={t("switch_to_bar_chart")}
-                                >
-                                  <BarChart2 className="h-4 w-4" />
-                                </button>
-                                <div
-                                  data-ocid="dashboard.donut_chart.canvas_target"
-                                  style={{ height: 220 }}
-                                  className="relative"
-                                >
-                                  <ResponsiveContainer
-                                    width="100%"
-                                    height="100%"
-                                  >
-                                    <PieChart>
-                                      <Pie
-                                        data={chartData}
-                                        cx="50%"
-                                        cy="50%"
-                                        innerRadius={58}
-                                        outerRadius={90}
-                                        paddingAngle={2}
-                                        dataKey="value"
-                                      >
-                                        {chartData.map((entry) => (
-                                          <Cell
-                                            key={`cell-${entry.name}`}
-                                            fill={entry.color}
-                                          />
-                                        ))}
-                                      </Pie>
-                                      <Tooltip
-                                        formatter={(value: number) =>
-                                          formatCurrency(value, currency)
-                                        }
-                                        contentStyle={{
-                                          borderRadius: 8,
-                                          fontSize: 12,
-                                          border: "1px solid var(--border)",
-                                          background: "var(--card)",
-                                          color: "var(--foreground)",
-                                        }}
-                                      />
-                                    </PieChart>
-                                  </ResponsiveContainer>
-                                  {/* Center label overlay */}
+                              <div data-ocid="dashboard.donut_chart.canvas_target">
+                                <div className="flex flex-row gap-3 items-center">
+                                  {/* Left: large donut, vertically centered */}
                                   <div
-                                    className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"
-                                    aria-hidden="true"
+                                    className="relative flex-shrink-0"
+                                    style={{ width: 180, height: 180 }}
                                   >
-                                    <span
-                                      className="text-[10px] font-semibold uppercase tracking-wider"
-                                      style={{
-                                        color: isDark
-                                          ? "rgba(241,245,249,0.65)"
-                                          : "rgba(51,65,85,0.65)",
-                                      }}
+                                    {/* Toggle to bar */}
+                                    <button
+                                      type="button"
+                                      data-ocid="dashboard.chart_toggle.toggle"
+                                      onClick={() => setChartView("bar")}
+                                      className="absolute top-0 right-0 z-10 h-6 w-6 flex items-center justify-center rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
+                                      aria-label={t("switch_to_bar_chart")}
                                     >
-                                      Total Spent
-                                    </span>
-                                    <span
-                                      className="text-sm font-bold leading-tight mt-0.5"
-                                      style={{
-                                        color: isDark ? "#f1f5f9" : "#1e2937",
-                                      }}
+                                      <BarChart2 className="h-3 w-3" />
+                                    </button>
+                                    <ResponsiveContainer
+                                      width="100%"
+                                      height="100%"
                                     >
-                                      {formatCurrency(totalSpent, currency)}
-                                    </span>
+                                      <PieChart>
+                                        <Pie
+                                          data={chartData}
+                                          cx="50%"
+                                          cy="50%"
+                                          innerRadius={56}
+                                          outerRadius={84}
+                                          paddingAngle={2}
+                                          dataKey="value"
+                                        >
+                                          {chartData.map((entry) => (
+                                            <Cell
+                                              key={`cell-${entry.name}`}
+                                              fill={entry.color}
+                                            />
+                                          ))}
+                                        </Pie>
+                                        <Tooltip
+                                          formatter={(value: number) =>
+                                            formatCurrency(value, currency)
+                                          }
+                                          contentStyle={{
+                                            borderRadius: 8,
+                                            fontSize: 12,
+                                            border: "1px solid var(--border)",
+                                            background: "var(--card)",
+                                            color: "var(--foreground)",
+                                          }}
+                                        />
+                                      </PieChart>
+                                    </ResponsiveContainer>
+                                    {/* Center label */}
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                      <span
+                                        className="text-[9px] font-semibold uppercase tracking-wider"
+                                        style={{
+                                          color: isDark
+                                            ? "rgba(255,255,255,0.5)"
+                                            : "rgba(0,0,0,0.4)",
+                                        }}
+                                      >
+                                        Spent Total
+                                      </span>
+                                      <span
+                                        className="text-sm font-bold leading-tight font-display"
+                                        style={{
+                                          color: isDark ? "#f1f5f9" : "#0f172a",
+                                        }}
+                                      >
+                                        {formatCurrency(totalSpent, currency)}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {/* Right: clear legend */}
+                                  <div className="flex-1 min-w-0 space-y-1.5 overflow-y-auto max-h-[180px] pr-1">
+                                    {chartData.map((entry) => {
+                                      const entryPct =
+                                        totalSpent > 0
+                                          ? Math.round(
+                                              (entry.value / totalSpent) * 100,
+                                            )
+                                          : 0;
+                                      return (
+                                        <div
+                                          key={entry.name}
+                                          className="flex items-center gap-2 min-w-0"
+                                        >
+                                          <span
+                                            className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                            style={{
+                                              backgroundColor: entry.color,
+                                            }}
+                                          />
+                                          <span className="flex-1 text-xs font-medium text-foreground truncate">
+                                            {entry.name}
+                                          </span>
+                                          <span className="text-[10px] font-semibold text-muted-foreground flex-shrink-0">
+                                            {entryPct}%
+                                          </span>
+                                        </div>
+                                      );
+                                    })}
                                   </div>
                                 </div>
                               </div>
@@ -1232,90 +1265,135 @@ export default function DashboardTab({
                               </div>
                             ) : (
                               <>
-                                {/* Donut */}
+                                {/* Donut — always horizontal */}
                                 {chartViewIncome === "donut" && (
-                                  <div className="relative">
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setChartViewIncome("vertical");
-                                      }}
-                                      className="absolute top-2 right-2 z-20 h-8 w-8 flex items-center justify-center rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
-                                      aria-label="Switch to vertical bar chart"
-                                    >
-                                      <BarChart2 className="h-4 w-4" />
-                                    </button>
-                                    <div
-                                      style={{ height: 220 }}
-                                      className="relative"
-                                    >
-                                      <ResponsiveContainer
-                                        width="100%"
-                                        height="100%"
-                                      >
-                                        <PieChart>
-                                          <Pie
-                                            data={chartDataIncome}
-                                            cx="50%"
-                                            cy="50%"
-                                            innerRadius={58}
-                                            outerRadius={90}
-                                            paddingAngle={2}
-                                            dataKey="value"
-                                          >
-                                            {chartDataIncome.map((entry) => (
-                                              <Cell
-                                                key={`income-cell-${entry.name}`}
-                                                fill={entry.color}
-                                              />
-                                            ))}
-                                          </Pie>
-                                          <Tooltip
-                                            formatter={(value: number) =>
-                                              formatCurrency(value, currency)
-                                            }
-                                            contentStyle={{
-                                              borderRadius: 8,
-                                              fontSize: 12,
-                                              border: "1px solid var(--border)",
-                                              background: "var(--card)",
-                                              color: "var(--foreground)",
-                                            }}
-                                          />
-                                        </PieChart>
-                                      </ResponsiveContainer>
-                                      {/* Center label overlay */}
+                                  <div>
+                                    <div className="flex flex-row gap-3 items-center">
+                                      {/* Left: large donut, vertically centered */}
                                       <div
-                                        className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"
-                                        aria-hidden="true"
+                                        className="relative flex-shrink-0"
+                                        style={{ width: 180, height: 180 }}
                                       >
-                                        <span
-                                          className="text-[10px] font-semibold uppercase tracking-wider"
-                                          style={{
-                                            color: isDark
-                                              ? "rgba(241,245,249,0.65)"
-                                              : "rgba(51,65,85,0.65)",
+                                        {/* Toggle to vertical bar */}
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setChartViewIncome("vertical");
                                           }}
+                                          className="absolute top-0 right-0 z-20 h-6 w-6 flex items-center justify-center rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
+                                          aria-label="Switch to vertical bar chart"
                                         >
-                                          Total Income
-                                        </span>
-                                        <span
-                                          className="text-sm font-bold leading-tight mt-0.5"
-                                          style={{
-                                            color: isDark
-                                              ? "#f1f5f9"
-                                              : "#1e2937",
-                                          }}
+                                          <BarChart2 className="h-3 w-3" />
+                                        </button>
+                                        <ResponsiveContainer
+                                          width="100%"
+                                          height="100%"
                                         >
-                                          {formatCurrency(
+                                          <PieChart>
+                                            <Pie
+                                              data={chartDataIncome}
+                                              cx="50%"
+                                              cy="50%"
+                                              innerRadius={56}
+                                              outerRadius={84}
+                                              paddingAngle={2}
+                                              dataKey="value"
+                                            >
+                                              {chartDataIncome.map((entry) => (
+                                                <Cell
+                                                  key={`income-cell-${entry.name}`}
+                                                  fill={entry.color}
+                                                />
+                                              ))}
+                                            </Pie>
+                                            <Tooltip
+                                              formatter={(value: number) =>
+                                                formatCurrency(value, currency)
+                                              }
+                                              contentStyle={{
+                                                borderRadius: 8,
+                                                fontSize: 12,
+                                                border:
+                                                  "1px solid var(--border)",
+                                                background: "var(--card)",
+                                                color: "var(--foreground)",
+                                              }}
+                                            />
+                                          </PieChart>
+                                        </ResponsiveContainer>
+                                        {/* Center label */}
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                          <span
+                                            className="text-[9px] font-semibold uppercase tracking-wider"
+                                            style={{
+                                              color: isDark
+                                                ? "rgba(255,255,255,0.5)"
+                                                : "rgba(0,0,0,0.4)",
+                                            }}
+                                          >
+                                            Total Income
+                                          </span>
+                                          <span
+                                            className="text-sm font-bold leading-tight font-display"
+                                            style={{
+                                              color: isDark
+                                                ? "#f1f5f9"
+                                                : "#0f172a",
+                                            }}
+                                          >
+                                            {formatCurrency(
+                                              chartDataIncome.reduce(
+                                                (s, e) => s + e.value,
+                                                0,
+                                              ),
+                                              currency,
+                                            )}
+                                          </span>
+                                        </div>
+                                      </div>
+
+                                      {/* Right: clear legend */}
+                                      <div className="flex-1 min-w-0 space-y-1.5 overflow-y-auto max-h-[180px] pr-1">
+                                        {(() => {
+                                          const incomeTotal =
                                             chartDataIncome.reduce(
-                                              (s, d) => s + d.value,
+                                              (s, e) => s + e.value,
                                               0,
-                                            ),
-                                            currency,
-                                          )}
-                                        </span>
+                                            );
+                                          return chartDataIncome.map(
+                                            (entry) => {
+                                              const entryPct =
+                                                incomeTotal > 0
+                                                  ? Math.round(
+                                                      (entry.value /
+                                                        incomeTotal) *
+                                                        100,
+                                                    )
+                                                  : 0;
+                                              return (
+                                                <div
+                                                  key={entry.name}
+                                                  className="flex items-center gap-2 min-w-0"
+                                                >
+                                                  <span
+                                                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                                    style={{
+                                                      backgroundColor:
+                                                        entry.color,
+                                                    }}
+                                                  />
+                                                  <span className="flex-1 text-xs font-medium text-foreground truncate">
+                                                    {entry.name}
+                                                  </span>
+                                                  <span className="text-[10px] font-semibold text-muted-foreground flex-shrink-0">
+                                                    {entryPct}%
+                                                  </span>
+                                                </div>
+                                              );
+                                            },
+                                          );
+                                        })()}
                                       </div>
                                     </div>
                                   </div>

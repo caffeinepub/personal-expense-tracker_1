@@ -6,16 +6,14 @@ import Runtime "mo:core/Runtime";
 import Int "mo:core/Int";
 import Time "mo:core/Time";
 import Principal "mo:core/Principal";
-import MixinAuthorization "mo:caffeineai-authorization/MixinAuthorization";
-import AccessControl "mo:caffeineai-authorization/access-control";
+import Migration "migration";
 
 
 
+(with migration = Migration.run)
 actor {
-  let accessControlState = AccessControl.initState();
-  include MixinAuthorization(accessControlState);
 
-  // Expense type — kept at original shape to preserve stable variable compatibility.
+  // Expense type — extended with optional fields for recurring, tags.
   public type Expense = {
     id : Text;
     amount : Float;
@@ -24,6 +22,9 @@ actor {
     note : Text;
     paymentMethod : Text;
     createdAt : Int;
+    recurring : ?Bool;
+    recurringFrequency : ?Text;
+    tags : ?Text;
   };
 
   public type ExpenseMeta = {
@@ -105,6 +106,22 @@ actor {
     createdAt : Int;
   };
 
+  // Net Worth Tracker
+  public type NetWorthItem = {
+    id : Text;
+    name : Text;
+    amount : Float;
+    itemType : Text; // "asset" | "liability"
+    createdAt : Int;
+  };
+
+  // Exchange Rate Cache
+  public type ExchangeRateEntry = {
+    currency : Text;
+    rate : Float;
+    updatedAt : Int;
+  };
+
   // CategoryInternal is kept WITHOUT pinned to preserve stable variable compatibility.
   // pinned is stored separately in categoryPinnedByUser.
   type CategoryInternal = {
@@ -137,6 +154,10 @@ actor {
   let userDebts = Map.empty<Principal, Map.Map<Text, DebtRecord>>();
   // Cloud backup records per user.
   let userBackups = Map.empty<Principal, Map.Map<Text, BackupRecord>>();
+  // Net worth items per user.
+  let userNetWorthItems = Map.empty<Principal, Map.Map<Text, NetWorthItem>>();
+  // Exchange rate cache per user.
+  let userExchangeRates = Map.empty<Principal, Map.Map<Text, ExchangeRateEntry>>();
 
   // Helper: get or create user data
   func getOrCreateUserData(caller : Principal) : UserData {
@@ -203,7 +224,7 @@ actor {
     userProfiles.get(caller);
   };
 
-  public query ({ caller }) func getUserProfile(user : Principal) : async ?UserProfile {
+  public query ({ caller = _ }) func getUserProfile(user : Principal) : async ?UserProfile {
     userProfiles.get(user);
   };
 
@@ -418,6 +439,38 @@ actor {
   public query ({ caller }) func getDebts() : async [DebtRecord] {
     switch (userDebts.get(caller)) {
       case (?debtsMap) { debtsMap.values().toArray() };
+      case (null) { [] };
+    };
+  };
+
+  // Net Worth Tracker
+  public shared ({ caller }) func saveNetWorthItems(items : [NetWorthItem]) : async () {
+    let itemsMap = Map.empty<Text, NetWorthItem>();
+    for (item in items.vals()) {
+      itemsMap.add(item.id, item);
+    };
+    userNetWorthItems.add(caller, itemsMap);
+  };
+
+  public query ({ caller }) func getNetWorthItems() : async [NetWorthItem] {
+    switch (userNetWorthItems.get(caller)) {
+      case (?m) { m.values().toArray() };
+      case (null) { [] };
+    };
+  };
+
+  // Exchange Rate Cache
+  public shared ({ caller }) func saveExchangeRates(rates : [ExchangeRateEntry]) : async () {
+    let ratesMap = Map.empty<Text, ExchangeRateEntry>();
+    for (rate in rates.vals()) {
+      ratesMap.add(rate.currency, rate);
+    };
+    userExchangeRates.add(caller, ratesMap);
+  };
+
+  public query ({ caller }) func getExchangeRates() : async [ExchangeRateEntry] {
+    switch (userExchangeRates.get(caller)) {
+      case (?m) { m.values().toArray() };
       case (null) { [] };
     };
   };

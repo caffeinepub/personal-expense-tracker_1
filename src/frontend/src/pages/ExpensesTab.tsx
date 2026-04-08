@@ -44,6 +44,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Copy,
   Globe,
   MoreVertical,
   Paperclip,
@@ -60,7 +61,7 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import type { Expense } from "../types";
+import type { Expense } from "../backend.d";
 
 import { useQueryClient } from "@tanstack/react-query";
 import GlobalSearchSheet from "../components/GlobalSearchSheet";
@@ -108,6 +109,7 @@ const GREEN_GRADIENT =
 
 interface ExpensesTabProps {
   onEditExpense: (expense: Expense) => void;
+  onDuplicateExpense: (expense: Expense) => void;
   month: string;
   setMonth: (m: string) => void;
 }
@@ -131,6 +133,7 @@ function useYearExpenses(year: number) {
 
 export default function ExpensesTab({
   onEditExpense,
+  onDuplicateExpense,
   month,
   setMonth,
 }: ExpensesTabProps) {
@@ -164,34 +167,12 @@ export default function ExpensesTab({
   const currency = settings?.currency ?? "USD";
   const { data: expenseMetaList = [] } = useExpenseMetaList();
   const metaByExpenseId = useMemo(() => {
-    const map = new Map<string, { tags?: string[]; receiptUrl?: string }>();
-    const safeList = Array.isArray(expenseMetaList) ? expenseMetaList : [];
-    for (const item of safeList) {
-      try {
-        if (!Array.isArray(item) || item.length < 2) continue;
-        const [id, meta] = item;
-        if (typeof id !== "string" || !meta) continue;
-        // tags may come back as a comma-separated string from backend or as string[]
-        let tagsArr: string[] | undefined;
-        const rawTags = meta.tags as unknown;
-        if (Array.isArray(rawTags)) {
-          tagsArr = (rawTags as string[]).filter(
-            (t) => typeof t === "string" && t.length > 0,
-          );
-        } else if (typeof rawTags === "string" && rawTags.length > 0) {
-          tagsArr = rawTags
-            .split(",")
-            .map((t) => t.trim())
-            .filter(Boolean);
-        }
-        map.set(id, {
-          tags: tagsArr,
-          receiptUrl:
-            typeof meta.receiptUrl === "string" ? meta.receiptUrl : undefined,
-        });
-      } catch {
-        // skip malformed entries
-      }
+    const map = new Map<string, { tags?: string; receiptUrl?: string }>();
+    for (const [id, meta] of expenseMetaList) {
+      map.set(id, {
+        tags: meta.tags ?? undefined,
+        receiptUrl: meta.receiptUrl ?? undefined,
+      });
     }
     return map;
   }, [expenseMetaList]);
@@ -1295,13 +1276,14 @@ export default function ExpensesTab({
                                     </span>
                                   )}
                                   {/* Tags chips */}
-                                  {(metaByExpenseId.get(expense.id)?.tags ?? [])
-                                    .length > 0 && (
+                                  {metaByExpenseId.get(expense.id)?.tags && (
                                     <div className="flex flex-wrap gap-1 mt-0.5">
                                       {(
                                         metaByExpenseId.get(expense.id)?.tags ??
-                                        []
+                                        ""
                                       )
+                                        .split(",")
+                                        .map((tag) => tag.trim())
                                         .filter(Boolean)
                                         .map((tag) => (
                                           <Badge
@@ -1337,10 +1319,7 @@ export default function ExpensesTab({
                                   )}
                                   <div className="text-right">
                                     <span className="font-semibold text-sm block">
-                                      {formatCurrency(
-                                        Number(expense.amount),
-                                        currency,
-                                      )}
+                                      {formatCurrency(expense.amount, currency)}
                                     </span>
                                     {(() => {
                                       const match = expense.note?.match(
@@ -1368,7 +1347,7 @@ export default function ExpensesTab({
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent
                                       align="end"
-                                      className="w-36"
+                                      className="w-40"
                                     >
                                       <DropdownMenuItem
                                         onClick={() => onEditExpense(expense)}
@@ -1377,6 +1356,16 @@ export default function ExpensesTab({
                                       >
                                         <Pencil className="h-3.5 w-3.5" />
                                         {t("edit")}
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={() =>
+                                          onDuplicateExpense(expense)
+                                        }
+                                        data-ocid={`expense.duplicate_button.${globalIndex}`}
+                                        className="gap-2 text-primary"
+                                      >
+                                        <Copy className="h-3.5 w-3.5" />
+                                        Duplicate
                                       </DropdownMenuItem>
                                       <DropdownMenuItem
                                         onClick={() => setDeleteId(expense.id)}

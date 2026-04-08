@@ -8,11 +8,6 @@
 
 import { IDL } from '@icp-sdk/core/candid';
 
-export const UserRole = IDL.Variant({
-  'admin' : IDL.Null,
-  'user' : IDL.Null,
-  'guest' : IDL.Null,
-});
 export const Category = IDL.Record({
   'id' : IDL.Text,
   'name' : IDL.Text,
@@ -27,6 +22,9 @@ export const Expense = IDL.Record({
   'date' : IDL.Text,
   'note' : IDL.Text,
   'createdAt' : IDL.Int,
+  'recurring' : IDL.Opt(IDL.Bool),
+  'tags' : IDL.Opt(IDL.Text),
+  'recurringFrequency' : IDL.Opt(IDL.Text),
   'amount' : IDL.Float64,
 });
 export const ShoppingItem = IDL.Record({
@@ -60,6 +58,11 @@ export const DebtRecord = IDL.Record({
   'personName' : IDL.Text,
   'amount' : IDL.Float64,
 });
+export const ExchangeRateEntry = IDL.Record({
+  'rate' : IDL.Float64,
+  'updatedAt' : IDL.Int,
+  'currency' : IDL.Text,
+});
 export const ExpenseMeta = IDL.Record({
   'receiptUrl' : IDL.Opt(IDL.Text),
   'tags' : IDL.Opt(IDL.Text),
@@ -85,10 +88,15 @@ export const MonthlySummary = IDL.Record({
   'totalIncome' : IDL.Float64,
   'totalExpenses' : IDL.Float64,
 });
+export const NetWorthItem = IDL.Record({
+  'id' : IDL.Text,
+  'name' : IDL.Text,
+  'createdAt' : IDL.Int,
+  'itemType' : IDL.Text,
+  'amount' : IDL.Float64,
+});
 
 export const idlService = IDL.Service({
-  '_initializeAccessControl' : IDL.Func([], [], []),
-  'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'clearBoughtShoppingItems' : IDL.Func([], [], []),
   'createCategory' : IDL.Func([Category], [], []),
   'createExpense' : IDL.Func([Expense], [], []),
@@ -102,9 +110,9 @@ export const idlService = IDL.Service({
   'getAppSettings' : IDL.Func([], [IDL.Opt(AppSettings)], ['query']),
   'getBackupsList' : IDL.Func([], [IDL.Vec(BackupRecord)], ['query']),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
-  'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getCategories' : IDL.Func([], [IDL.Vec(Category)], ['query']),
   'getDebts' : IDL.Func([], [IDL.Vec(DebtRecord)], ['query']),
+  'getExchangeRates' : IDL.Func([], [IDL.Vec(ExchangeRateEntry)], ['query']),
   'getExpenseMetaList' : IDL.Func(
       [],
       [IDL.Vec(IDL.Tuple(IDL.Text, ExpenseMeta))],
@@ -120,18 +128,20 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'getMonthlySummary' : IDL.Func([IDL.Text], [MonthlySummary], ['query']),
+  'getNetWorthItems' : IDL.Func([], [IDL.Vec(NetWorthItem)], ['query']),
   'getShoppingItems' : IDL.Func([], [IDL.Vec(ShoppingItem)], ['query']),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(UserProfile)],
       ['query'],
     ),
-  'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'resetUserData' : IDL.Func([], [], []),
   'saveBackup' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'saveDebts' : IDL.Func([IDL.Vec(DebtRecord)], [], []),
+  'saveExchangeRates' : IDL.Func([IDL.Vec(ExchangeRateEntry)], [], []),
   'saveIncomeSources' : IDL.Func([IDL.Vec(IncomeSource)], [], []),
+  'saveNetWorthItems' : IDL.Func([IDL.Vec(NetWorthItem)], [], []),
   'setAppSettings' : IDL.Func([AppSettings], [], []),
   'setExpenseMeta' : IDL.Func([IDL.Text, ExpenseMeta], [], []),
   'setMonthlyIncome' : IDL.Func([MonthlyIncome], [], []),
@@ -144,11 +154,6 @@ export const idlService = IDL.Service({
 export const idlInitArgs = [];
 
 export const idlFactory = ({ IDL }) => {
-  const UserRole = IDL.Variant({
-    'admin' : IDL.Null,
-    'user' : IDL.Null,
-    'guest' : IDL.Null,
-  });
   const Category = IDL.Record({
     'id' : IDL.Text,
     'name' : IDL.Text,
@@ -163,6 +168,9 @@ export const idlFactory = ({ IDL }) => {
     'date' : IDL.Text,
     'note' : IDL.Text,
     'createdAt' : IDL.Int,
+    'recurring' : IDL.Opt(IDL.Bool),
+    'tags' : IDL.Opt(IDL.Text),
+    'recurringFrequency' : IDL.Opt(IDL.Text),
     'amount' : IDL.Float64,
   });
   const ShoppingItem = IDL.Record({
@@ -196,6 +204,11 @@ export const idlFactory = ({ IDL }) => {
     'personName' : IDL.Text,
     'amount' : IDL.Float64,
   });
+  const ExchangeRateEntry = IDL.Record({
+    'rate' : IDL.Float64,
+    'updatedAt' : IDL.Int,
+    'currency' : IDL.Text,
+  });
   const ExpenseMeta = IDL.Record({
     'receiptUrl' : IDL.Opt(IDL.Text),
     'tags' : IDL.Opt(IDL.Text),
@@ -221,10 +234,15 @@ export const idlFactory = ({ IDL }) => {
     'totalIncome' : IDL.Float64,
     'totalExpenses' : IDL.Float64,
   });
+  const NetWorthItem = IDL.Record({
+    'id' : IDL.Text,
+    'name' : IDL.Text,
+    'createdAt' : IDL.Int,
+    'itemType' : IDL.Text,
+    'amount' : IDL.Float64,
+  });
   
   return IDL.Service({
-    '_initializeAccessControl' : IDL.Func([], [], []),
-    'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'clearBoughtShoppingItems' : IDL.Func([], [], []),
     'createCategory' : IDL.Func([Category], [], []),
     'createExpense' : IDL.Func([Expense], [], []),
@@ -238,9 +256,9 @@ export const idlFactory = ({ IDL }) => {
     'getAppSettings' : IDL.Func([], [IDL.Opt(AppSettings)], ['query']),
     'getBackupsList' : IDL.Func([], [IDL.Vec(BackupRecord)], ['query']),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
-    'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getCategories' : IDL.Func([], [IDL.Vec(Category)], ['query']),
     'getDebts' : IDL.Func([], [IDL.Vec(DebtRecord)], ['query']),
+    'getExchangeRates' : IDL.Func([], [IDL.Vec(ExchangeRateEntry)], ['query']),
     'getExpenseMetaList' : IDL.Func(
         [],
         [IDL.Vec(IDL.Tuple(IDL.Text, ExpenseMeta))],
@@ -260,18 +278,20 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'getMonthlySummary' : IDL.Func([IDL.Text], [MonthlySummary], ['query']),
+    'getNetWorthItems' : IDL.Func([], [IDL.Vec(NetWorthItem)], ['query']),
     'getShoppingItems' : IDL.Func([], [IDL.Vec(ShoppingItem)], ['query']),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(UserProfile)],
         ['query'],
       ),
-    'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'resetUserData' : IDL.Func([], [], []),
     'saveBackup' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'saveDebts' : IDL.Func([IDL.Vec(DebtRecord)], [], []),
+    'saveExchangeRates' : IDL.Func([IDL.Vec(ExchangeRateEntry)], [], []),
     'saveIncomeSources' : IDL.Func([IDL.Vec(IncomeSource)], [], []),
+    'saveNetWorthItems' : IDL.Func([IDL.Vec(NetWorthItem)], [], []),
     'setAppSettings' : IDL.Func([AppSettings], [], []),
     'setExpenseMeta' : IDL.Func([IDL.Text, ExpenseMeta], [], []),
     'setMonthlyIncome' : IDL.Func([MonthlyIncome], [], []),

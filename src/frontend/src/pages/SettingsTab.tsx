@@ -44,10 +44,12 @@ import {
   Hash,
   Info,
   KeyRound,
+  Landmark,
   Loader2,
   Lock,
   Pencil,
   Plus,
+  RefreshCw,
   RotateCcw,
   ShieldCheck,
   Smartphone,
@@ -59,7 +61,8 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { Category } from "../types";
+import type { Category } from "../backend.d";
+import type { NetWorthItem } from "../backend.d";
 
 import CreatePINDialog from "../components/CreatePINDialog";
 import { useAutoLock } from "../contexts/AutoLockContext";
@@ -72,12 +75,16 @@ import {
   useCreateExpense,
   useDeleteBackup,
   useDeleteCategory,
+  useExchangeRates,
   useExpenses,
   useExportExpenses,
   useIncomeSources,
+  useNetWorthItems,
   useResetUserData,
   useSaveBackup,
+  useSaveExchangeRates,
   useSaveIncomeSources,
+  useSaveNetWorthItems,
   useSetAppSettings,
   useSetMonthlyIncome,
   useUpdateCategory,
@@ -183,6 +190,69 @@ export default function SettingsTab() {
   const setMonthlyIncomeMutation = useSetMonthlyIncome();
   const qc = useQueryClient();
   const { t, language, setLanguage } = useLanguage();
+  const { data: exchangeRates = [] } = useExchangeRates();
+  const saveExchangeRatesMutation = useSaveExchangeRates();
+  const [isFetchingRates, setIsFetchingRates] = useState(false);
+
+  function timeAgo(ms: number): string {
+    const diff = Date.now() - ms;
+    const mins = Math.floor(diff / 60_000);
+    if (mins < 1) return "just now";
+    if (mins < 60) return `${mins} minute${mins === 1 ? "" : "s"} ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs} hour${hrs === 1 ? "" : "s"} ago`;
+    const days = Math.floor(hrs / 24);
+    return `${days} day${days === 1 ? "" : "s"} ago`;
+  }
+
+  const lastUpdatedAt =
+    exchangeRates.length > 0
+      ? Math.max(...exchangeRates.map((r) => Number(r.updatedAt) / 1_000_000))
+      : null;
+
+  async function handleRefreshRates(baseCurrency: string) {
+    if (!secondaryCurrencies.length) {
+      toast.info("Add secondary currencies first to fetch rates.");
+      return;
+    }
+    setIsFetchingRates(true);
+    try {
+      const res = await fetch(
+        `https://open.er-api.com/v6/latest/${baseCurrency}`,
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = (await res.json()) as {
+        result: string;
+        rates: Record<string, number>;
+      };
+      if (json.result !== "success") throw new Error("API error");
+
+      const now = BigInt(Date.now() * 1_000_000);
+      const updated = secondaryCurrencies.map((sc) => ({
+        currency: sc.code,
+        rate: json.rates[sc.code] ?? sc.rate,
+        updatedAt: now,
+      }));
+
+      // Reflect fetched rates in local secondary currencies state
+      const updatedSecondary = secondaryCurrencies.map((sc) => ({
+        ...sc,
+        rate: json.rates[sc.code] ?? sc.rate,
+      }));
+      setSecondaryCurrencies(updatedSecondary);
+      localStorage.setItem(
+        "pe_secondary_currencies",
+        JSON.stringify(updatedSecondary),
+      );
+
+      await saveExchangeRatesMutation.mutateAsync(updated);
+      toast.success("Exchange rates updated");
+    } catch {
+      toast.error("Failed to fetch rates");
+    } finally {
+      setIsFetchingRates(false);
+    }
+  }
 
   const [currency, setCurrency] = useState(settings?.currency ?? "USD");
   const [multiCurrencyEnabled, setMultiCurrencyEnabled] = useState(
@@ -289,6 +359,79 @@ export default function SettingsTab() {
   const [incColor, setIncColor] = useState(PRESET_COLORS[0]);
   const [incBudget, setIncBudget] = useState("");
 
+  // Net Worth state
+  const { data: netWorthItems = [] } = useNetWorthItems();
+  const saveNetWorthItems = useSaveNetWorthItems();
+  const [showNetWorthDialog, setShowNetWorthDialog] = useState(false);
+  const [editingNetWorthItem, setEditingNetWorthItem] =
+    useState<NetWorthItem | null>(null);
+  const [deleteNetWorthId, setDeleteNetWorthId] = useState<string | null>(null);
+  const [nwName, setNwName] = useState("");
+  const [nwAmount, setNwAmount] = useState("");
+  const [nwType, setNwType] = useState<"Asset" | "Liability">("Asset");
+
+  function openAddNetWorth() {
+    setEditingNetWorthItem(null);
+    setNwName("");
+    setNwAmount("");
+    setNwType("Asset");
+    setShowNetWorthDialog(true);
+  }
+  function openEditNetWorth(item: NetWorthItem) {
+    setEditingNetWorthItem(item);
+    setNwName(item.name);
+    setNwAmount(String(item.amount));
+    setNwType(item.itemType as "Asset" | "Liability");
+    setShowNetWorthDialog(true);
+  }
+  async function handleSaveNetWorth() {
+    if (!nwName.trim()) {
+      toast.error("Name is required");
+      return;
+    }
+    const amount = Number.parseFloat(nwAmount);
+    if (!nwAmount || Number.isNaN(amount) || amount < 0) {
+      toast.error("Enter a valid amount");
+      return;
+    }
+    let updated: NetWorthItem[];
+    if (editingNetWorthItem) {
+      updated = netWorthItems.map((i) =>
+        i.id === editingNetWorthItem.id
+          ? { ...i, name: nwName.trim(), amount, itemType: nwType }
+          : i,
+      );
+    } else {
+      updated = [
+        ...netWorthItems,
+        {
+          id: crypto.randomUUID(),
+          name: nwName.trim(),
+          amount,
+          itemType: nwType,
+          createdAt: BigInt(Date.now()),
+        },
+      ];
+    }
+    try {
+      await saveNetWorthItems.mutateAsync(updated);
+      toast.success(editingNetWorthItem ? "Item updated" : "Item added");
+      setShowNetWorthDialog(false);
+    } catch {
+      toast.error("Failed to save net worth item");
+    }
+  }
+  async function handleDeleteNetWorth(id: string) {
+    const updated = netWorthItems.filter((i) => i.id !== id);
+    try {
+      await saveNetWorthItems.mutateAsync(updated);
+      toast.success("Item deleted");
+    } catch {
+      toast.error("Failed to delete item");
+    }
+    setDeleteNetWorthId(null);
+  }
+
   useEffect(() => {
     if (settings?.currency) setCurrency(settings.currency);
   }, [settings?.currency]);
@@ -331,6 +474,10 @@ export default function SettingsTab() {
         updatedAt: BigInt(Date.now()),
       });
       toast.success(t("currency_updated"));
+      // Auto-fetch rates when base currency changes
+      if (secondaryCurrencies.length > 0) {
+        handleRefreshRates(val);
+      }
     } catch {
       toast.error(t("failed_update_currency"));
     }
@@ -530,9 +677,10 @@ export default function SettingsTab() {
   }
 
   async function handleRestoreBackup(name: string) {
-    if (!backups.find((b) => b.name === name)) return;
+    const backup = backups.find((b) => b.name === name);
+    if (!backup) return;
     try {
-      // Note: actual restore would call actor.getBackup(name) to retrieve data
+      JSON.parse(backup.data); // validate JSON
       toast.success("Backup restored successfully! Reload may be needed.");
       setBackupToRestore(null);
     } catch {
@@ -653,8 +801,8 @@ export default function SettingsTab() {
       await setSettings.mutateAsync({
         currency: settings?.currency ?? currency,
         updatedAt: BigInt(Date.now()),
-        dailyLimit: daily,
-        weeklyLimit: weekly,
+        dailyLimit: daily ?? undefined,
+        weeklyLimit: weekly ?? undefined,
       });
       toast.success("Spending limits saved");
     } catch {
@@ -1018,6 +1166,32 @@ export default function SettingsTab() {
                             Rate = units of secondary per 1 {currency} (e.g. 1
                             EUR = 1.08 USD → rate 1.08)
                           </p>
+                          {/* Refresh Rates button */}
+                          <div className="pt-1 space-y-1.5">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="w-full h-9 gap-2 border-teal-300 text-teal-700 hover:bg-teal-50 dark:border-teal-700 dark:text-teal-300 dark:hover:bg-teal-950/30"
+                              onClick={() => handleRefreshRates(currency)}
+                              disabled={isFetchingRates}
+                              data-ocid="settings.refresh_rates.button"
+                            >
+                              {isFetchingRates ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <RefreshCw className="h-3.5 w-3.5" />
+                              )}
+                              {isFetchingRates ? "Fetching…" : "Refresh Rates"}
+                            </Button>
+                            {lastUpdatedAt !== null && (
+                              <p
+                                className="text-[10px] text-center text-muted-foreground"
+                                data-ocid="settings.rates_last_updated"
+                              >
+                                Last updated: {timeAgo(lastUpdatedAt)}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -1119,7 +1293,7 @@ export default function SettingsTab() {
             <div className="overflow-hidden">
               <CardContent className="px-4 pb-3 pt-1.5">
                 <Tabs value={financialTab} onValueChange={setFinancialTab}>
-                  <TabsList className="w-full grid grid-cols-5 h-9 mb-3">
+                  <TabsList className="w-full grid grid-cols-6 h-9 mb-3">
                     <TabsTrigger
                       value="income"
                       className="text-xs"
@@ -1154,6 +1328,13 @@ export default function SettingsTab() {
                       data-ocid="settings.financial.limits.tab"
                     >
                       Limits
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="networth"
+                      className="text-xs"
+                      data-ocid="settings.financial.networth.tab"
+                    >
+                      Net Worth
                     </TabsTrigger>
                   </TabsList>
                   <TabsContent value="income" className="mt-0">
@@ -1467,6 +1648,113 @@ export default function SettingsTab() {
                       )}
                       Save Limits
                     </Button>
+                  </TabsContent>
+                  <TabsContent value="networth" className="mt-0 space-y-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-xs text-muted-foreground">
+                        Track your assets and liabilities to calculate your net
+                        worth.
+                      </p>
+                      <Button
+                        size="sm"
+                        className="h-8 gap-1.5 text-xs flex-shrink-0"
+                        onClick={openAddNetWorth}
+                        data-ocid="settings.add_networth.button"
+                      >
+                        <Plus className="h-3.5 w-3.5" /> Add
+                      </Button>
+                    </div>
+                    {/* Summary */}
+                    {netWorthItems.length > 0 &&
+                      (() => {
+                        const totalAssets = netWorthItems
+                          .filter((i) => i.itemType === "Asset")
+                          .reduce((s, i) => s + i.amount, 0);
+                        const totalLiabilities = netWorthItems
+                          .filter((i) => i.itemType === "Liability")
+                          .reduce((s, i) => s + i.amount, 0);
+                        const netWorth = totalAssets - totalLiabilities;
+                        return (
+                          <div className="grid grid-cols-3 gap-2 mb-1">
+                            <div className="rounded-lg bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/50 dark:border-emerald-800/30 px-2 py-1.5 text-center">
+                              <p className="text-[10px] font-semibold uppercase text-muted-foreground">
+                                Assets
+                              </p>
+                              <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                                {formatCurrency(totalAssets, currency)}
+                              </p>
+                            </div>
+                            <div className="rounded-lg bg-red-50/60 dark:bg-red-950/30 border border-red-200/50 dark:border-red-800/30 px-2 py-1.5 text-center">
+                              <p className="text-[10px] font-semibold uppercase text-muted-foreground">
+                                Liabilities
+                              </p>
+                              <p className="text-xs font-bold text-red-600 dark:text-red-400">
+                                {formatCurrency(totalLiabilities, currency)}
+                              </p>
+                            </div>
+                            <div
+                              className={`rounded-lg px-2 py-1.5 text-center border ${netWorth >= 0 ? "bg-emerald-50/60 dark:bg-emerald-950/30 border-emerald-200/50 dark:border-emerald-800/30" : "bg-red-50/60 dark:bg-red-950/30 border-red-200/50 dark:border-red-800/30"}`}
+                            >
+                              <p className="text-[10px] font-semibold uppercase text-muted-foreground">
+                                Net Worth
+                              </p>
+                              <p
+                                className={`text-xs font-bold ${netWorth >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}
+                              >
+                                {formatCurrency(netWorth, currency)}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    {netWorthItems.length === 0 ? (
+                      <p
+                        className="text-muted-foreground text-sm text-center py-5"
+                        data-ocid="networth.empty_state"
+                      >
+                        No items yet. Add your assets and liabilities.
+                      </p>
+                    ) : (
+                      <div className="space-y-1">
+                        {netWorthItems.map((item, i) => (
+                          <div
+                            key={item.id}
+                            className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-muted/40"
+                            data-ocid={`networth.item.${i + 1}`}
+                          >
+                            <span
+                              className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0 ${item.itemType === "Asset" ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300" : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"}`}
+                            >
+                              {item.itemType}
+                            </span>
+                            <span className="flex-1 text-sm font-medium truncate">
+                              {item.name}
+                            </span>
+                            <span
+                              className={`text-sm font-semibold tabular-nums flex-shrink-0 ${item.itemType === "Asset" ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}
+                            >
+                              {formatCurrency(item.amount, currency)}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => openEditNetWorth(item)}
+                              className="p-1 text-muted-foreground hover:text-foreground"
+                              data-ocid={`networth.edit_button.${i + 1}`}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDeleteNetWorthId(item.id)}
+                              className="p-1 text-muted-foreground hover:text-destructive"
+                              data-ocid={`networth.delete_button.${i + 1}`}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </TabsContent>
                 </Tabs>
               </CardContent>
@@ -2494,6 +2782,111 @@ export default function SettingsTab() {
               data-ocid="settings.backup_restore.confirm_button"
             >
               Restore
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Add/Edit Net Worth Item Dialog */}
+      <Dialog open={showNetWorthDialog} onOpenChange={setShowNetWorthDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Landmark className="h-4 w-4 text-emerald-500" />
+              {editingNetWorthItem
+                ? "Edit Net Worth Item"
+                : "Add Net Worth Item"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div>
+              <Label className="text-xs font-medium mb-1 block">Name *</Label>
+              <Input
+                value={nwName}
+                onChange={(e) => setNwName(e.target.value)}
+                placeholder="e.g. Savings Account"
+                className="h-9"
+                data-ocid="networth.name.input"
+              />
+            </div>
+            <div>
+              <Label className="text-xs font-medium mb-1 block">Amount *</Label>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={nwAmount}
+                onChange={(e) => setNwAmount(e.target.value)}
+                placeholder="0.00"
+                className="h-9"
+                data-ocid="networth.amount.input"
+              />
+            </div>
+            <div>
+              <Label className="text-xs font-medium mb-1 block">Type</Label>
+              <div className="flex gap-2">
+                {(["Asset", "Liability"] as const).map((type) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setNwType(type)}
+                    className={`flex-1 h-9 rounded-lg text-sm font-medium border transition-colors ${nwType === type ? (type === "Asset" ? "bg-emerald-100 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300" : "bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-700 text-red-700 dark:text-red-300") : "bg-background border-border text-muted-foreground hover:text-foreground"}`}
+                    data-ocid={`networth.settings.type.${type.toLowerCase()}`}
+                  >
+                    {type}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowNetWorthDialog(false)}
+              data-ocid="networth.cancel.button"
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSaveNetWorth}
+              disabled={saveNetWorthItems.isPending}
+              data-ocid="networth.save.button"
+            >
+              {saveNetWorthItems.isPending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+              ) : null}
+              {editingNetWorthItem ? "Update" : "Add"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Net Worth Item Confirmation */}
+      <AlertDialog
+        open={!!deleteNetWorthId}
+        onOpenChange={(open) => !open && setDeleteNetWorthId(null)}
+      >
+        <AlertDialogContent className="max-w-sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete item?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-ocid="networth.cancel.button">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() =>
+                deleteNetWorthId && handleDeleteNetWorth(deleteNetWorthId)
+              }
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-ocid="networth.delete.confirm.button"
+            >
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

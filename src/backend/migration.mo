@@ -1,10 +1,20 @@
+// Migration: drops accessControlState (authorization removed).
+// Expense type gains optional fields: recurring, recurringFrequency, tags.
+// Must explicitly transform userData because Expense changed shape.
 import Map "mo:core/Map";
-import Int "mo:core/Int";
-import Principal "mo:core/Principal";
-import Text "mo:core/Text";
 
 module {
-  type Expense = {
+  // ── Old types (from previous version) ────────────────────────────────────
+
+  type UserRole = { #admin; #guest; #user };
+
+  type OldAccessControlState = {
+    var adminAssigned : Bool;
+    userRoles : Map.Map<Principal, UserRole>;
+  };
+
+  // Old Expense — no optional fields.
+  type OldExpense = {
     id : Text;
     amount : Float;
     categoryId : Text;
@@ -27,11 +37,6 @@ module {
     amount : Float;
   };
 
-  type AppSettings = {
-    currency : Text;
-    updatedAt : Int;
-  };
-
   type ShoppingItem = {
     id : Text;
     name : Text;
@@ -42,24 +47,48 @@ module {
     date : ?Text;
   };
 
-  type OldUserData = {
-    var expenses : Map.Map<Text, Expense>;
-    var categories : Map.Map<Text, CategoryInternal>;
-    var monthlyIncome : Map.Map<Text, MonthlyIncome>;
-    var settings : ?AppSettings;
-    var initialized : Bool;
+  type AppSettingsInternal = {
+    currency : Text;
+    updatedAt : Int;
   };
 
-  type NewUserData = {
-    var expenses : Map.Map<Text, Expense>;
+  type OldUserData = {
+    var expenses : Map.Map<Text, OldExpense>;
     var categories : Map.Map<Text, CategoryInternal>;
     var monthlyIncome : Map.Map<Text, MonthlyIncome>;
     var shoppingItems : Map.Map<Text, ShoppingItem>;
-    var settings : ?AppSettings;
+    var settings : ?AppSettingsInternal;
     var initialized : Bool;
   };
 
+  // ── New types (matching new actor state) ─────────────────────────────────
+
+  type NewExpense = {
+    id : Text;
+    amount : Float;
+    categoryId : Text;
+    date : Text;
+    note : Text;
+    paymentMethod : Text;
+    createdAt : Int;
+    recurring : ?Bool;
+    recurringFrequency : ?Text;
+    tags : ?Text;
+  };
+
+  type NewUserData = {
+    var expenses : Map.Map<Text, NewExpense>;
+    var categories : Map.Map<Text, CategoryInternal>;
+    var monthlyIncome : Map.Map<Text, MonthlyIncome>;
+    var shoppingItems : Map.Map<Text, ShoppingItem>;
+    var settings : ?AppSettingsInternal;
+    var initialized : Bool;
+  };
+
+  // ── Migration domain / codomain ───────────────────────────────────────────
+
   type OldActor = {
+    accessControlState : OldAccessControlState;
     userData : Map.Map<Principal, OldUserData>;
   };
 
@@ -68,23 +97,36 @@ module {
   };
 
   public func run(old : OldActor) : NewActor {
-    let newUserDataEntries = old.userData.entries().map(
-      func((principal, oldUserData)) {
-        (principal, toNewUserData(oldUserData));
+    // Upgrade each user's OldUserData to NewUserData by migrating expenses.
+    let newUserData = old.userData.map<Principal, OldUserData, NewUserData>(
+      func(_principal, oldData) {
+        let newExpenses = oldData.expenses.map<Text, OldExpense, NewExpense>(
+          func(_id, e) {
+            {
+              id = e.id;
+              amount = e.amount;
+              categoryId = e.categoryId;
+              date = e.date;
+              note = e.note;
+              paymentMethod = e.paymentMethod;
+              createdAt = e.createdAt;
+              recurring = null;
+              recurringFrequency = null;
+              tags = null;
+            }
+          }
+        );
+        {
+          var expenses = newExpenses;
+          var categories = oldData.categories;
+          var monthlyIncome = oldData.monthlyIncome;
+          var shoppingItems = oldData.shoppingItems;
+          var settings = oldData.settings;
+          var initialized = oldData.initialized;
+        }
       }
     );
-    let newUserDataMap = Map.fromIter<Principal, NewUserData>(newUserDataEntries);
-    { userData = newUserDataMap };
-  };
-
-  func toNewUserData(old : OldUserData) : NewUserData {
-    {
-      var expenses = old.expenses;
-      var categories = old.categories;
-      var monthlyIncome = old.monthlyIncome;
-      var shoppingItems = Map.empty<Text, ShoppingItem>();
-      var settings = old.settings;
-      var initialized = old.initialized;
-    };
+    // accessControlState is intentionally discarded.
+    { userData = newUserData }
   };
 };

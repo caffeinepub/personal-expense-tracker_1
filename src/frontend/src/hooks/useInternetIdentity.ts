@@ -1,3 +1,2 @@
-// Re-exported from @caffeineai/core-infrastructure
-// Do NOT add local implementations here — the package is the source of truth.
+// Re-export useInternetIdentity from core-infrastructure.
 export { useInternetIdentity } from "@caffeineai/core-infrastructure";

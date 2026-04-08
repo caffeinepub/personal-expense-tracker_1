@@ -7,13 +7,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Search, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { Expense } from "../backend.d";
 import {
   useAppSettings,
   useCategories,
   useExpenseMetaList,
   useExpenses,
 } from "../hooks/useQueries";
-import type { Expense } from "../types";
 import { getCategoryById } from "../utils/categories";
 import { formatCurrency, formatDate } from "../utils/format";
 
@@ -54,34 +54,12 @@ export default function GlobalSearchSheet({
   }, [query]);
 
   const metaByExpenseId = useMemo(() => {
-    const map = new Map<string, { tags?: string[]; receiptUrl?: string }>();
-    const safeList = Array.isArray(expenseMetaList) ? expenseMetaList : [];
-    for (const item of safeList) {
-      try {
-        if (!Array.isArray(item) || item.length < 2) continue;
-        const [id, meta] = item;
-        if (typeof id !== "string" || !meta) continue;
-        // tags may come back as a comma-separated string from backend or as string[]
-        let tagsArr: string[] | undefined;
-        const rawTags = meta.tags as unknown;
-        if (Array.isArray(rawTags)) {
-          tagsArr = (rawTags as string[]).filter(
-            (t) => typeof t === "string" && t.length > 0,
-          );
-        } else if (typeof rawTags === "string" && rawTags.length > 0) {
-          tagsArr = rawTags
-            .split(",")
-            .map((t) => t.trim())
-            .filter(Boolean);
-        }
-        map.set(id, {
-          tags: tagsArr,
-          receiptUrl:
-            typeof meta.receiptUrl === "string" ? meta.receiptUrl : undefined,
-        });
-      } catch {
-        // skip malformed entries
-      }
+    const map = new Map<string, { tags?: string; receiptUrl?: string }>();
+    for (const [id, meta] of expenseMetaList) {
+      map.set(id, {
+        tags: meta.tags ?? undefined,
+        receiptUrl: meta.receiptUrl ?? undefined,
+      });
     }
     return map;
   }, [expenseMetaList]);
@@ -92,16 +70,13 @@ export default function GlobalSearchSheet({
     return allExpenses
       .filter((e: Expense) => {
         const catName = getCategoryById(categories, e.categoryId)?.name ?? "";
-        const tagArr = metaByExpenseId.get(e.id)?.tags ?? e.tags ?? [];
-        const tagsStr = (Array.isArray(tagArr) ? tagArr : [tagArr])
-          .join(" ")
-          .toLowerCase();
+        const tags = metaByExpenseId.get(e.id)?.tags ?? e.tags ?? "";
         return (
           e.note?.toLowerCase().includes(q) ||
           catName.toLowerCase().includes(q) ||
           String(e.amount).includes(q) ||
           e.paymentMethod?.toLowerCase().includes(q) ||
-          tagsStr.includes(q)
+          tags.toLowerCase().includes(q)
         );
       })
       .sort(
@@ -200,9 +175,8 @@ export default function GlobalSearchSheet({
               </p>
               {results.map((expense: Expense, idx: number) => {
                 const cat = getCategoryById(categories, expense.categoryId);
-                const tagArr =
-                  metaByExpenseId.get(expense.id)?.tags ?? expense.tags ?? [];
-                const tags = Array.isArray(tagArr) ? tagArr : [];
+                const tags =
+                  metaByExpenseId.get(expense.id)?.tags ?? expense.tags ?? "";
                 return (
                   <button
                     key={expense.id}
@@ -238,10 +212,12 @@ export default function GlobalSearchSheet({
                           {formatDate(expense.date)}
                         </span>
                       </div>
-                      {tags.length > 0 && (
+                      {tags && (
                         <div className="flex flex-wrap gap-1 mt-1">
                           {tags
+                            .split(",")
                             .slice(0, 3)
+                            .map((tag) => tag.trim())
                             .filter(Boolean)
                             .map((tag) => (
                               <span

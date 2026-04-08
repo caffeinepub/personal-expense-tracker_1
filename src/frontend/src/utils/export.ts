@@ -1,4 +1,4 @@
-import type { Category, Expense } from "../types";
+import type { Category, Expense } from "../backend.d";
 
 // ─── Export ─────────────────────────────────────────────────────────────────────────
 

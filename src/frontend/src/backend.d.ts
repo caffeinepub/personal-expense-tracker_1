@@ -7,18 +7,60 @@ export interface None {
     __kind__: "None";
 }
 export type Option<T> = Some<T> | None;
-export interface Category {
-    id: string;
+export interface UserProfile {
     name: string;
-    color: string;
-    pinned?: boolean;
-    budget: number;
 }
 export interface IncomeSource {
     id: string;
     monthlyBudget: number;
     name: string;
     color: string;
+}
+export interface CategorySummary {
+    categoryId: string;
+    total: number;
+    categoryName: string;
+}
+export interface DebtRecord {
+    id: string;
+    status: string;
+    direction: string;
+    createdAt: bigint;
+    dueDate?: string;
+    description: string;
+    personName: string;
+    amount: number;
+}
+export interface MonthlySummary {
+    month: string;
+    categoryBreakdown: Array<CategorySummary>;
+    totalIncome: number;
+    totalExpenses: number;
+}
+export interface NetWorthItem {
+    id: string;
+    name: string;
+    createdAt: bigint;
+    itemType: string;
+    amount: number;
+}
+export interface AppSettings {
+    dailyLimit?: number;
+    updatedAt: bigint;
+    currency: string;
+    weeklyLimit?: number;
+}
+export interface Expense {
+    id: string;
+    categoryId: string;
+    paymentMethod: string;
+    date: string;
+    note: string;
+    createdAt: bigint;
+    recurring?: boolean;
+    tags?: string;
+    recurringFrequency?: string;
+    amount: number;
 }
 export interface BackupRecord {
     data: string;
@@ -34,60 +76,27 @@ export interface ShoppingItem {
     bought: boolean;
     category: string;
 }
-export interface AppSettings {
-    dailyLimit?: number;
-    updatedAt: bigint;
-    currency: string;
-    weeklyLimit?: number;
-}
 export interface ExpenseMeta {
     receiptUrl?: string;
     tags?: string;
 }
-export interface CategorySummary {
-    categoryId: string;
-    total: number;
-    categoryName: string;
+export interface ExchangeRateEntry {
+    rate: number;
+    updatedAt: bigint;
+    currency: string;
 }
-export interface MonthlySummary {
-    month: string;
-    categoryBreakdown: Array<CategorySummary>;
-    totalIncome: number;
-    totalExpenses: number;
-}
-export interface Expense {
+export interface Category {
     id: string;
-    categoryId: string;
-    paymentMethod: string;
-    date: string;
-    note: string;
-    createdAt: bigint;
-    amount: number;
+    name: string;
+    color: string;
+    pinned?: boolean;
+    budget: number;
 }
 export interface MonthlyIncome {
     month: string;
     amount: number;
 }
-export interface UserProfile {
-    name: string;
-}
-export interface DebtRecord {
-    id: string;
-    status: string;
-    direction: string;
-    createdAt: bigint;
-    dueDate?: string;
-    description: string;
-    personName: string;
-    amount: number;
-}
-export enum UserRole {
-    admin = "admin",
-    user = "user",
-    guest = "guest"
-}
 export interface backendInterface {
-    assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     clearBoughtShoppingItems(): Promise<void>;
     createCategory(category: Category): Promise<void>;
     createExpense(expense: Expense): Promise<void>;
@@ -101,9 +110,9 @@ export interface backendInterface {
     getAppSettings(): Promise<AppSettings | null>;
     getBackupsList(): Promise<Array<BackupRecord>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
-    getCallerUserRole(): Promise<UserRole>;
     getCategories(): Promise<Array<Category>>;
     getDebts(): Promise<Array<DebtRecord>>;
+    getExchangeRates(): Promise<Array<ExchangeRateEntry>>;
     getExpenseMetaList(): Promise<Array<[string, ExpenseMeta]>>;
     getExpenses(): Promise<Array<Expense>>;
     getExpensesByCategory(categoryId: string): Promise<Array<Expense>>;
@@ -111,14 +120,16 @@ export interface backendInterface {
     getIncomeSourcesList(): Promise<Array<IncomeSource>>;
     getMonthlyIncome(month: string): Promise<MonthlyIncome | null>;
     getMonthlySummary(month: string): Promise<MonthlySummary>;
+    getNetWorthItems(): Promise<Array<NetWorthItem>>;
     getShoppingItems(): Promise<Array<ShoppingItem>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
-    isCallerAdmin(): Promise<boolean>;
     resetUserData(): Promise<void>;
     saveBackup(name: string, data: string): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     saveDebts(debts: Array<DebtRecord>): Promise<void>;
+    saveExchangeRates(rates: Array<ExchangeRateEntry>): Promise<void>;
     saveIncomeSources(sources: Array<IncomeSource>): Promise<void>;
+    saveNetWorthItems(items: Array<NetWorthItem>): Promise<void>;
     setAppSettings(settings: AppSettings): Promise<void>;
     setExpenseMeta(expenseId: string, meta: ExpenseMeta): Promise<void>;
     setMonthlyIncome(income: MonthlyIncome): Promise<void>;

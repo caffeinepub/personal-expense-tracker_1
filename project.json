@@ -1,0 +1,28 @@
+{
+  "overview": "PE Tracker is a privacy-focused personal finance PWA for tracking expenses, income, budgets, net worth, savings goals, shopping lists, debts, and more. Built on the Internet Computer with Internet Identity for secure, cross-device sync.",
+  "features": [
+    "Expense & Income tracking with categories",
+    "Dashboard with donut charts (left chart + right legend layout)",
+    "Net Worth Tracker with assets and liabilities",
+    "Currency Exchange Rate Auto-Fetch",
+    "Expense Duplication from row menu",
+    "Budget alerts and spending limits",
+    "Debt/loan tracker",
+    "Recurring expense management",
+    "Shopping list with buy tracking",
+    "Cloud backup and cross-device sync",
+    "Dark/light mode with card themes",
+    "8-language support"
+  ],
+  "category": "finance",
+  "tags": [
+    "personal-finance",
+    "expense-tracker",
+    "budget",
+    "net-worth",
+    "pwa",
+    "icp",
+    "internet-computer"
+  ],
+  "last_updated": "2026-04-08T18:33:58.081Z"
+}

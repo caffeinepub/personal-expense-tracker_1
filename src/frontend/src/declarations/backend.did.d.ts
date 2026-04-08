@@ -43,6 +43,11 @@ export interface DebtRecord {
   'personName' : string,
   'amount' : number,
 }
+export interface ExchangeRateEntry {
+  'rate' : number,
+  'updatedAt' : bigint,
+  'currency' : string,
+}
 export interface Expense {
   'id' : string,
   'categoryId' : string,
@@ -50,6 +55,9 @@ export interface Expense {
   'date' : string,
   'note' : string,
   'createdAt' : bigint,
+  'recurring' : [] | [boolean],
+  'tags' : [] | [string],
+  'recurringFrequency' : [] | [string],
   'amount' : number,
 }
 export interface ExpenseMeta {
@@ -69,6 +77,13 @@ export interface MonthlySummary {
   'totalIncome' : number,
   'totalExpenses' : number,
 }
+export interface NetWorthItem {
+  'id' : string,
+  'name' : string,
+  'createdAt' : bigint,
+  'itemType' : string,
+  'amount' : number,
+}
 export interface ShoppingItem {
   'id' : string,
   'estimatedPrice' : [] | [number],
@@ -79,12 +94,7 @@ export interface ShoppingItem {
   'category' : string,
 }
 export interface UserProfile { 'name' : string }
-export type UserRole = { 'admin' : null } |
-  { 'user' : null } |
-  { 'guest' : null };
 export interface _SERVICE {
-  '_initializeAccessControl' : ActorMethod<[], undefined>,
-  'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'clearBoughtShoppingItems' : ActorMethod<[], undefined>,
   'createCategory' : ActorMethod<[Category], undefined>,
   'createExpense' : ActorMethod<[Expense], undefined>,
@@ -98,9 +108,9 @@ export interface _SERVICE {
   'getAppSettings' : ActorMethod<[], [] | [AppSettings]>,
   'getBackupsList' : ActorMethod<[], Array<BackupRecord>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
-  'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getCategories' : ActorMethod<[], Array<Category>>,
   'getDebts' : ActorMethod<[], Array<DebtRecord>>,
+  'getExchangeRates' : ActorMethod<[], Array<ExchangeRateEntry>>,
   'getExpenseMetaList' : ActorMethod<[], Array<[string, ExpenseMeta]>>,
   'getExpenses' : ActorMethod<[], Array<Expense>>,
   'getExpensesByCategory' : ActorMethod<[string], Array<Expense>>,
@@ -108,14 +118,16 @@ export interface _SERVICE {
   'getIncomeSourcesList' : ActorMethod<[], Array<IncomeSource>>,
   'getMonthlyIncome' : ActorMethod<[string], [] | [MonthlyIncome]>,
   'getMonthlySummary' : ActorMethod<[string], MonthlySummary>,
+  'getNetWorthItems' : ActorMethod<[], Array<NetWorthItem>>,
   'getShoppingItems' : ActorMethod<[], Array<ShoppingItem>>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
-  'isCallerAdmin' : ActorMethod<[], boolean>,
   'resetUserData' : ActorMethod<[], undefined>,
   'saveBackup' : ActorMethod<[string, string], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'saveDebts' : ActorMethod<[Array<DebtRecord>], undefined>,
+  'saveExchangeRates' : ActorMethod<[Array<ExchangeRateEntry>], undefined>,
   'saveIncomeSources' : ActorMethod<[Array<IncomeSource>], undefined>,
+  'saveNetWorthItems' : ActorMethod<[Array<NetWorthItem>], undefined>,
   'setAppSettings' : ActorMethod<[AppSettings], undefined>,
   'setExpenseMeta' : ActorMethod<[string, ExpenseMeta], undefined>,
   'setMonthlyIncome' : ActorMethod<[MonthlyIncome], undefined>,

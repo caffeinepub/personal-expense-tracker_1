@@ -1,9 +1,3 @@
-type UserRole = 
- variant {
-   admin;
-   guest;
-   user;
- };
 type UserProfile = record {name: text;};
 type ShoppingItem = 
  record {
@@ -13,6 +7,14 @@ type ShoppingItem =
    date: opt text;
    estimatedPrice: opt float64;
    id: text;
+   name: text;
+ };
+type NetWorthItem = 
+ record {
+   amount: float64;
+   createdAt: int;
+   id: text;
+   itemType: text;
    name: text;
  };
 type MonthlySummary = 
@@ -48,6 +50,15 @@ type Expense =
    id: text;
    note: text;
    paymentMethod: text;
+   recurring: opt bool;
+   recurringFrequency: opt text;
+   tags: opt text;
+ };
+type ExchangeRateEntry = 
+ record {
+   currency: text;
+   rate: float64;
+   updatedAt: int;
  };
 type DebtRecord = 
  record {
@@ -88,8 +99,6 @@ type AppSettings =
    weeklyLimit: opt float64;
  };
 service : {
-  _initializeAccessControl: () -> ();
-  assignCallerUserRole: (user: principal, role: UserRole) -> ();
   clearBoughtShoppingItems: () -> ();
   createCategory: (category: Category) -> ();
   createExpense: (expense: Expense) -> ();
@@ -103,9 +112,9 @@ service : {
   getAppSettings: () -> (opt AppSettings) query;
   getBackupsList: () -> (vec BackupRecord) query;
   getCallerUserProfile: () -> (opt UserProfile) query;
-  getCallerUserRole: () -> (UserRole) query;
   getCategories: () -> (vec Category) query;
   getDebts: () -> (vec DebtRecord) query;
+  getExchangeRates: () -> (vec ExchangeRateEntry) query;
   getExpenseMetaList: () -> (vec record {
                                    text;
                                    ExpenseMeta;
@@ -116,14 +125,16 @@ service : {
   getIncomeSourcesList: () -> (vec IncomeSource) query;
   getMonthlyIncome: (month: text) -> (opt MonthlyIncome) query;
   getMonthlySummary: (month: text) -> (MonthlySummary) query;
+  getNetWorthItems: () -> (vec NetWorthItem) query;
   getShoppingItems: () -> (vec ShoppingItem) query;
   getUserProfile: (user: principal) -> (opt UserProfile) query;
-  isCallerAdmin: () -> (bool) query;
   resetUserData: () -> ();
   saveBackup: (name: text, data: text) -> ();
   saveCallerUserProfile: (profile: UserProfile) -> ();
   saveDebts: (debts: vec DebtRecord) -> ();
+  saveExchangeRates: (rates: vec ExchangeRateEntry) -> ();
   saveIncomeSources: (sources: vec IncomeSource) -> ();
+  saveNetWorthItems: (items: vec NetWorthItem) -> ();
   setAppSettings: (settings: AppSettings) -> ();
   setExpenseMeta: (expenseId: text, meta: ExpenseMeta) -> ();
   setMonthlyIncome: (income: MonthlyIncome) -> ();

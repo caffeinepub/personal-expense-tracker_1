@@ -1,4 +1,4 @@
-import type { Category } from "../types";
+import type { Category } from "../backend.d";
 
 export const DEFAULT_CATEGORIES: Category[] = [
   { id: "food", name: "Food & Dining", color: "#FF6B6B", budget: 0 },

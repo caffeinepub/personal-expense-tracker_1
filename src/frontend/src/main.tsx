@@ -21,15 +21,18 @@ const queryClient = new QueryClient();
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <QueryClientProvider client={queryClient}>
     <InternetIdentityProvider>
-      {/* ─── PERMANENT: LanguageProvider — DO NOT REMOVE ─────────────────────
-          This provider must always wrap the entire app. Removing it breaks all
-          translations across every tab and component. Comment guard is intentional.
-      ─────────────────────────────────────────────────────────────────────── */}
+      {/* ============================================================
+          DO NOT REMOVE: LanguageProvider must stay here permanently.
+          It provides translations to the entire app. Removing it
+          will cause all useLanguage() calls to fail silently.
+          ============================================================ */}
       <LanguageProvider>
-        {/* ─── PERMANENT: AutoLockProvider — DO NOT REMOVE ──────────────────────
-            This provider manages PIN/auto-lock state. Removing it crashes the
-            lock screen and Danger Zone. Comment guard is intentional.
-        ─────────────────────────────────────────────────────────────────────── */}
+        {/* ============================================================
+            DO NOT REMOVE: AutoLockProvider must stay here permanently.
+            It provides auto-lock/PIN security to the entire app.
+            Removing it will cause all useAutoLock() calls to use
+            no-op defaults and the lock screen will never activate.
+            ============================================================ */}
         <AutoLockProvider>
           <App />
         </AutoLockProvider>

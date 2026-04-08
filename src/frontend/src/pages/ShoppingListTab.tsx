@@ -47,6 +47,7 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
+import type { ShoppingItem } from "../backend.d";
 import {
   useAppSettings,
   useCategories,
@@ -61,7 +62,6 @@ import {
   useUpdateShoppingItem,
 } from "../hooks/useQueries";
 import { useLanguage } from "../i18n/LanguageContext";
-import type { ShoppingItem } from "../types";
 
 const MONTH_LABELS = [
   "Jan",
