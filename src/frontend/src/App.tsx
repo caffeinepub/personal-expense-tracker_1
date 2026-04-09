@@ -383,28 +383,23 @@ export default function App() {
   };
 
   return (
-    // Responsive outer shell: full-screen on mobile, centered app-card on tablet/desktop
-    <div
-      className="min-h-screen bg-background flex flex-col items-center
-        md:bg-muted/20 md:justify-center md:p-6
-        lg:p-8"
-    >
-      {/* Desktop background decoration */}
+    // Responsive outer shell: full-screen on mobile AND tablet/desktop (no centering on md+)
+    <div className="min-h-screen bg-background flex flex-col items-center md:items-stretch">
+      {/* Subtle background decoration */}
       <div
-        className="hidden md:block fixed inset-0 -z-10 pointer-events-none"
+        className="fixed inset-0 -z-10 pointer-events-none"
         style={{
           background: `radial-gradient(ellipse 80% 60% at 50% -10%, ${theme.orb}22 0%, transparent 70%)`,
         }}
       />
 
-      {/* App card — full screen on mobile, framed card on tablet/desktop */}
+      {/* App card — full screen on mobile, full-width on tablet/desktop */}
       <div
         className="
           w-full max-w-[480px] flex flex-col relative
           bg-background
           h-dvh rounded-b-3xl overflow-hidden
-          md:min-h-0 md:max-h-[92vh] md:rounded-3xl md:shadow-2xl md:overflow-hidden md:border md:border-border/50
-          lg:max-w-[520px]
+          md:max-w-full md:rounded-none md:shadow-none md:border-0 md:h-dvh
         "
         style={{ "--theme-tint": theme.orb } as React.CSSProperties}
       >
@@ -489,9 +484,9 @@ export default function App() {
         {/* Bottom navigation — sticky to app card on md+, fixed to viewport on mobile */}
         <nav
           className="
-            fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px]
-            backdrop-blur-lg border-t border-border z-40 safe-bottom rounded-b-3xl
-            lg:max-w-[520px]
+            fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] rounded-b-3xl
+            md:left-0 md:translate-x-0 md:max-w-full md:rounded-none
+            backdrop-blur-lg border-t border-border z-40 safe-bottom
           "
           style={{
             backgroundColor: `color-mix(in oklch, ${theme.orb} 30%, oklch(var(--card) / 0.95))`,
@@ -544,7 +539,7 @@ export default function App() {
 
         {/* FAB — hidden on shopping tab (has its own FAB) */}
         {activeTab !== "shopping" && (
-          <div className="fixed bottom-[4.5rem] left-1/2 -translate-x-1/2 z-50">
+          <div className="fixed bottom-[4.5rem] left-1/2 -translate-x-1/2 z-50 md:left-auto md:translate-x-0 md:right-6">
             <motion.button
               type="button"
               data-ocid="fab.button"

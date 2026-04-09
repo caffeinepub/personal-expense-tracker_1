@@ -6,11 +6,11 @@ import Runtime "mo:core/Runtime";
 import Int "mo:core/Int";
 import Time "mo:core/Time";
 import Principal "mo:core/Principal";
-import Migration "migration";
 
 
 
-(with migration = Migration.run)
+
+
 actor {
 
   // Expense type — extended with optional fields for recurring, tags.
